@@ -6,39 +6,40 @@ import { Mail, Lock, Eye, LogIn } from "lucide-react";
 import "../auth.css";
 
 export default function LoginPage() {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleLogin(e: any) {
     e.preventDefault();
 
-    const response = await fetch("http://127.0.0.1:8000/login", {
+    const formData = new FormData();
+
+    formData.append("username", email);
+    formData.append("password", password);
+
+    const response = await fetch("http://127.0.0.1:8000/login/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
+      body: formData,
     });
 
     const data = await response.json();
-    
-    alert(data.message || data.error);
+
+    if (data.access_token) {
+      alert("Login realizado com sucesso!");
+    } else {
+      alert(data.detail || "Erro ao fazer login");
+    }
   }
 
   return (
     <main className="auth-page">
-
       <div className="brand">
         <img src="/chapeu.png" alt="Logo" className="logo" />
         <h1>LumoStudy</h1>
       </div>
 
       <section className="auth-card">
-
         <span className="badge">Acesso seguro</span>
 
         <h2>Bem-vindo de volta</h2>
@@ -48,7 +49,6 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleLogin}>
-
           <label>E-mail</label>
 
           <div className="input-box">
@@ -68,27 +68,29 @@ export default function LoginPage() {
             <Lock size={16} />
 
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
 
-            <Eye size={16} />
+            <Eye
+              size={16}
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ cursor: "pointer" }}
+            />
           </div>
 
           <button type="submit">
             <LogIn size={17} />
             Entrar na conta
           </button>
-
         </form>
       </section>
 
       <p className="bottom-text">
         Não tem uma conta? <Link href="/cadastro">Criar conta grátis</Link>
       </p>
-
     </main>
   );
 }

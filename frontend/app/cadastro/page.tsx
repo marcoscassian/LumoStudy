@@ -17,28 +17,26 @@ export default function CadastroPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleRegister(e: any) {
-
     e.preventDefault();
 
-    const response = await fetch("http://127.0.0.1:8000/register", {
+    const response = await fetch("http://127.0.0.1:8000/usuarios/", {
       method: "POST",
-
       headers: {
         "Content-Type": "application/json",
       },
-
       body: JSON.stringify({
-        username,
-        email,
-        password,
+        nome: username,
+        email: email,
+        senha_hash: password,
       }),
     });
 
     const data = await response.json();
 
-    alert(data.message || data.error);
+    alert(data.mensagem || data.detail || "Usuário cadastrado!");
   }
 
   return (
@@ -93,13 +91,17 @@ export default function CadastroPage() {
             <Lock size={16} />
 
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
 
-            <Eye size={16} />
+            <Eye
+              size={16}
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ cursor: "pointer" }}
+            />
           </div>
 
           <button type="submit">
