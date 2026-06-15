@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, LogIn } from "lucide-react";
 import "../auth.css";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
+  const [mensagem, setMensagem] = useState("");
+  const [tipoMensagem, setTipoMensagem] = useState("");
 
   async function handleLogin(e: any) {
     e.preventDefault();
@@ -25,10 +31,16 @@ export default function LoginPage() {
 
     const data = await response.json();
 
-    if (data.access_token) {
-      alert("Login realizado com sucesso!");
+    if (response.ok && data.access_token) {
+      setTipoMensagem("sucesso");
+
+      localStorage.setItem("token", data.access_token);
+
+        router.push("/");
+      
     } else {
-      alert(data.detail || "Erro ao fazer login");
+      setTipoMensagem("erro");
+      setMensagem(data.detail || "E-mail ou senha inválidos.");
     }
   }
 
@@ -43,22 +55,25 @@ export default function LoginPage() {
         <span className="badge">Acesso seguro</span>
 
         <h2>Bem-vindo de volta</h2>
+        <p>Entre com suas credenciais para acessar o site.</p>
 
-        <p>
-          Entre com suas credenciais para acessar o site.
-        </p>
+        {mensagem && (
+          <div className={`mensagem ${tipoMensagem}`}>
+            {mensagem}
+          </div>
+        )}
 
         <form onSubmit={handleLogin}>
           <label>E-mail</label>
 
           <div className="input-box">
             <Mail size={16} />
-
             <input
               type="email"
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 
@@ -66,12 +81,12 @@ export default function LoginPage() {
 
           <div className="input-box">
             <Lock size={16} />
-
             <input
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
 
             <Eye
