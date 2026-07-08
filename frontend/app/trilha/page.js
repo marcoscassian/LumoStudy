@@ -33,7 +33,7 @@ export default function TrilhaPage() {
 
             <SubjectCard
               color="purple"
-              image="/linguagens.png"
+              image="/linguagenscard.png"
               title="Linguagens, Códigos e suas Tecnologias"
               description="Interpretação de textos..."
               progress={58}
@@ -42,7 +42,7 @@ export default function TrilhaPage() {
 
             <SubjectCard
               color="green"
-              image="/humanas.png"
+              image="/cienciashumanas.png"
               title="Ciências Humanas"
               description="História, Geografia..."
               progress={40}

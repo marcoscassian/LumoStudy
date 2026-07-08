@@ -48,7 +48,7 @@ body{
 }
 
 .logo img{
-    width:42px;
+    width:60px;
 }
 
 .profile-card{
@@ -108,6 +108,7 @@ nav{
     padding:18px;
     border-radius:20px;
     text-align:center;
+    
 }
 
 .magic-card img{
@@ -203,7 +204,7 @@ nav{
     border-radius:14px;
 
     background:transparent;
-    color:#666;          /* texto cinza */
+    color:#666;          
 
     cursor:pointer;
     transition:.25s;
@@ -227,7 +228,6 @@ nav{
     color:#6E42F5;
 }
 
-/* botão selecionado */
 
 .navigation .selected{
     background:#F3EEFF;
