@@ -1,6 +1,8 @@
 
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import "./trilha.css";
 
 import Sidebar from "./components/sidebar";
@@ -11,6 +13,16 @@ import StreakCard from "./components/streakcard";
 import RewardCard from "./components/rewardcard";
 
 export default function TrilhaPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.replace("/login");
+    }
+  }, [router]);
+
   return (
     <main className="dashboard">
 

@@ -36,8 +36,7 @@ export default function LoginPage() {
 
       localStorage.setItem("token", data.access_token);
 
-        router.push("/");
-      
+      router.push("/trilha");
     } else {
       setTipoMensagem("erro");
       setMensagem(data.detail || "E-mail ou senha inválidos.");

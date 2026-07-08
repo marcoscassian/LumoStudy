@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LogIn, UserPlus } from "lucide-react";
-import "./auth.css";
+import "./home.css";
 
 export default function HomePage() {
   return (
@@ -24,9 +24,11 @@ export default function HomePage() {
 
       <section className="hero">
         <div className="hero-text">
-          <span className="hero-badge">
-            Plataforma gratuita para o ENEM
-          </span>
+          <div className="hero-badge-container">
+            <span className="hero-badge">
+              Plataforma gratuita para o ENEM
+            </span>
+          </div>
 
           <h1>
             Prepare-se para o ENEM de um jeito{" "}

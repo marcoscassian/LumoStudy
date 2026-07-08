@@ -4,5 +4,6 @@ sqlmodel
 pydantic
 email-validator
 pwdlib
+argon2-cffi
 PyJWT
 python-multipart
