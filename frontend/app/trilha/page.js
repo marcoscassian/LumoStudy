@@ -5,8 +5,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "./trilha.css";
 
-import Sidebar from "./components/sidebar";
-import Header from "./components/header";
+import Sidebar from "../components/sidebar";
+import Header from "../components/header";
 import SubjectCard from "./components/subjectcard";
 import ProgressCard from "./components/progresscard";
 import StreakCard from "./components/streakcard";

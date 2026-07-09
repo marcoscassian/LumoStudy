@@ -9,19 +9,10 @@ export default function ProgressCard() {
 
       <h3>Progresso Geral</h3>
 
-      <div className="circle">
-
-        <div className="circle-value">
-
-          58%
-
-        </div>
-
+      <div className="circle circle--large">
+        <div className="circle-value">58%</div>
       </div>
-
-      <p>
-        Você concluiu mais da metade da trilha.
-      </p>
+      <p>71/135 temas concluídos</p>
 
     </div>
 

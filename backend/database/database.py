@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, create_engine, Session
+from sqlalchemy import text
 
 DATABASE_URL = "sqlite:///database.db"
 
@@ -10,3 +11,14 @@ def get_session():
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+
+    # Ensure older tables have the new columns (coins, streak, xp)
+    with engine.connect() as conn:
+        # Attempt to add missing columns to known user table names. Ignore errors if column already exists.
+        for tbl in ("usuarios", "Usuarios"):
+            for col in ("coins", "streak", "xp"):
+                try:
+                    conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN {col} INTEGER DEFAULT 0"))
+                except Exception:
+                    # Likely the table doesn't exist yet or column already present — ignore and continue
+                    continue

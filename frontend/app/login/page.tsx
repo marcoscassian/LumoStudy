@@ -24,22 +24,35 @@ export default function LoginPage() {
     formData.append("username", email);
     formData.append("password", password);
 
-    const response = await fetch("http://127.0.0.1:8000/login/", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("http://127.0.0.1:8000/login/", {
+        method: "POST",
+        body: formData,
+      });
 
-    const data = await response.json();
+      // If server returned non-JSON (e.g. HTML error), guard against parse errors
+      let data: any = {};
+      try {
+        data = await response.json();
+      } catch (err) {
+        data = {};
+      }
 
-    if (response.ok && data.access_token) {
-      setTipoMensagem("sucesso");
-
-      localStorage.setItem("token", data.access_token);
-
-      router.push("/trilha");
-    } else {
+      if (response.ok && data.access_token) {
+        setTipoMensagem("sucesso");
+        localStorage.setItem("token", data.access_token);
+        router.push("/trilha");
+      } else {
+        setTipoMensagem("erro");
+        setMensagem(data.detail || "E-mail ou senha inválidos.");
+      }
+    } catch (err) {
+      // Network or CORS error
       setTipoMensagem("erro");
-      setMensagem(data.detail || "E-mail ou senha inválidos.");
+      setMensagem(
+        "Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://127.0.0.1:8000"
+      );
+      console.error("Login fetch error:", err);
     }
   }
 
