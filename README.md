@@ -28,22 +28,18 @@ Para garantir uma interface veloz, otimizada e reativa (quase como um passe de m
 
 # 📅 Cronograma de Desenvolvimento
 
-| Data | Entrega |
-|------|----------|
-| **17/04** | Criação do repositório no GitHub, definição da arquitetura do projeto, organização da equipe e elaboração da documentação inicial (problema, público-alvo e levantamento de requisitos). |
-| **01/05** | Configuração do ambiente de desenvolvimento (Next.js, FastAPI e banco de dados), estrutura inicial de pastas e primeiros protótipos das telas de autenticação. |
-| **15/05** | Implementação do sistema de autenticação (**RF01–RF04**): Cadastro, Login, Logout, Recuperação de Senha e integração com o banco de dados. |
-| **29/05** | Protótipo e implementação da **Trilha de Aprendizado (RF05)**, incluindo estrutura dos módulos, API e exibição do progresso do usuário. |
-| **12/06** | Desenvolvimento da **Lista de Questões (RF06)**, com banco de questões, feedback imediato e sistema de pontuação. |
-| **26/06** | Implementação do **Perfil do Usuário (RF07)**, permitindo visualização e edição de informações e estatísticas. |
-| **10/07** | Desenvolvimento dos **Flashcards (RF08)**, incluindo criação dos decks, interface de revisão e registro do desempenho do usuário. |
-| **24/07** | Implementação dos **Simulados Cronometrados (RF09)**, com cronômetro, envio das respostas e relatório de desempenho. |
-| **07/08** | Desenvolvimento do sistema de **Streak (RF10)**, registrando a frequência diária dos estudos e incentivando a constância. |
-| **21/08** | Implementação do **Ranking (RF11)**, permitindo a comparação do desempenho entre os usuários. |
-| **04/09** | Desenvolvimento das **Metas Diárias (RF12)**, incluindo barra de progresso e acompanhamento dos objetivos de estudo. |
-| **18/09** | Implementação da **Loja de Itens Virtuais (RF13)**, utilizando moedas obtidas na plataforma para aquisição de itens cosméticos. |
-| **02/10** | Integração completa entre Front-end e Back-end, testes funcionais, correção de bugs, melhorias de desempenho e refinamentos da interface. |
-| **17/10 – 30/10** | Testes finais, documentação, correção de bugs remanescentes, refinamentos visuais, preparação da apresentação e entrega da versão final do projeto. |
+| Período | Objetivo da etapa |
+|---------|-------------------|
+| **17/04 – 30/04** | Planejamento do projeto, definição do problema, público-alvo, levantamento dos requisitos iniciais, criação do repositório, organização do Trello e estruturação da documentação. |
+| **01/05 – 31/05** | Desenvolvimento gradual dos protótipos (Login, Cadastro e Página Inicial), modelagem do banco de dados, definição da arquitetura da aplicação e início da implementação da autenticação. |
+| **01/06 – 30/06** | Consolidação do sistema de autenticação (RF01–RF04), integração entre Front-end e Back-end, refinamento dos protótipos e testes iniciais. |
+| **01/07 – 31/07** | Desenvolvimento da **Trilha de Aprendizado (RF05)**, incluindo prototipação das telas, implementação dos endpoints, integração com o banco de dados e exibição do progresso do usuário. |
+| **01/08 – 15/08** | Desenvolvimento da **Lista de Questões (RF06)**, com sistema de respostas, feedback imediato e pontuação. |
+| **16/08 – 31/08** | Implementação do **Perfil do Usuário (RF07)** e do sistema de **Flashcards (RF08)**. |
+| **01/09 – 15/09** | Desenvolvimento dos **Simulados Cronometrados (RF09)** e geração do relatório de desempenho. |
+| **16/09 – 30/09** | Implementação das funcionalidades de gamificação (**RF10**, **RF11** e **RF12**): Streak, Ranking e Metas Diárias. |
+| **01/10 – 15/10** | Desenvolvimento da **Loja de Itens Virtuais (RF13)**, integração das funcionalidades e testes do sistema. |
+| **16/10 – 30/10** | Correção de bugs, refinamentos da interface, testes finais, documentação e preparação para a entrega do projeto. |
 
 ---
 
