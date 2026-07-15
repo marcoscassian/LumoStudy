@@ -7,17 +7,15 @@ import {
   BarChart3,
   Trophy,
   StickyNote,
-  Settings
+  Settings,
+  Zap,
+  Award,
+  ShoppingCart
 } from "lucide-react";
 
 export default function Sidebar() {
   return (
     <aside className="sidebar">
-
-      <div className="logo logo--sidebar">
-        <img src="/chapeu.png" alt="Logo" />
-        <span>LumoStudy</span>
-      </div>
 
       <div className="profile-card profile-card--compact">
 
@@ -32,32 +30,42 @@ export default function Sidebar() {
 
       <nav>
         <Link href="#" className="menu active">
-          <BookOpen size={18} />
+          <BookOpen size={20} />
           <span>Trilha de Estudos</span>
         </Link>
 
         <Link href="#" className="menu">
-          <Target size={18} />
+          <Target size={20} />
           <span>Questões</span>
         </Link>
 
         <Link href="#" className="menu">
-          <BarChart3 size={18} />
+          <BarChart3 size={20} />
           <span>Flashcards</span>
         </Link>
 
         <Link href="#" className="menu">
-          <Trophy size={18} />
+          <Zap size={20} />
+          <span>Simulados</span>
+        </Link>
+
+        <Link href="#" className="menu">
+          <Trophy size={20} />
           <span>Ranking</span>
         </Link>
 
         <Link href="#" className="menu">
-          <StickyNote size={18} />
+          <ShoppingCart size={20} />
           <span>Loja</span>
         </Link>
 
         <Link href="#" className="menu">
-          <Settings size={18} />
+          <Award size={20} />
+          <span>Conquistas</span>
+        </Link>
+
+        <Link href="#" className="menu">
+          <Settings size={20} />
           <span>Configurações</span>
         </Link>
       </nav>
