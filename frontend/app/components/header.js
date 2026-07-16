@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Flame, Coins } from "lucide-react";
 
 export default function Header() {
@@ -40,9 +41,9 @@ export default function Header() {
 
         </div>
 
-        <div className="header-avatar">
-          <img src="/avatar.png" className="avatar" alt="" />
-        </div>
+        <Link href="/usuario" className="header-avatar" title="Ver perfil">
+          <img src="/avatar.png" className="avatar" alt="Perfil" />
+        </Link>
 
       </div>
 
