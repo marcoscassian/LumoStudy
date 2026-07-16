@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Flame, Coins } from "lucide-react";
-
+import { Flame } from "lucide-react";
+ 
 export default function Header() {
   return (
     <header className="header header--compact">
@@ -15,14 +15,18 @@ export default function Header() {
       </div>
 
       <div className="header-center">
-        {/* empty center to keep layout aligned with mock */}
       </div>
 
       <div className="header-right">
 
         <div className="header-stats">
           <div className="coins">
-            <Coins size={16} />
+            <img
+              src="/header/coin.png"
+              alt="Moeda"
+              width={35}
+              height={35}
+            />
             <span className="coins-value">1.250</span>
           </div>
 
