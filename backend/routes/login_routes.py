@@ -22,6 +22,7 @@ oauth_schema = OAuth2PasswordBearer(tokenUrl="/login/")
 
 SECRET = "lumostudy_secret"
 ALGORITHM = "HS256"
+REVOGADOS: set[str] = set()
 
 
 def validar_senha(senha: str, senha_hash: str) -> bool:
@@ -58,6 +59,9 @@ def get_usuario(
     )
 
     try:
+        if token in REVOGADOS:
+            raise credentials_exception
+
         dados = jwt.decode(
             token,
             SECRET,
@@ -116,12 +120,34 @@ def login(
 
     return {
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "nome": usuario.nome,
+        "coins": usuario.coins,
+        "streak": usuario.streak,
+        "xp": usuario.xp,
+    }
+
+
+@router.get("/me")
+def get_me(
+    usuario: Annotated[Usuarios, Depends(get_usuario)]
+):
+    return {
+        "id": usuario.id,
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "coins": usuario.coins,
+        "streak": usuario.streak,
+        "xp": usuario.xp,
     }
 
 
 @router.post("/logout")
-def logout():
+def logout(
+    token: Annotated[str, Depends(oauth_schema)]
+):
+    REVOGADOS.add(token)
+
     return {
         "mensagem": "Logout realizado com sucesso"
     }

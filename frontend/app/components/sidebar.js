@@ -19,7 +19,7 @@ export default function Sidebar() {
 
       <div className="profile-card profile-card--compact">
 
-        <img src="/coruja.png" alt="Coruja" className="owl" />
+        <img src="/sidebar/coruja.png" alt="Coruja" className="owl" />
 
         <div className="profile-text">
           <h3>Olá, Bruxo.</h3>
@@ -29,7 +29,7 @@ export default function Sidebar() {
       </div>
 
       <nav>
-        <Link href="#" className="menu active">
+        <Link href="/trilha" className="menu active">
           <BookOpen size={20} />
           <span>Trilha de Estudos</span>
         </Link>
@@ -69,15 +69,6 @@ export default function Sidebar() {
           <span>Configurações</span>
         </Link>
       </nav>
-
-      <div className="magic-card">
-        <img src="/pocao.png" alt="" />
-        <p>Sua jornada é mágica quando você é constante.</p>
-        <button>Definir meta</button>
-      </div>
-
-      <div className="sidebar-footer">Perfil</div>
-
     </aside>
   );
 }

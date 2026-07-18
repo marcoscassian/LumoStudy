@@ -1,8 +1,6 @@
 
 "use client";
 
-import { Flame } from "lucide-react";
-
 export default function StreakCard(){
 
     return(
@@ -13,7 +11,12 @@ export default function StreakCard(){
 
             <div className="streak-icon">
 
-                <Flame size={45}/>
+                <img
+                src="/header/fire.png"
+                alt="Streak"
+                width={80}
+                height={80}
+                />
 
             </div>
 
