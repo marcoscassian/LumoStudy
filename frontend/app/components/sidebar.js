@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Target,
@@ -14,6 +15,16 @@ import {
 } from "lucide-react";
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
+  const isActive = (href) => {
+    if (!href || href === "#") {
+      return false;
+    }
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
   return (
     <aside className="sidebar">
 
@@ -29,42 +40,42 @@ export default function Sidebar() {
       </div>
 
       <nav>
-        <Link href="/trilha" className="menu active">
+        <Link href="/trilha" className={`menu ${isActive("/trilha") ? "active" : ""}`}>
           <BookOpen size={20} />
           <span>Trilha de Estudos</span>
         </Link>
 
-        <Link href="#" className="menu">
+        <Link href="#" className={`menu ${isActive("/questoes") ? "active" : ""}`}>
           <Target size={20} />
           <span>Questões</span>
         </Link>
 
-        <Link href="#" className="menu">
+        <Link href="#" className={`menu ${isActive("/flashcards") ? "active" : ""}`}>
           <BarChart3 size={20} />
           <span>Flashcards</span>
         </Link>
 
-        <Link href="#" className="menu">
+        <Link href="#" className={`menu ${isActive("/simulados") ? "active" : ""}`}>
           <Zap size={20} />
           <span>Simulados</span>
         </Link>
 
-        <Link href="#" className="menu">
+        <Link href="#" className={`menu ${isActive("/ranking") ? "active" : ""}`}>
           <Trophy size={20} />
           <span>Ranking</span>
         </Link>
 
-        <Link href="#" className="menu">
+        <Link href="#" className={`menu ${isActive("/loja") ? "active" : ""}`}>
           <ShoppingCart size={20} />
           <span>Loja</span>
         </Link>
 
-        <Link href="#" className="menu">
+        <Link href="#" className={`menu ${isActive("/conquistas") ? "active" : ""}`}>
           <Award size={20} />
           <span>Conquistas</span>
         </Link>
 
-        <Link href="#" className="menu">
+        <Link href="#" className={`menu ${isActive("/configuracoes") ? "active" : ""}`}>
           <Settings size={20} />
           <span>Configurações</span>
         </Link>

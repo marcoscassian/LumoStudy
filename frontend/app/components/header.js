@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, User } from "lucide-react";
 
@@ -90,10 +91,10 @@ export default function Header() {
     <header className="header header--compact">
 
       <div className="header-left">
-        <div className="logo-small">
+        <Link href="/trilha" className="logo-small" aria-label="Voltar para a trilha de estudos">
           <img src="/chapeu.png" alt="Logo" />
           <span>LumoStudy</span>
-        </div>
+        </Link>
       </div>
 
       <div className="header-center">
