@@ -45,37 +45,37 @@ export default function Sidebar() {
           <span>Trilha de Estudos</span>
         </Link>
 
-        <Link href="#" className={`menu ${isActive("/questoes") ? "active" : ""}`}>
+        <Link href="/questoes" className={`menu ${isActive("/questoes") ? "active" : ""}`}>
           <Target size={20} />
           <span>Questões</span>
         </Link>
 
-        <Link href="#" className={`menu ${isActive("/flashcards") ? "active" : ""}`}>
+        <Link href="/flashcards" className={`menu ${isActive("/flashcards") ? "active" : ""}`}>
           <BarChart3 size={20} />
           <span>Flashcards</span>
         </Link>
 
-        <Link href="#" className={`menu ${isActive("/simulados") ? "active" : ""}`}>
+        <Link href="/simulados" className={`menu ${isActive("/simulados") ? "active" : ""}`}>
           <Zap size={20} />
           <span>Simulados</span>
         </Link>
 
-        <Link href="#" className={`menu ${isActive("/ranking") ? "active" : ""}`}>
+        <Link href="/ranking" className={`menu ${isActive("/ranking") ? "active" : ""}`}>
           <Trophy size={20} />
           <span>Ranking</span>
         </Link>
 
-        <Link href="#" className={`menu ${isActive("/loja") ? "active" : ""}`}>
+        <Link href="/loja" className={`menu ${isActive("/loja") ? "active" : ""}`}>
           <ShoppingCart size={20} />
           <span>Loja</span>
         </Link>
 
-        <Link href="#" className={`menu ${isActive("/conquistas") ? "active" : ""}`}>
+        <Link href="/conquistas" className={`menu ${isActive("/conquistas") ? "active" : ""}`}>
           <Award size={20} />
           <span>Conquistas</span>
         </Link>
 
-        <Link href="#" className={`menu ${isActive("/configuracoes") ? "active" : ""}`}>
+        <Link href="/configuracoes" className={`menu ${isActive("/configuracoes") ? "active" : ""}`}>
           <Settings size={20} />
           <span>Configurações</span>
         </Link>
