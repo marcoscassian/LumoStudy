@@ -1,0 +1,1 @@
+As migrações do banco do LumoStudy são versionadas nesta pasta. Toda alteração nos modelos deve gerar uma nova migration com Alembic.

@@ -1,0 +1,722 @@
+/* =======================================
+   Página de Usuário / Perfil
+======================================= */
+
+.dashboard-body--profile {
+  grid-template-columns: 220px 1fr;
+}
+
+.profile-content {
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+/* =======================
+   Hero / Banner do perfil
+======================= */
+
+.profile-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 34px 40px;
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #fff;
+  background:
+    radial-gradient(700px 260px at 15% 20%, rgba(150, 110, 255, 0.35), transparent 60%),
+    linear-gradient(120deg, #150a33 0%, #2c1760 55%, #1a0d3d 100%);
+  box-shadow: 0 20px 40px rgba(30, 10, 70, 0.25);
+}
+
+.profile-hero-stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 25% 60%, #fff, transparent),
+    radial-gradient(1px 1px at 40% 15%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 55% 75%, #fff, transparent),
+    radial-gradient(1px 1px at 70% 30%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 85% 55%, #fff, transparent),
+    radial-gradient(1px 1px at 95% 20%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 65% 85%, #fff, transparent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.profile-hero-castle {
+  position: absolute;
+  right: -40px;
+  bottom: -40px;
+  height: 260px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.5;
+  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.9), transparent 85%);
+  mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.9), transparent 85%);
+  pointer-events: none;
+}
+
+.profile-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.profile-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.profile-hero-user {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-hero-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.profile-hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-hero-greeting {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.profile-hero-info h1 {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 2px 0 12px;
+}
+
+.profile-hero-level {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.level-tag {
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.level-bar {
+  width: 180px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.level-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #b98bff, #ffffff);
+}
+
+.level-xp {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+}
+
+.profile-hero-house {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.house-crest {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.profile-hero-house span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.profile-hero-house h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.house-corvinal .house-crest {
+  border-color: #7c8bff;
+  color: #a9b4ff;
+}
+
+.house-grifinoria .house-crest {
+  border-color: #ff8a80;
+  color: #ffb3a7;
+}
+
+.house-sonserina .house-crest {
+  border-color: #7fdc8f;
+  color: #a6e8b2;
+}
+
+.house-lufalufa .house-crest {
+  border-color: #ffe28a;
+  color: #ffe9ad;
+}
+
+.profile-hero-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.profile-hero-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.hero-stat.coins svg {
+  color: #ffcf4d;
+}
+
+.hero-stat.streak svg {
+  color: #ff8a4d;
+}
+
+.btn-edit-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #6e42f5;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-edit-profile:hover {
+  background: #f0eaff;
+}
+
+/* =======================
+   Progresso geral (stats)
+======================= */
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.section-title svg {
+  color: #6e42f5;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  transition: 0.25s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-text strong {
+  font-size: 19px;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.stat-text span {
+  font-size: 12.5px;
+  color: #888;
+  line-height: 1.3;
+}
+
+.stat-purple .stat-icon {
+  background: #f0eaff;
+  color: #6e42f5;
+}
+
+.stat-green .stat-icon {
+  background: #e9fbec;
+  color: #34c759;
+}
+
+.stat-blue .stat-icon {
+  background: #eaf4ff;
+  color: #2196f3;
+}
+
+.stat-yellow .stat-icon {
+  background: #fff7e0;
+  color: #d8a000;
+}
+
+.stat-pink .stat-icon {
+  background: #ffeaf1;
+  color: #ff4d79;
+}
+
+/* =======================
+   Domínio por área
+======================= */
+
+.mastery-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+}
+
+.mastery-card {
+  --mastery-color: #6e42f5;
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  transition: 0.25s;
+}
+
+.mastery-card:hover {
+  transform: translateY(-4px);
+}
+
+.mastery-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.mastery-ring-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mastery-ring-inner img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+
+.mastery-general-percent {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mastery-color);
+}
+
+.mastery-percent {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 4px;
+}
+
+.mastery-card h4 {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #666;
+  line-height: 1.4;
+  min-height: 34px;
+}
+
+.mastery-btn {
+  margin-top: 4px;
+  border: none;
+  padding: 7px 18px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--mastery-color);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.mastery-btn:hover {
+  filter: brightness(1.08);
+}
+
+.mastery-purple {
+  --mastery-color: #6e42f5;
+}
+
+.mastery-green {
+  --mastery-color: #34c759;
+}
+
+.mastery-blue {
+  --mastery-color: #2196f3;
+}
+
+.mastery-yellow {
+  --mastery-color: #d8a000;
+}
+
+.mastery-general {
+  --mastery-color: #4b2fa6;
+  background: linear-gradient(180deg, #f6f0ff, #ffffff);
+}
+
+/* =======================
+   Painéis (atividades / metas)
+======================= */
+
+.profile-panels {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.panel-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* atividades */
+
+.activity-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.activity-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activity-purple {
+  background: #f0eaff;
+  color: #6e42f5;
+}
+
+.activity-blue {
+  background: #eaf4ff;
+  color: #2196f3;
+}
+
+.activity-yellow {
+  background: #fff7e0;
+  color: #d8a000;
+}
+
+.activity-green {
+  background: #e9fbec;
+  color: #34c759;
+}
+
+.activity-text p {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+}
+
+.activity-text span {
+  font-size: 12px;
+  color: #999;
+}
+
+.ver-mais {
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: #6e42f5;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* metas */
+
+.goals-tabs {
+  display: flex;
+  background: #f4f0fc;
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.goals-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 9px 0;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a7a8c;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.goals-tab.active {
+  background: linear-gradient(90deg, #a233ff, #ff4da6);
+  color: #fff;
+}
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.goal-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.goal-purple {
+  background: #f0eaff;
+  color: #6e42f5;
+}
+
+.goal-red {
+  background: #ffe2e8;
+  color: #ff4d6d;
+}
+
+.goal-green {
+  background: #e9fbec;
+  color: #34c759;
+}
+
+.goal-info {
+  flex: 1;
+}
+
+.goal-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #444;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.goal-bar {
+  width: 100%;
+  height: 8px;
+  background: #ececec;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.goal-fill {
+  height: 100%;
+  border-radius: 10px;
+}
+
+.goal-fill-purple {
+  background: linear-gradient(90deg, #a233ff, #ff4da6);
+}
+
+.goal-fill-red {
+  background: #ff4d6d;
+}
+
+.goal-fill-green {
+  background: #34c759;
+}
+
+/* =======================
+   Responsivo
+======================= */
+
+@media (max-width: 1400px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .mastery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .dashboard-body--profile {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-hero {
+    padding: 26px 22px;
+  }
+
+  .profile-hero-top {
+    flex-direction: column;
+  }
+
+  .profile-hero-house {
+    align-self: flex-start;
+  }
+
+  .level-bar {
+    width: 120px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mastery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-hero-castle {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mastery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-hero-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-edit-profile {
+    align-self: stretch;
+    justify-content: center;
+  }
+}
