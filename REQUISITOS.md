@@ -1,240 +1,319 @@
-# Requisitos do Sistema
+# 📚 Requisitos do Sistema
 
-## Requisitos Funcionais (RF)
-
-Os requisitos funcionais descrevem as funcionalidades que o sistema deve oferecer para que o utilizador consiga estudar e interagir com a plataforma temática.
-
----
-
-### RF01 - Cadastro de Usuários
-
-**Descrição:**
-Permitir que novos utilizadores criem uma conta para salvar o seu progresso nas trilhas e poções.
-
-**Prioridade:** Obrigatório
-
-**Entrada e condição anterior:**
-O utilizador não deve possuir uma conta ativa. O sistema deve solicitar os seguintes dados:
-
-* Nome de utilizador (ou nome de bruxo);
-* E-mail;
-* Senha segura.
-
-**Saída e condição posterior:**
-Conta criada com sucesso e armazenamento dos dados no banco de dados.
+> **Projeto:** LumoStudy
+> **Categoria:** Plataforma Gamificada de Estudos
 
 ---
 
-### RF02 - Realizar Login
+## 📌 1. Requisitos Funcionais
 
-**Descrição:**
-Permitir o acesso de utilizadores já cadastrados.
+Os **Requisitos Funcionais (RF)** descrevem as funcionalidades que o sistema deve oferecer para permitir que o utilizador estude, acompanhe seu desempenho e interaja com os recursos da plataforma.
 
-**Prioridade:** Obrigatório
+### 📊 Resumo de Prioridades
 
-**Entrada e condição anterior:**
-E-mail e senha válidos.
-
-**Saída e condição posterior:**
-Utilizador autenticado com acesso ao seu progresso e perfil.
-
----
-
-### RF03 - Realizar Logout
-
-**Descrição:**
-Permitir que o utilizador encerre a sessão da conta associada.
-
-**Prioridade:** Obrigatório
-
-**Entrada e condição anterior:**
-Utilizador estar logado e clicar na opção de sair.
-
-**Saída e condição posterior:**
-Sessão encerrada e retorno à tela de autenticação.
+|     Prioridade     | Requisitos                         |
+| :----------------: | :--------------------------------- |
+| 🔴 **Obrigatório** | RF01, RF02, RF03, RF05, RF06       |
+| 🟡 **Recomendado** | RF04, RF07, RF08, RF09, RF10, RF11 |
+|   🟢 **Opcional**  | RF12, RF13                         |
 
 ---
 
-### RF04 - Recuperação de Senha
+### 🔐 RF01 - Cadastro de Usuários
 
-**Descrição:**
-Disponibilizar uma funcionalidade para redefinir o acesso caso o utilizador esqueça a senha.
+**Descrição**
+Permitir que novos utilizadores criem uma conta para salvar seu progresso nas trilhas e utilizar os recursos da plataforma.
 
-**Prioridade:** Recomendado
+**Prioridade:** 🔴 **Obrigatório**
 
-**Entrada e condição anterior:**
-E-mail cadastrado pelo utilizador.
+**Entrada e condição anterior**
 
-**Saída e condição posterior:**
-Envio de link de redefinição para o e-mail e possibilidade de criar uma nova senha.
+* O utilizador não deve possuir uma conta ativa.
+* O sistema deve solicitar:
 
----
+  * Nome de utilizador ou nome de bruxo;
+  * E-mail;
+  * Senha segura.
 
-### RF05 - Trilha de Aprendizado
-
-**Descrição:**
-Permitir a visualização estruturada dos conteúdos, organizados em módulos ou anos letivos de forma sequencial.
-
-**Prioridade:** Obrigatório
-
-**Entrada e condição anterior:**
-Acesso à área de conteúdos.
-
-**Saída e condição posterior:**
-Exibição do progresso do utilizador e dos próximos temas disponíveis.
+**Saída e condição posterior**
+A conta deve ser criada com sucesso e os dados devem ser armazenados no banco de dados.
 
 ---
 
-### RF06 - Lista de Questões
+### 🔑 RF02 - Realizar Login
 
-**Descrição:**
-Permitir a resolução de exercícios com feedback imediato após cada resposta.
+**Descrição**
+Permitir o acesso de utilizadores que já possuem uma conta cadastrada.
 
-**Prioridade:** Obrigatório
+**Prioridade:** 🔴 **Obrigatório**
 
-**Entrada e condição anterior:**
-Seleção de um tema da trilha de aprendizado.
+**Entrada e condição anterior**
 
-**Saída e condição posterior:**
-Exibição do resultado da questão, indicando acerto ou erro, juntamente com a pontuação obtida.
+* E-mail cadastrado;
+* Senha válida.
 
----
-
-### RF07 - Perfil do Utilizador
-
-**Descrição:**
-Disponibilizar um espaço com informações pessoais e estatísticas do utilizador.
-
-**Prioridade:** Recomendado
-
-**Entrada e condição anterior:**
-Dados do utilizador, como nome, foto ou "Casa".
-
-**Saída e condição posterior:**
-Exibição e possibilidade de edição das informações do perfil.
+**Saída e condição posterior**
+O utilizador deve ser autenticado e ter acesso ao seu perfil e progresso.
 
 ---
 
-### RF08 - FlashCards
+### 🚪 RF03 - Realizar Logout
 
-**Descrição:**
-Disponibilizar um método de revisão baseado em cartões de memória para auxiliar na fixação dos conteúdos.
+**Descrição**
+Permitir que o utilizador encerre sua sessão na plataforma.
 
-**Prioridade:** Recomendado
+**Prioridade:** 🔴 **Obrigatório**
 
-**Entrada e condição anterior:**
-Seleção de um deck (baralho) de cartas.
+**Entrada e condição anterior**
 
-**Saída e condição posterior:**
-Registro do desempenho do utilizador para auxiliar no processo de repetição espaçada.
+* O utilizador deve estar autenticado;
+* O utilizador deve selecionar a opção de sair.
 
----
-
-### RF09 - Simulados Cronometrados
-
-**Descrição:**
-Permitir a realização de avaliações com tempo limitado e exibir o resultado somente ao final do teste.
-
-**Prioridade:** Recomendado
-
-**Entrada e condição anterior:**
-Início do cronômetro pelo utilizador.
-
-**Saída e condição posterior:**
-Exibição de um relatório final de desempenho após o término do simulado.
+**Saída e condição posterior**
+A sessão deve ser encerrada e o utilizador deve ser direcionado para a tela de autenticação.
 
 ---
 
-### RF10 - Streak (Foguinho)
+### 🔄 RF04 - Recuperação de Senha
 
-**Descrição:**
+**Descrição**
+Permitir que o utilizador redefina sua senha caso esqueça suas credenciais de acesso.
+
+**Prioridade:** 🟡 **Recomendado**
+
+**Entrada e condição anterior**
+
+* E-mail cadastrado no sistema.
+
+**Saída e condição posterior**
+O sistema deve enviar um link de redefinição para o e-mail cadastrado, permitindo que o utilizador crie uma nova senha.
+
+---
+
+### 🧭 RF05 - Trilha de Aprendizado
+
+**Descrição**
+Permitir a visualização estruturada dos conteúdos da plataforma, organizados em módulos ou anos letivos de forma sequencial.
+
+**Prioridade:** 🔴 **Obrigatório**
+
+**Entrada e condição anterior**
+
+* O utilizador deve acessar a área de conteúdos.
+
+**Saída e condição posterior**
+
+* Exibição do progresso atual;
+* Indicação dos conteúdos concluídos;
+* Indicação dos próximos temas disponíveis.
+
+---
+
+### 📝 RF06 - Lista de Questões
+
+**Descrição**
+Permitir que o utilizador resolva exercícios relacionados aos temas estudados, recebendo feedback após cada resposta.
+
+**Prioridade:** 🔴 **Obrigatório**
+
+**Entrada e condição anterior**
+
+* Seleção de um tema dentro da trilha de aprendizado.
+
+**Saída e condição posterior**
+
+* Exibição de acerto ou erro;
+* Exibição da pontuação obtida;
+* Atualização do progresso do utilizador.
+
+---
+
+### 👤 RF07 - Perfil do Utilizador
+
+**Descrição**
+Disponibilizar uma área contendo informações pessoais e estatísticas relacionadas ao desempenho do utilizador.
+
+**Prioridade:** 🟡 **Recomendado**
+
+**Entrada e condição anterior**
+
+* Dados cadastrados do utilizador, como nome, foto ou "Casa".
+
+**Saída e condição posterior**
+
+* Exibição das informações do perfil;
+* Possibilidade de editar os dados;
+* Exibição de estatísticas de desempenho.
+
+---
+
+### 🃏 RF08 - FlashCards
+
+**Descrição**
+Disponibilizar um método de revisão baseado em cartões de memória para auxiliar na fixação dos conteúdos estudados.
+
+**Prioridade:** 🟡 **Recomendado**
+
+**Entrada e condição anterior**
+
+* Seleção de um deck ou baralho de FlashCards.
+
+**Saída e condição posterior**
+
+* Exibição dos cartões;
+* Registro do desempenho do utilizador;
+* Utilização dos resultados para auxiliar na repetição espaçada.
+
+---
+
+### ⏱️ RF09 - Simulados Cronometrados
+
+**Descrição**
+Permitir a realização de avaliações com tempo limitado, apresentando o resultado somente após o término do teste.
+
+**Prioridade:** 🟡 **Recomendado**
+
+**Entrada e condição anterior**
+
+* O utilizador deve iniciar o simulado;
+* O cronômetro deve ser iniciado automaticamente.
+
+**Saída e condição posterior**
+
+* Encerramento do teste ao finalizar as questões ou o tempo;
+* Exibição do resultado;
+* Apresentação de um relatório final de desempenho.
+
+---
+
+### 🔥 RF10 - Streak (Foguinho)
+
+**Descrição**
 Registrar a frequência diária de estudos para incentivar a constância do utilizador.
 
-**Prioridade:** Recomendado
+**Prioridade:** 🟡 **Recomendado**
 
-**Entrada e condição anterior:**
-Utilizador autenticado e realização de pelo menos uma atividade no dia.
+**Entrada e condição anterior**
 
-**Saída e condição posterior:**
-Atualização visual do contador de dias consecutivos de atividade.
+* Utilizador autenticado;
+* Realização de pelo menos uma atividade no dia.
 
----
-
-### RF11 - Sistema de Competição (Ranking)
-
-**Descrição:**
-Disponibilizar um ranking entre os utilizadores para tornar o processo de estudo mais interativo e divertido.
-
-**Prioridade:** Recomendado
-
-**Entrada e condição anterior:**
-Pontuação acumulada pelo utilizador.
-
-**Saída e condição posterior:**
-Exibição da posição do utilizador em comparação com outros bruxos/estudantes.
+**Saída e condição posterior**
+O contador de dias consecutivos deve ser atualizado e exibido visualmente na plataforma.
 
 ---
 
-### RF12 - Definição de Metas
+### 🏆 RF11 - Sistema de Competição (Ranking)
 
-**Descrição:**
-Permitir que o utilizador defina objetivos diários, como tempo de estudo ou quantidade de questões.
+**Descrição**
+Disponibilizar um ranking entre os utilizadores para tornar o processo de estudo mais interativo e gamificado.
 
-**Prioridade:** Opcional
+**Prioridade:** 🟡 **Recomendado**
 
-**Entrada e condição anterior:**
-Inserção do valor da meta pelo utilizador, como, por exemplo, 20 minutos de estudo.
+**Entrada e condição anterior**
 
-**Saída e condição posterior:**
-Exibição de uma barra de progresso visual indicando o nível de conclusão da meta.
+* Pontuação acumulada pelo utilizador.
 
----
-
-### RF13 - Loja de Itens Virtuais
-
-**Descrição:**
-Permitir a troca de moedas virtuais obtidas durante os estudos por itens cosméticos ou "poções" de recuperação.
-
-**Prioridade:** Opcional
-
-**Entrada e condição anterior:**
-Utilizador possuir saldo suficiente de moedas virtuais.
-
-**Saída e condição posterior:**
-Item adquirido e adicionado ao inventário do utilizador.
+**Saída e condição posterior**
+Exibição da posição do utilizador em comparação com outros estudantes ou bruxos da plataforma.
 
 ---
 
-# Requisitos Não Funcionais (NF)
+### 🎯 RF12 - Definição de Metas
 
-Os requisitos não funcionais descrevem as características de qualidade do sistema, suas restrições e aspectos relacionados à experiência de utilização.
+**Descrição**
+Permitir que o utilizador estabeleça objetivos diários de estudo, como tempo de estudo ou quantidade de questões.
 
----
+**Prioridade:** 🟢 **Opcional**
 
-### NF01 - Tematização e Imersão (Interface)
+**Entrada e condição anterior**
 
-A interface deve ser gamificada e inspirada visualmente no universo de Harry Potter, utilizando elementos como pergaminhos, poções e fontes características para garantir a imersão temática.
+* Inserção do valor da meta pelo utilizador.
+* Exemplo: `20 minutos de estudo`.
 
----
-
-### NF02 - Portabilidade e Responsividade
-
-O sistema deve ser acessível em computadores e dispositivos móveis, como tablets e smartphones, ajustando automaticamente a interface temática de acordo com o tamanho da tela.
-
----
-
-### NF03 - Segurança dos Dados
-
-O sistema deve garantir que as senhas sejam armazenadas de forma segura e criptografada, impedindo o acesso não autorizado aos dados pessoais dos utilizadores.
+**Saída e condição posterior**
+Exibição de uma barra de progresso indicando visualmente o nível de conclusão da meta.
 
 ---
 
-### NF04 - Desempenho e Eficiência
+### 🛒 RF13 - Loja de Itens Virtuais
 
-O sistema deve responder às ações de gamificação, como a validação de questões, em menos de **2 segundos**, evitando interrupções no ritmo da experiência do utilizador.
+**Descrição**
+Permitir a troca de moedas virtuais obtidas durante as atividades por itens cosméticos ou "poções" de recuperação.
+
+**Prioridade:** 🟢 **Opcional**
+
+**Entrada e condição anterior**
+
+* O utilizador deve possuir saldo suficiente de moedas virtuais.
+
+**Saída e condição posterior**
+
+* Confirmação da compra;
+* Desconto das moedas utilizadas;
+* Item adicionado ao inventário do utilizador.
 
 ---
 
-### NF05 - Disponibilidade
+# ⚙️ 2. Requisitos Não Funcionais
 
-Por ser uma plataforma de estudos, o sistema deve estar disponível **24 horas por dia**, permitindo que o utilizador realize suas atividades e metas diárias em qualquer horário.
+Os **Requisitos Não Funcionais (NF)** descrevem características de qualidade, desempenho, segurança, disponibilidade e restrições da plataforma.
+
+---
+
+### 🪄 NF01 - Tematização e Imersão
+
+A interface deve possuir uma identidade visual **gamificada e temática**, inspirada no universo de fantasia utilizado pelo projeto.
+
+A interface poderá utilizar elementos como:
+
+* Pergaminhos;
+* Poções;
+* Elementos mágicos;
+* Ícones temáticos;
+* Tipografia característica;
+* Elementos visuais relacionados às casas e à magia.
+
+O objetivo é proporcionar maior **imersão e identificação do utilizador com a plataforma**.
+
+---
+
+### 📱 NF02 - Portabilidade e Responsividade
+
+O sistema deve ser acessível em diferentes dispositivos, incluindo:
+
+* 💻 Computadores;
+* 📱 Smartphones;
+* 📲 Tablets.
+
+A interface deve se adaptar automaticamente ao tamanho da tela, mantendo a usabilidade e a identidade visual da plataforma.
+
+---
+
+### 🔒 NF03 - Segurança dos Dados
+
+O sistema deve garantir a proteção dos dados dos utilizadores.
+
+As senhas devem ser armazenadas utilizando métodos seguros de **hashing**, evitando que sejam armazenadas diretamente em texto simples.
+
+O sistema também deve impedir acessos não autorizados às informações pessoais e ao progresso dos utilizadores.
+
+---
+
+### ⚡ NF04 - Desempenho e Eficiência
+
+O sistema deve apresentar respostas rápidas às ações realizadas pelo utilizador.
+
+As principais ações da plataforma, como a validação de questões e atualização da pontuação, devem apresentar resposta em **menos de 2 segundos**, sempre que tecnicamente possível.
+
+O objetivo é evitar interrupções no ritmo da experiência de estudo.
+
+---
+
+### 🌐 NF05 - Disponibilidade
+
+A plataforma deve estar disponível **24 horas por dia**, permitindo que os utilizadores acessem seus conteúdos e realizem suas atividades em qualquer horário.
+
+O sistema deve buscar minimizar períodos de indisponibilidade e garantir o acesso contínuo às funcionalidades essenciais da plataforma.
+
+---
