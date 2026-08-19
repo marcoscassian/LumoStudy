@@ -6,9 +6,5 @@ email-validator
 pwdlib
 argon2-cffi
 PyJWT
-<<<<<<< HEAD
 python-multipart
 alembic
-=======
-python-multipart
->>>>>>> 18e56acbc2671cebd20cec0eaae5abe03cdfc422
