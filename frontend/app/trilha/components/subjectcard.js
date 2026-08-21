@@ -10,7 +10,9 @@ export default function SubjectCard({
   progress,
   completed,
   topics = [],
-  color
+  color,
+  onContinue,
+  onTrain
 }) {
   return (
     <div className={`subject-card ${color}`}>
@@ -25,7 +27,12 @@ export default function SubjectCard({
         </div>
 
         <div className="subject-action">
-          <ChevronDown size={20} />
+          <button
+            className="subject-cta"
+            onClick={() => onTrain && onTrain({ title })}
+          >
+            Treinar
+          </button>
         </div>
 
       </div>
@@ -47,7 +54,25 @@ export default function SubjectCard({
                 {topic.status === "lock" && <Lock size={18} className="lock" />}
                 <span>{topic.name}</span>
               </div>
-              <span>{topic.progress}%</span>
+
+              <div className="topic-right">
+                {topic.status === "lock" ? (
+                  <button className="continue-btn locked" disabled>
+                    <Lock size={14} /> Bloqueado
+                  </button>
+                ) : topic.link ? (
+                  <a className="continue-btn" href={topic.link}>
+                    Continuar
+                  </a>
+                ) : (
+                  <button
+                    className="continue-btn"
+                    onClick={() => onContinue && onContinue(topic)}
+                  >
+                    Continuar
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

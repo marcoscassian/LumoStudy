@@ -74,8 +74,6 @@ export default function TrilhaPage() {
               image="/linguagenscard.png"
               title="Linguagens, Códigos e suas Tecnologias"
               description="Interpretação de textos..."
-              progress={58}
-              completed="24/35 concluídos"
             />
 
             <SubjectCard
@@ -83,8 +81,6 @@ export default function TrilhaPage() {
               image="/cienciashumanas.png"
               title="Ciências Humanas"
               description="História, Geografia..."
-              progress={40}
-              completed="18/32 concluídos"
             />
 
             <SubjectCard
@@ -92,8 +88,6 @@ export default function TrilhaPage() {
               image="/matematica.png"
               title="Matemática"
               description="Geometria, álgebra..."
-              progress={62}
-              completed="21/33 concluídos"
             />
 
             <SubjectCard
@@ -101,8 +95,6 @@ export default function TrilhaPage() {
               image="/natureza.png"
               title="Ciências da Natureza"
               description="Biologia, Física..."
-              progress={48}
-              completed="16/31 concluídos"
             />
 
           </div>
