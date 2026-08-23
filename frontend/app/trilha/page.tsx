@@ -21,9 +21,13 @@ export default function TrilhaPage() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      router.replace("/login");
+      router.replace("/login?next=/trilha");
     }
   }, [router]);
+
+  const handleSubjectContinue = ({ title }: { title: string }) => {
+    router.push(`/questoes?area=${encodeURIComponent(title)}`);
+  };
 
   const handleInfoButtonClick = () => {
     setIsInfoOpen((prev) => !prev);
@@ -74,6 +78,7 @@ export default function TrilhaPage() {
               image="/linguagenscard.png"
               title="Linguagens, Códigos e suas Tecnologias"
               description="Interpretação de textos..."
+              onTrain={handleSubjectContinue}
             />
 
             <SubjectCard
@@ -81,6 +86,7 @@ export default function TrilhaPage() {
               image="/cienciashumanas.png"
               title="Ciências Humanas"
               description="História, Geografia..."
+              onTrain={handleSubjectContinue}
             />
 
             <SubjectCard
@@ -88,6 +94,7 @@ export default function TrilhaPage() {
               image="/matematica.png"
               title="Matemática"
               description="Geometria, álgebra..."
+              onTrain={handleSubjectContinue}
             />
 
             <SubjectCard
@@ -95,6 +102,7 @@ export default function TrilhaPage() {
               image="/natureza.png"
               title="Ciências da Natureza"
               description="Biologia, Física..."
+              onTrain={handleSubjectContinue}
             />
 
           </div>

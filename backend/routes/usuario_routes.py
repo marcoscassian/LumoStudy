@@ -5,12 +5,90 @@ from pwdlib import PasswordHash
 
 from database.database import get_session
 from models.models import Usuarios
+from routes.login_routes import UsuarioLogado
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
 senha_context = PasswordHash.recommended()
+
+
+
+
+@router.get("/me/perfil")
+def get_meu_perfil(usuario: UsuarioLogado):
+    """Retorna os dados públicos do perfil do usuário autenticado."""
+    return {
+        "id": usuario.id,
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "criado_em": usuario.criado_em,
+        "coins": usuario.coins,
+        "streak": usuario.streak,
+        "xp": usuario.xp,
+    }
+
+
+@router.put("/me/perfil")
+def update_meu_perfil(
+    dados: dict,
+    usuario: UsuarioLogado,
+    session: SessionDep,
+):
+    """Atualiza nome, e-mail e/ou senha do usuário autenticado."""
+    nome = dados.get("nome")
+    email = dados.get("email")
+    senha_atual = dados.get("senha_atual")
+    nova_senha = dados.get("nova_senha")
+
+    if nome is not None:
+        nome = str(nome).strip()
+        if not nome:
+            raise HTTPException(status_code=400, detail="Nome não pode ficar vazio")
+        usuario.nome = nome
+
+    if email is not None:
+        email = str(email).strip().lower()
+        if not email:
+            raise HTTPException(status_code=400, detail="E-mail não pode ficar vazio")
+
+        outro_usuario = session.exec(
+            select(Usuarios).where(
+                Usuarios.email == email,
+                Usuarios.id != usuario.id,
+            )
+        ).first()
+
+        if outro_usuario:
+            raise HTTPException(status_code=400, detail="E-mail já cadastrado")
+
+        usuario.email = email
+
+    if nova_senha is not None and str(nova_senha).strip():
+        nova_senha = str(nova_senha).strip()
+
+        if not senha_atual or not senha_context.verify(password=senha_atual, hash=usuario.senha_hash):
+            raise HTTPException(status_code=400, detail="Senha atual incorreta")
+
+        if len(nova_senha) < 6:
+            raise HTTPException(status_code=400, detail="A nova senha deve ter pelo menos 6 caracteres")
+
+        usuario.senha_hash = senha_context.hash(nova_senha)
+
+    session.add(usuario)
+    session.commit()
+    session.refresh(usuario)
+
+    return {
+        "id": usuario.id,
+        "nome": usuario.nome,
+        "email": usuario.email,
+        "criado_em": usuario.criado_em,
+        "coins": usuario.coins,
+        "streak": usuario.streak,
+        "xp": usuario.xp,
+    }
 
 
 @router.get("/", response_model=list[Usuarios])

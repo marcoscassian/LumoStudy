@@ -35,7 +35,7 @@ def create_access_token(data: dict, expires: timedelta | None = None):
     if expires:
         expire = datetime.now() + expires
     else:
-        expire = datetime.now() + timedelta(minutes=30)
+        expire = datetime.now() + timedelta(days=7)
 
     to_encode.update({"exp": expire})
 

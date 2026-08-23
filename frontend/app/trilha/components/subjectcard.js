@@ -7,11 +7,11 @@ export default function SubjectCard({
   image,
   title,
   description,
-  progress,
-  completed,
+  progress = 0,
+  completed = "0%",
   topics = [],
   color,
-  onContinue,
+  onContinue = () => {},
   onTrain
 }) {
   return (

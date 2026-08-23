@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, LogIn } from "lucide-react";
 import "../auth.css";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get("next");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +43,7 @@ export default function LoginPage() {
       if (response.ok && data.access_token) {
         setTipoMensagem("sucesso");
         localStorage.setItem("token", data.access_token);
-        router.push("/trilha");
+        router.push(nextUrl || "/trilha");
       } else {
         setTipoMensagem("erro");
         setMensagem(data.detail || "E-mail ou senha inválidos.");

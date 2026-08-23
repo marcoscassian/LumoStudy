@@ -242,6 +242,12 @@
   background: #f0eaff;
 }
 
+.profile-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* =======================
    Progresso geral (stats)
 ======================= */
@@ -713,6 +719,11 @@
   .profile-hero-bottom {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .profile-hero-actions {
+    align-self: stretch;
+    flex-direction: column;
   }
 
   .btn-edit-profile {
