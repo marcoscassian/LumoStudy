@@ -7,7 +7,6 @@ import { Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
 import "../../trilha/trilha.css";
 import "../questoes.css";
 
-import Sidebar from "../../components/sidebar";
 import Header from "../../components/header";
 
 const API_BASE = "http://127.0.0.1:8000";
@@ -33,10 +32,9 @@ export default function SessaoDeQuestoesPage() {
   const [questoes, setQuestoes] = useState([]);
   const [indiceAtual, setIndiceAtual] = useState(0);
 
-  // Estado por questão, indexado pelo índice da questão na lista
-  const [selecionadas, setSelecionadas] = useState({}); // { [indice]: "A" }
-  const [riscadas, setRiscadas] = useState({}); // { [indice]: Set("B", "C") }
-  const [resultados, setResultados] = useState({}); // { [indice]: { correta, gabarito } }
+  const [selecionadas, setSelecionadas] = useState({});
+  const [riscadas, setRiscadas] = useState({});
+  const [resultados, setResultados] = useState({});
 
   const [corrigindo, setCorrigindo] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
@@ -86,7 +84,6 @@ export default function SessaoDeQuestoesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkingAuth, area, quantidade, nivel]);
 
-  // Cronômetro crescente (tempo decorrido na sessão)
   useEffect(() => {
     if (loading || erro || finalizado || questoes.length === 0) return;
 
@@ -113,7 +110,6 @@ export default function SessaoDeQuestoesPage() {
       else atual.add(letra);
       return { ...prev, [indice]: atual };
     });
-    // Se a alternativa riscada estava selecionada, remove a seleção
     setSelecionadas((prev) => {
       if (prev[indice] !== letra) return prev;
       const copia = { ...prev };
@@ -179,9 +175,8 @@ export default function SessaoDeQuestoesPage() {
   return (
     <main className="dashboard">
       <Header />
-      <div className="dashboard-body dashboard-body--questoes">
-        <Sidebar />
-        <section className="content">
+      <div className="dashboard-body dashboard-body--quiz">
+        <section className="content content--quiz">
           {loading && (
             <div className="quiz-loading">
               <p>Preparando suas questões...</p>
