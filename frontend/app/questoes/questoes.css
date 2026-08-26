@@ -11,6 +11,7 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   max-width: 900px;
+  margin: 0 auto;
 }
 
 .area-card {
@@ -78,6 +79,7 @@
 
 .config-panel {
   max-width: 640px;
+  margin: 0 auto;
   background: white;
   border-radius: 22px;
   padding: 32px;
@@ -220,7 +222,8 @@
 ======================= */
 
 .quiz-panel {
-  max-width: 780px;
+  max-width: 1100px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -518,6 +521,7 @@
 .quiz-loading,
 .quiz-error {
   max-width: 640px;
+  margin: 0 auto;
   background: white;
   border-radius: 22px;
   padding: 40px;
@@ -543,6 +547,7 @@
 
 .quiz-summary {
   max-width: 640px;
+  margin: 0 auto;
   background: white;
   border-radius: 22px;
   padding: 40px;
@@ -601,4 +606,62 @@
   .dashboard-body--questoes {
     grid-template-columns: 1fr;
   }
+}
+
+/* =======================
+   Layout da sessão de questões (sem sidebar)
+======================= */
+
+.dashboard-body--quiz {
+  display: block;
+  padding: 32px 60px;
+}
+
+.content--quiz {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .dashboard-body--quiz {
+    padding: 24px;
+  }
+}
+
+/* =======================
+   Ajustes: página de seleção de área maior e centralizada
+======================= */
+
+.dashboard-body--questoes .title-area {
+  text-align: center;
+  margin: 0 auto 12px;
+}
+
+.dashboard-body--questoes .area-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  max-width: 1200px;
+  margin: 40px auto 0;
+}
+
+.dashboard-body--questoes .area-card {
+  padding: 36px;
+}
+
+.dashboard-body--questoes .area-card-image {
+  width: 72px;
+  height: 72px;
+}
+
+.dashboard-body--questoes .area-card h3 {
+  font-size: 20px;
+}
+
+.dashboard-body--questoes .area-card p {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.dashboard-body--questoes .area-card-cta {
+  font-size: 14px;
+  padding: 10px 20px;
 }
