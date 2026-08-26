@@ -5,8 +5,12 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlmodel import Session, select
+
+from database.database import get_session
+from models.models import QuestaoEditorial
 
 router = APIRouter(prefix="/questoes", tags=["questoes"])
 
@@ -214,9 +218,9 @@ def _nome_arquivo_local(referencia: str) -> str:
     return Path(urlparse(referencia).path).name or referencia
 
 
-def _montar_questao_publica(prova: str, index: str, nivel: str) -> dict:
+def _montar_questao_original(prova: str, index: str, dados: dict | None = None) -> dict:
     """Monta a questão para envio ao front-end, sem revelar o gabarito."""
-    dados = _ler_json_questao(prova, index)
+    dados = dados or _ler_json_questao(prova, index)
 
     imagens = [
         f"/static/provas/{prova}/questions/{index}/{_nome_arquivo_local(referencia)}"
@@ -244,9 +248,33 @@ def _montar_questao_publica(prova: str, index: str, nivel: str) -> dict:
         "comando": dados.get("alternativesIntroduction"),
         "imagens": imagens,
         "alternativas": alternativas,
-        "nivel": nivel,
-        "assunto": _classificar_assunto(dados.get("discipline"), dados),
+        "gabarito": dados.get("correctAlternative"),
+        "disciplinaOriginal": dados.get("discipline"),
     }
+
+
+def _buscar_editorial(session: Session, prova: str, index: str) -> QuestaoEditorial | None:
+    return session.exec(
+        select(QuestaoEditorial).where(
+            QuestaoEditorial.prova == prova,
+            QuestaoEditorial.numero == index,
+        )
+    ).first()
+
+
+def _montar_questao_publica(prova: str, index: str, nivel: str, session: Session) -> dict:
+    dados = _ler_json_questao(prova, index)
+    questao = _montar_questao_original(prova, index, dados)
+    questao.pop("gabarito", None)
+    editorial = _buscar_editorial(session, prova, index)
+    assunto_automatico = _classificar_assunto(dados.get("discipline"), dados)
+    questao.update({
+        "nivel": nivel,
+        "assunto": editorial.conteudo_principal if editorial else assunto_automatico,
+        "disciplina": editorial.disciplina if editorial else None,
+        "conteudoPrincipal": editorial.conteudo_principal if editorial else assunto_automatico,
+    })
+    return questao
 
 
 @router.get("/areas")
@@ -260,6 +288,7 @@ def gerar_questoes(
     area: str = Query(..., description="linguagens, ciencias-humanas, matematica ou ciencias-natureza"),
     quantidade: int = Query(10),
     nivel: str = Query("medio", description="facil, medio ou dificil"),
+    session: Session = Depends(get_session),
 ):
     if area not in VALORES_DE_AREA:
         raise HTTPException(status_code=400, detail="Área inválida")
@@ -291,7 +320,10 @@ def gerar_questoes(
         itens_nivel = itens_nivel + complemento[:faltando]
 
     escolhidos = random.sample(itens_nivel, k=min(quantidade, len(itens_nivel)))
-    questoes = [_montar_questao_publica(item["prova"], item["index"], item["nivel"]) for item in escolhidos]
+    questoes = [
+        _montar_questao_publica(item["prova"], item["index"], item["nivel"], session)
+        for item in escolhidos
+    ]
 
     return {
         "area": area,
@@ -312,7 +344,7 @@ class CorrecaoRequest(BaseModel):
 
 
 @router.post("/corrigir")
-def corrigir_questoes(payload: CorrecaoRequest):
+def corrigir_questoes(payload: CorrecaoRequest, session: Session = Depends(get_session)):
     """Recebe as respostas escolhidas e devolve o gabarito de cada uma."""
     detalhes = []
     acertos = 0
@@ -325,12 +357,14 @@ def corrigir_questoes(payload: CorrecaoRequest):
         if correta:
             acertos += 1
 
+        editorial = _buscar_editorial(session, resposta.prova, resposta.index)
         detalhes.append({
             "prova": resposta.prova,
             "index": resposta.index,
             "letraEscolhida": resposta.letra,
             "correta": correta,
             "gabarito": gabarito,
+            "resolucao": editorial.resolucao if editorial else None,
         })
 
     return {

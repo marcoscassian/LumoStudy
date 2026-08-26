@@ -300,6 +300,13 @@ export default function SessaoDeQuestoesPage() {
                   </div>
                 )}
 
+                {resultadoAtual?.resolucao && (
+                  <div className="quiz-feedback">
+                    <strong>Resolução comentada</strong>
+                    <p style={{ whiteSpace: "pre-wrap", marginTop: 8 }}>{resultadoAtual.resolucao}</p>
+                  </div>
+                )}
+
                 {!resultadoAtual && (
                   <button
                     type="button"

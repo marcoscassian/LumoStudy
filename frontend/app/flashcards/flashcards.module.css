@@ -1,0 +1,19 @@
+.content { margin-left: 280px; padding: 110px 34px 50px; min-height: 100vh; background: #f7f5ff; }
+.head { max-width: 1000px; margin: 0 auto 25px; }
+.head h1 { color: #2e1065; font-size: 36px; }
+.head p { color: #6b7280; margin-top: 6px; }
+.filters { max-width: 1000px; margin: 0 auto 24px; display: flex; gap: 12px; }
+.filters select { border: 1px solid #ddd6fe; border-radius: 11px; padding: 11px 14px; background: white; color: #4c1d95; }
+.grid { max-width: 1000px; margin: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.card { min-height: 240px; border: 0; background: transparent; perspective: 1000px; cursor: pointer; text-align: left; }
+.inner { position: relative; width: 100%; height: 100%; min-height: 240px; transition: transform .45s; transform-style: preserve-3d; }
+.flipped { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 20px; padding: 24px; box-shadow: 0 14px 35px #4c1d9515; display: flex; flex-direction: column; justify-content: space-between; }
+.front { background: white; border: 1px solid #e9e5f3; }
+.back { transform: rotateY(180deg); background: linear-gradient(145deg, #5b21b6, #7c3aed); color: white; }
+.face h2 { font-size: 19px; line-height: 1.45; }
+.meta { font-size: 12px; font-weight: 800; color: #7c3aed; }
+.back .meta { color: #ddd6fe; }
+.hint { font-size: 12px; color: #9ca3af; }
+.empty { max-width: 1000px; margin: auto; background: white; border-radius: 18px; padding: 45px; text-align: center; color: #6b7280; }
+@media (max-width: 900px) { .content { margin-left: 0; padding: 95px 18px 40px; } }

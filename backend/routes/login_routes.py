@@ -88,6 +88,15 @@ def get_usuario(
         raise credentials_exception
 
 
+def exigir_admin(usuario: Annotated[Usuarios, Depends(get_usuario)]):
+    if not usuario.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a administradores",
+        )
+    return usuario
+
+
 @router.post("/")
 def login(
     session: SessionDep,
@@ -125,6 +134,7 @@ def login(
         "coins": usuario.coins,
         "streak": usuario.streak,
         "xp": usuario.xp,
+        "is_admin": usuario.is_admin,
     }
 
 
@@ -139,6 +149,7 @@ def get_me(
         "coins": usuario.coins,
         "streak": usuario.streak,
         "xp": usuario.xp,
+        "is_admin": usuario.is_admin,
     }
 
 
@@ -156,4 +167,9 @@ def logout(
 UsuarioLogado = Annotated[
     Usuarios,
     Depends(get_usuario)
+]
+
+AdminLogado = Annotated[
+    Usuarios,
+    Depends(exigir_admin)
 ]

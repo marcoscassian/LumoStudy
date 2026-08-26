@@ -116,6 +116,8 @@ def create_usuario(usuario: Usuarios, session: SessionDep):
         raise HTTPException(status_code=400, detail="E-mail já cadastrado")
 
     usuario.senha_hash = senha_context.hash(usuario.senha_hash)
+    # Cadastro público nunca pode conceder privilégios administrativos.
+    usuario.is_admin = False
 
     session.add(usuario)
     session.commit()
