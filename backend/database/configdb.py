@@ -5,7 +5,7 @@ from sqlalchemy.engine import URL
 MYSQL_HOST = "localhost"
 MYSQL_PORT = 3306
 MYSQL_USER = "root"
-MYSQL_PASSWORD = "admin"
+MYSQL_PASSWORD = ""
 MYSQL_DATABASE = "lumostudy"
 MYSQL_CHARSET = "utf8mb4"
 
