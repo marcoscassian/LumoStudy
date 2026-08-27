@@ -9,7 +9,7 @@ from pwdlib import PasswordHash
 from sqlmodel import Session, select
 from starlette import status
 
-from database.database import get_session
+from database.db import get_session
 from models.models import Usuarios
 
 SessionDep = Annotated[Session, Depends(get_session)]

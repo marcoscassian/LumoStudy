@@ -66,9 +66,10 @@ body {
 }
 
 .logo-small img {
-    width: 42px;
-    height: 42px;
+    width: 54px;
+    height: 54px;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .logo-small span {
@@ -269,6 +270,7 @@ body {
 
     background: #f7f5fc;
     border-right: 1px solid #eee9f5;
+    overflow-x: hidden;
 
     justify-self: start;
 }
@@ -304,10 +306,16 @@ body {
     margin-bottom: 6px;
 }
 
+.profile-text {
+    width: 100%;
+    max-width: 210px;
+}
+
 .profile-text p {
     font-size: 14px;
     line-height: 20px;
     color: #555;
+    overflow-wrap: anywhere;
 }
 
 nav {
@@ -336,6 +344,11 @@ nav {
     height: 21px;
     color: #85818e;
     flex-shrink: 0;
+}
+
+.menu span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .menu:hover {
@@ -951,8 +964,8 @@ nav {
     }
 
     .logo-small img {
-        width: 37px;
-        height: 37px;
+        width: 44px;
+        height: 44px;
     }
 
     .logo-small span {

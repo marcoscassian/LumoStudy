@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import Session, select
 
-from database.database import get_session
-from models.models import Flashcard, QuestaoEditorial
+from database.db import get_session
+from models.models import Flashcard, Prova, Questao, QuestaoEditorial
 from routes.login_routes import AdminLogado
 from routes.questoes_routes import (
     _ler_json_questao,
@@ -26,11 +26,53 @@ def _prova_do_ano(ano: int) -> str:
     return prova
 
 
-def _validar_questao(prova: str, numero: str) -> dict:
+def _validar_questao_arquivo(prova: str, numero: str) -> dict:
     numero = str(numero).strip()
     if numero not in _pastas_de_questoes(prova):
         raise HTTPException(status_code=404, detail="Questão não encontrada")
     return _ler_json_questao(prova, numero)
+
+
+def _buscar_questao_db(session: Session, prova: str, numero: str) -> Questao:
+    questao = session.exec(
+        select(Questao)
+        .join(Prova, Prova.id == Questao.prova_id)
+        .where(Prova.codigo == prova, Questao.numero == str(numero).strip())
+    ).first()
+    if not questao:
+        raise HTTPException(
+            status_code=409,
+            detail="Questão ainda não foi indexada no MySQL. Execute python database/createdb.py.",
+        )
+    return questao
+
+
+def _referencia_questao(session: Session, questao_id: int | None) -> tuple[str | None, str | None]:
+    if not questao_id:
+        return None, None
+    questao = session.get(Questao, questao_id)
+    if not questao:
+        return None, None
+    prova = session.get(Prova, questao.prova_id)
+    return (prova.codigo if prova else None), questao.numero
+
+
+def _flashcard_publico(session: Session, flashcard: Flashcard) -> dict:
+    prova, numero = _referencia_questao(session, flashcard.questao_id)
+    return {
+        "id": flashcard.id,
+        "frente": flashcard.frente,
+        "verso": flashcard.verso,
+        "disciplina": flashcard.disciplina,
+        "conteudo_principal": flashcard.conteudo_principal,
+        "prova": prova,
+        "numero_questao": numero,
+        "questao_id": flashcard.questao_id,
+        "ativo": flashcard.ativo,
+        "criado_por": flashcard.criado_por,
+        "criado_em": flashcard.criado_em,
+        "atualizado_em": flashcard.atualizado_em,
+    }
 
 
 class QuestaoEditorialPayload(BaseModel):
@@ -69,11 +111,14 @@ def admin_atual(admin: AdminLogado):
 
 
 @router.get("/provas")
-def listar_provas_admin(admin: AdminLogado):
-    provas = _listar_provas()
+def listar_provas_admin(admin: AdminLogado, session: SessionDep):
+    provas = session.exec(select(Prova).where(Prova.ativa == True).order_by(Prova.ano.desc())).all()  # noqa: E712
+    if provas:
+        return [{"prova": prova.codigo, "ano": prova.ano} for prova in provas]
+    # fallback enquanto o catálogo ainda não tiver sido sincronizado
     return [
         {"prova": prova, "ano": int(prova.removeprefix("ENEM"))}
-        for prova in sorted(provas, reverse=True)
+        for prova in sorted(_listar_provas(), reverse=True)
         if prova.removeprefix("ENEM").isdigit()
     ]
 
@@ -86,17 +131,12 @@ def buscar_questao(
     numero: str = Query(..., min_length=1, max_length=30),
 ):
     prova = _prova_do_ano(ano)
-    dados = _validar_questao(prova, numero)
+    dados = _validar_questao_arquivo(prova, numero)
+    questao = _buscar_questao_db(session, prova, numero)
     editorial = session.exec(
-        select(QuestaoEditorial).where(
-            QuestaoEditorial.prova == prova,
-            QuestaoEditorial.numero == numero,
-        )
+        select(QuestaoEditorial).where(QuestaoEditorial.questao_id == questao.id)
     ).first()
-    return {
-        "original": _montar_questao_original(prova, numero, dados),
-        "editorial": editorial,
-    }
+    return {"original": _montar_questao_original(prova, numero, dados), "editorial": editorial}
 
 
 @router.put("/questoes/{prova}/{numero}/editorial")
@@ -109,17 +149,15 @@ def salvar_editorial(
 ):
     if prova not in _listar_provas():
         raise HTTPException(status_code=404, detail="Prova não encontrada")
-    _validar_questao(prova, numero)
+    _validar_questao_arquivo(prova, numero)
+    questao = _buscar_questao_db(session, prova, numero)
 
     editorial = session.exec(
-        select(QuestaoEditorial).where(
-            QuestaoEditorial.prova == prova,
-            QuestaoEditorial.numero == numero,
-        )
+        select(QuestaoEditorial).where(QuestaoEditorial.questao_id == questao.id)
     ).first()
     agora = datetime.now()
     if editorial is None:
-        editorial = QuestaoEditorial(prova=prova, numero=numero, criado_em=agora)
+        editorial = QuestaoEditorial(questao_id=questao.id, criado_em=agora)
 
     editorial.resolucao = payload.resolucao
     editorial.disciplina = payload.disciplina
@@ -132,16 +170,16 @@ def salvar_editorial(
     return editorial
 
 
-def _validar_vinculo_flashcard(payload: FlashcardPayload):
+def _questao_id_do_payload(session: Session, payload: FlashcardPayload) -> int | None:
     if bool(payload.prova) != bool(payload.numero_questao):
-        raise HTTPException(
-            status_code=400,
-            detail="Informe prova e número da questão juntos",
-        )
-    if payload.prova:
-        if payload.prova not in _listar_provas():
-            raise HTTPException(status_code=404, detail="Prova vinculada não encontrada")
-        _validar_questao(payload.prova, payload.numero_questao or "")
+        raise HTTPException(status_code=400, detail="Informe prova e número da questão juntos")
+    if not payload.prova:
+        return None
+    prova = payload.prova.upper()
+    if prova not in _listar_provas():
+        raise HTTPException(status_code=404, detail="Prova vinculada não encontrada")
+    _validar_questao_arquivo(prova, payload.numero_questao or "")
+    return _buscar_questao_db(session, prova, payload.numero_questao or "").id
 
 
 @router.get("/flashcards")
@@ -160,17 +198,19 @@ def listar_flashcards_admin(
         consulta = consulta.where(Flashcard.disciplina == disciplina)
     if ativo is not None:
         consulta = consulta.where(Flashcard.ativo == ativo)
-    return session.exec(consulta.order_by(Flashcard.atualizado_em.desc())).all()
+    cards = session.exec(consulta.order_by(Flashcard.atualizado_em.desc())).all()
+    return [_flashcard_publico(session, card) for card in cards]
 
 
 @router.post("/flashcards", status_code=201)
 def criar_flashcard(payload: FlashcardPayload, admin: AdminLogado, session: SessionDep):
-    _validar_vinculo_flashcard(payload)
-    flashcard = Flashcard(**payload.model_dump(), criado_por=admin.id)
+    questao_id = _questao_id_do_payload(session, payload)
+    dados = payload.model_dump(exclude={"prova", "numero_questao"})
+    flashcard = Flashcard(**dados, questao_id=questao_id, criado_por=admin.id)
     session.add(flashcard)
     session.commit()
     session.refresh(flashcard)
-    return flashcard
+    return _flashcard_publico(session, flashcard)
 
 
 @router.get("/flashcards/{flashcard_id}")
@@ -178,7 +218,7 @@ def obter_flashcard(flashcard_id: int, admin: AdminLogado, session: SessionDep):
     flashcard = session.get(Flashcard, flashcard_id)
     if not flashcard:
         raise HTTPException(status_code=404, detail="Flashcard não encontrado")
-    return flashcard
+    return _flashcard_publico(session, flashcard)
 
 
 @router.put("/flashcards/{flashcard_id}")
@@ -191,14 +231,15 @@ def editar_flashcard(
     flashcard = session.get(Flashcard, flashcard_id)
     if not flashcard:
         raise HTTPException(status_code=404, detail="Flashcard não encontrado")
-    _validar_vinculo_flashcard(payload)
-    for campo, valor in payload.model_dump().items():
+    questao_id = _questao_id_do_payload(session, payload)
+    for campo, valor in payload.model_dump(exclude={"prova", "numero_questao"}).items():
         setattr(flashcard, campo, valor)
+    flashcard.questao_id = questao_id
     flashcard.atualizado_em = datetime.now()
     session.add(flashcard)
     session.commit()
     session.refresh(flashcard)
-    return flashcard
+    return _flashcard_publico(session, flashcard)
 
 
 @router.patch("/flashcards/{flashcard_id}/status")
@@ -216,4 +257,4 @@ def alterar_status_flashcard(
     session.add(flashcard)
     session.commit()
     session.refresh(flashcard)
-    return flashcard
+    return _flashcard_publico(session, flashcard)

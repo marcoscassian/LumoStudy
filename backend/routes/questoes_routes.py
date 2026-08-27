@@ -1,6 +1,7 @@
 import json
 import random
 import re
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
@@ -9,8 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from database.database import get_session
-from models.models import QuestaoEditorial
+from database.db import get_session
+from models.models import DiaEstudo, ProgressoTema, Prova, Questao, QuestaoEditorial, RespostaUsuario
+from routes.login_routes import UsuarioLogado
 
 router = APIRouter(prefix="/questoes", tags=["questoes"])
 
@@ -253,12 +255,20 @@ def _montar_questao_original(prova: str, index: str, dados: dict | None = None) 
     }
 
 
-def _buscar_editorial(session: Session, prova: str, index: str) -> QuestaoEditorial | None:
+def _buscar_questao_db(session: Session, prova: str, index: str) -> Questao | None:
     return session.exec(
-        select(QuestaoEditorial).where(
-            QuestaoEditorial.prova == prova,
-            QuestaoEditorial.numero == index,
-        )
+        select(Questao)
+        .join(Prova, Prova.id == Questao.prova_id)
+        .where(Prova.codigo == prova, Questao.numero == str(index))
+    ).first()
+
+
+def _buscar_editorial(session: Session, prova: str, index: str) -> QuestaoEditorial | None:
+    questao = _buscar_questao_db(session, prova, index)
+    if not questao:
+        return None
+    return session.exec(
+        select(QuestaoEditorial).where(QuestaoEditorial.questao_id == questao.id)
     ).first()
 
 
@@ -341,11 +351,69 @@ class RespostaEnviada(BaseModel):
 
 class CorrecaoRequest(BaseModel):
     respostas: list[RespostaEnviada]
+    tentativa_simulado_id: int | None = None
+
+
+def _registrar_dia_estudo(session: Session, usuario_id: int, questoes: int = 0, flashcards: int = 0) -> DiaEstudo:
+    hoje = date.today()
+    dia = session.exec(
+        select(DiaEstudo).where(DiaEstudo.usuario_id == usuario_id, DiaEstudo.data == hoje)
+    ).first()
+    if not dia:
+        dia = DiaEstudo(usuario_id=usuario_id, data=hoje)
+    dia.questoes_respondidas += questoes
+    dia.flashcards_revisados += flashcards
+    session.add(dia)
+    return dia
+
+
+def _recalcular_streak(session: Session, usuario) -> None:
+    datas = session.exec(
+        select(DiaEstudo.data)
+        .where(DiaEstudo.usuario_id == usuario.id)
+        .order_by(DiaEstudo.data.desc())
+    ).all()
+    esperada = date.today()
+    streak = 0
+    for data_estudo in datas:
+        if data_estudo == esperada:
+            streak += 1
+            esperada -= timedelta(days=1)
+        elif data_estudo < esperada:
+            break
+    usuario.streak = streak
+    session.add(usuario)
+
+
+def _atualizar_progresso_questao(session: Session, usuario_id: int, questao: Questao, correta: bool) -> None:
+    if not questao.tema_id:
+        return
+    progresso = session.exec(
+        select(ProgressoTema).where(
+            ProgressoTema.usuario_id == usuario_id,
+            ProgressoTema.tema_id == questao.tema_id,
+        )
+    ).first()
+    if not progresso:
+        progresso = ProgressoTema(usuario_id=usuario_id, tema_id=questao.tema_id)
+    progresso.questoes_respondidas += 1
+    if correta:
+        progresso.questoes_corretas += 1
+    progresso.progresso = min(100, progresso.questoes_respondidas * 5 + progresso.flashcards_revisados * 5)
+    progresso.status = "concluido" if progresso.progresso >= 100 else "em_andamento"
+    progresso.atualizado_em = datetime.now()
+    if progresso.status == "concluido" and progresso.concluido_em is None:
+        progresso.concluido_em = datetime.now()
+    session.add(progresso)
 
 
 @router.post("/corrigir")
-def corrigir_questoes(payload: CorrecaoRequest, session: Session = Depends(get_session)):
-    """Recebe as respostas escolhidas e devolve o gabarito de cada uma."""
+def corrigir_questoes(
+    payload: CorrecaoRequest,
+    usuario: UsuarioLogado,
+    session: Session = Depends(get_session),
+):
+    """Corrige e registra cada resposta no histórico do usuário."""
     detalhes = []
     acertos = 0
 
@@ -353,9 +421,27 @@ def corrigir_questoes(payload: CorrecaoRequest, session: Session = Depends(get_s
         dados = _ler_json_questao(resposta.prova, resposta.index)
         gabarito = dados.get("correctAlternative")
         correta = str(resposta.letra).strip().upper() == str(gabarito).strip().upper()
+        questao = _buscar_questao_db(session, resposta.prova, resposta.index)
+        if not questao:
+            raise HTTPException(
+                status_code=409,
+                detail="Catálogo de questões não indexado. Execute python database/createdb.py.",
+            )
 
         if correta:
             acertos += 1
+
+        session.add(
+            RespostaUsuario(
+                usuario_id=usuario.id,
+                questao_id=questao.id,
+                tentativa_simulado_id=payload.tentativa_simulado_id,
+                alternativa_escolhida=str(resposta.letra).strip().upper(),
+                correta=correta,
+            )
+        )
+        _registrar_dia_estudo(session, usuario.id, questoes=1)
+        _atualizar_progresso_questao(session, usuario.id, questao, correta)
 
         editorial = _buscar_editorial(session, resposta.prova, resposta.index)
         detalhes.append({
@@ -366,6 +452,9 @@ def corrigir_questoes(payload: CorrecaoRequest, session: Session = Depends(get_s
             "gabarito": gabarito,
             "resolucao": editorial.resolucao if editorial else None,
         })
+
+    _recalcular_streak(session, usuario)
+    session.commit()
 
     return {
         "acertos": acertos,

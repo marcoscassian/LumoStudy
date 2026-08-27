@@ -129,9 +129,13 @@ export default function SessaoDeQuestoesPage() {
     setCorrigindo(true);
 
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(`${API_BASE}/questoes/corrigir`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           respostas: [
             { prova: questaoAtual.prova, index: questaoAtual.index, letra: letraSelecionada },

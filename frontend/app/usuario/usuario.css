@@ -3,7 +3,7 @@
 ======================================= */
 
 .dashboard-body--profile {
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 250px minmax(0, 1fr);
 }
 
 .profile-content {
@@ -667,12 +667,24 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1350px) {
   .dashboard-body--profile {
-    grid-template-columns: 1fr;
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .dashboard-body--profile {
+    grid-template-columns: 215px minmax(0, 1fr);
   }
 
   .profile-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .dashboard-body--profile {
     grid-template-columns: 1fr;
   }
 }

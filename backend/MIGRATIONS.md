@@ -1,46 +1,52 @@
-# Migrações do banco — LumoStudy
+# Banco e migrations do LumoStudy
 
-O projeto usa **Alembic + SQLModel**. A estrutura do banco não deve mais ser
-criada ou alterada com `SQLModel.metadata.create_all()` nem com `ALTER TABLE`
-manual no código da aplicação.
+O banco definitivo do projeto é **MySQL**.
 
-## Instalar
+Configuração atual:
 
-```bash
+- host: `localhost`
+- porta: `3306`
+- usuário: `root`
+- senha: vazia
+- banco: `lumostudy`
+- charset: `utf8mb4`
+
+A configuração fica em `database/configdb.py` e a conexão usada pela API em `database/db.py`.
+
+## Primeira instalação
+
+Na pasta `backend`:
+
+```cmd
+py -m venv env
+env\Scripts\activate
 pip install -r requirements.txt
+python database\createdb.py
 ```
 
-## Aplicar as migrations
+`createdb.py`:
 
-```bash
+1. cria/verifica o banco `lumostudy`;
+2. executa `alembic upgrade head`;
+3. cadastra as quatro áreas e os temas base;
+4. indexa as provas e as questões dos JSONs locais no MySQL;
+5. cria cinco modelos iniciais de simulado.
+
+Depois inicie a API:
+
+```cmd
+python -m uvicorn main:app --reload --port 8000
+```
+
+## Alterações futuras nos models
+
+Não use `SQLModel.metadata.create_all()` nem `ALTER TABLE` manual para atualizar o schema.
+
+Depois de alterar `models/models.py`:
+
+```cmd
+alembic revision --autogenerate -m "descricao da alteracao"
 alembic upgrade head
 ```
 
-## Criar uma migration depois de alterar os modelos
-
-```bash
-alembic revision --autogenerate -m "descricao_da_alteracao"
-```
-
-Sempre revise o arquivo gerado antes de aplicar.
-
-## Aplicar
-
-```bash
-alembic upgrade head
-```
-
-## Desfazer a última migration
-
-```bash
-alembic downgrade -1
-```
-
-## Ver histórico
-
-```bash
-alembic history
-alembic current
-```
-
-Toda migration criada em `migrations/versions/` deve ser versionada no Git.
+As migrations devem ser commitadas em `migrations/versions/`.

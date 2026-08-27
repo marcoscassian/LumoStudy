@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pwdlib import PasswordHash
 
-from database.database import get_session
+from database.db import get_session
 from models.models import Usuarios
 from routes.login_routes import UsuarioLogado
 
