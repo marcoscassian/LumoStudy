@@ -1,30 +1,30 @@
-.content { margin-left: 280px; padding: 110px 34px 50px; min-height: 100vh; background: #f7f5ff; }
+.content { margin-left: 280px; padding: 110px 34px 50px; min-height: 100vh; background: var(--lumo-bg); }
 .head { max-width: 1000px; margin: 0 auto 25px; }
-.head h1 { color: #2e1065; font-size: 36px; }
-.head p { color: #6b7280; margin-top: 6px; }
+.head h1 { color: var(--lumo-text); font-size: 36px; }
+.head p { color: var(--lumo-text-soft); margin-top: 6px; }
 .filters { max-width: 1000px; margin: 0 auto 24px; display: flex; gap: 12px; }
-.filters select { border: 1px solid #ddd6fe; border-radius: 11px; padding: 11px 14px; background: white; color: #4c1d95; }
+.filters select { border: 1px solid rgba(var(--lumo-accent-rgb), .28); border-radius: 11px; padding: 11px 14px; background: var(--lumo-surface); color: var(--lumo-purple); }
 .grid { max-width: 1000px; margin: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; align-items: start; }
 .cardWrap { min-width: 0; }
 .card { width: 100%; min-height: 240px; border: 0; padding: 0; background: transparent; perspective: 1000px; cursor: pointer; text-align: left; display: block; }
 .inner { position: relative; display: block; width: 100%; height: 240px; transition: transform .45s; transform-style: preserve-3d; }
 .flipped { transform: rotateY(180deg); }
-.face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 20px; padding: 24px; box-shadow: 0 14px 35px #4c1d9515; display: flex; flex-direction: column; justify-content: space-between; }
-.front { background: white; border: 1px solid #e9e5f3; }
-.back { transform: rotateY(180deg); background: linear-gradient(145deg, #5b21b6, #7c3aed); color: white; }
+.face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 20px; padding: 24px; box-shadow: 0 14px 35px rgba(var(--lumo-accent-rgb), .08); display: flex; flex-direction: column; justify-content: space-between; }
+.front { background: var(--lumo-surface); border: 1px solid var(--lumo-border); }
+.back { transform: rotateY(180deg); background: linear-gradient(145deg, var(--lumo-accent-strong), var(--lumo-accent)); color: white; }
 .face h2 { font-size: 19px; line-height: 1.45; }
-.meta { font-size: 12px; font-weight: 800; color: #7c3aed; }
-.back .meta { color: #ddd6fe; }
+.meta { font-size: 12px; font-weight: 800; color: var(--lumo-accent); }
+.back .meta { color: rgba(var(--lumo-accent-rgb), .28); }
 .hint { font-size: 12px; color: #9ca3af; }
-.back .hint { color: #ddd6fe; }
-.reviewBox { margin-top: 10px; background: #fff; border: 1px solid #e9e5f3; border-radius: 14px; padding: 12px; box-shadow: 0 8px 24px #4c1d950d; }
-.reviewBox > span { display: block; color: #4c1d95; font-size: 12px; font-weight: 800; margin-bottom: 8px; }
+.back .hint { color: rgba(var(--lumo-accent-rgb), .28); }
+.reviewBox { margin-top: 10px; background: var(--lumo-surface); border: 1px solid var(--lumo-border); border-radius: 14px; padding: 12px; box-shadow: 0 8px 24px rgba(var(--lumo-accent-rgb), .05); }
+.reviewBox > span { display: block; color: var(--lumo-purple); font-size: 12px; font-weight: 800; margin-bottom: 8px; }
 .reviewActions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.reviewActions button { border: 1px solid #ddd6fe; background: #faf8ff; color: #5b21b6; border-radius: 9px; padding: 8px 5px; font-size: 11px; font-weight: 800; cursor: pointer; }
-.reviewActions button:hover { background: #f0eaff; }
+.reviewActions button { border: 1px solid var(--lumo-border); background: var(--lumo-surface-soft); color: var(--lumo-purple); border-radius: 9px; padding: 8px 5px; font-size: 11px; font-weight: 800; cursor: pointer; }
+.reviewActions button:hover { background: var(--lumo-surface-purple); }
 .reviewActions button:disabled { opacity: .6; cursor: wait; }
-.reviewActions .reviewSelected { background: #6d28d9; border-color: #6d28d9; color: white; }
+.reviewActions .reviewSelected { background: var(--lumo-accent-strong); border-color: var(--lumo-accent-strong); color: white; }
 .reviewBox small { display: block; margin-top: 8px; color: #16a34a; font-size: 11px; }
-.empty { max-width: 1000px; margin: auto; background: white; border-radius: 18px; padding: 45px; text-align: center; color: #6b7280; }
+.empty { max-width: 1000px; margin: auto; background: var(--lumo-surface); border-radius: 18px; padding: 45px; text-align: center; color: var(--lumo-text-soft); }
 @media (max-width: 900px) { .content { margin-left: 0; padding: 95px 18px 40px; } }
 @media (max-width: 420px) { .reviewActions { grid-template-columns: repeat(2, 1fr); } }

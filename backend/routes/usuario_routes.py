@@ -42,6 +42,8 @@ def _perfil_publico(usuario: Usuarios) -> dict:
         "xp": usuario.xp,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
+        "modo_escuro": usuario.modo_escuro,
+        "tema_roxo_padrao": usuario.tema_roxo_padrao,
     }
 
 
@@ -300,6 +302,8 @@ def update_meu_perfil(
     email = dados.get("email")
     senha_atual = dados.get("senha_atual")
     nova_senha = dados.get("nova_senha")
+    modo_escuro = dados.get("modo_escuro")
+    tema_roxo_padrao = dados.get("tema_roxo_padrao")
 
     if nome is not None:
         nome = str(nome).strip()
@@ -321,6 +325,12 @@ def update_meu_perfil(
         if outro_usuario:
             raise HTTPException(status_code=400, detail="E-mail já cadastrado")
         usuario.email = email
+
+    if modo_escuro is not None:
+        usuario.modo_escuro = bool(modo_escuro)
+
+    if tema_roxo_padrao is not None:
+        usuario.tema_roxo_padrao = bool(tema_roxo_padrao)
 
     if nova_senha is not None and str(nova_senha).strip():
         nova_senha = str(nova_senha).strip()
@@ -364,6 +374,8 @@ def create_usuario(usuario: Usuarios, session: SessionDep):
     usuario.xp = 0
     usuario.casa = usuario.casa or "corvinal"
     usuario.avatar_url = usuario.avatar_url or "/avatar.png"
+    usuario.modo_escuro = bool(usuario.modo_escuro)
+    usuario.tema_roxo_padrao = bool(usuario.tema_roxo_padrao)
 
     session.add(usuario)
     session.commit()

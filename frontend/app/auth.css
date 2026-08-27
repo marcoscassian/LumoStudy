@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
-  color: #5b2cff;
+  color: var(--lumo-accent);
   text-align: center;
 }
 
@@ -53,8 +53,8 @@
 }
 
 .badge {
-  background: #efe8ff;
-  color: #5b2cff;
+  background: var(--lumo-surface-purple);
+  color: var(--lumo-accent);
   padding: 8px 14px;
   border-radius: 999px;
   font-size: 13px;
@@ -74,8 +74,8 @@ label {
 
 .input-box {
   height: 48px;
-  background: #f7f5fc;
-  border: 1px solid #ded9ef;
+  background: var(--lumo-surface-soft);
+  border: 1px solid var(--lumo-border);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -113,7 +113,7 @@ label {
 }
 
 a {
-  color: #5b2cff;
+  color: var(--lumo-accent);
   text-decoration: none;
   font-weight: 600;
   font-size: 13px;
@@ -123,7 +123,7 @@ button {
   height: 50px;
   border: none;
   border-radius: 11px;
-  background: #5b2cff;
+  background: var(--lumo-accent);
   color: white;
   font-weight: 700;
   cursor: pointer;
@@ -135,7 +135,7 @@ button {
 }
 
 button:hover {
-  background: #4b20e8;
+  background: var(--lumo-accent-strong);
 }
 
 .bottom-text {

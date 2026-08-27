@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, LogIn } from "lucide-react";
 import "../auth.css";
+import { aplicarTema } from "../components/theme-provider";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,6 +44,12 @@ export default function LoginPage() {
       if (response.ok && data.access_token) {
         setTipoMensagem("sucesso");
         localStorage.setItem("token", data.access_token);
+        aplicarTema(
+          Boolean(data.modo_escuro),
+          data.casa || null,
+          Boolean(data.tema_roxo_padrao),
+          data.avatar_url || "/avatar.png"
+        );
         router.push(nextUrl || "/trilha");
       } else {
         setTipoMensagem("erro");

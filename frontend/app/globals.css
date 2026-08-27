@@ -1,28 +1,254 @@
 @import "tailwindcss";
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-html{
-  scroll-behavior:smooth;
+html {
+  scroll-behavior: smooth;
 }
 
-body{
-  background:#ffffff;
-  color:#111111;
+:root {
+  --lumo-bg: #ffffff;
+  --lumo-surface: #ffffff;
+  --lumo-surface-soft: #f7f5fc;
+  --lumo-text: #171717;
+  --lumo-text-soft: #6f6b78;
+  --lumo-border: #ebe7f2;
+  --lumo-shadow: 0 12px 34px rgba(48, 29, 85, 0.08);
+
+  /* Roxo padrão */
+  --lumo-accent: #6e42f5;
+  --lumo-accent-strong: #5b34dd;
+  --lumo-accent-light: #9a73ff;
+  --lumo-accent-rgb: 110, 66, 245;
+  --lumo-surface-purple: #f4efff;
+  --lumo-gradient-start: #2d1769;
+  --lumo-gradient-mid: #4a2398;
+  --lumo-gradient-end: #6e42f5;
+
+  /* aliases para o CSS antigo continuar funcionando */
+  --lumo-purple: var(--lumo-accent);
+  --lumo-purple-strong: var(--lumo-accent-strong);
 }
 
-a{
-  text-decoration:none;
-  color:inherit;
+/* Corvinal - Ludimila */
+html[data-accent="corvinal"] {
+  --lumo-accent: #2563a6;
+  --lumo-accent-strong: #1d4f86;
+  --lumo-accent-light: #5a91cb;
+  --lumo-accent-rgb: 37, 99, 166;
+  --lumo-surface-purple: #eef5ff;
+  --lumo-gradient-start: #0c2847;
+  --lumo-gradient-mid: #164b78;
+  --lumo-gradient-end: #2563a6;
+}
+
+/* Lufa-Lufa - Ícaro */
+html[data-accent="lufa-lufa"] {
+  --lumo-accent: #d39a00;
+  --lumo-accent-strong: #a97800;
+  --lumo-accent-light: #efc34c;
+  --lumo-accent-rgb: 211, 154, 0;
+  --lumo-surface-purple: #fff8df;
+  --lumo-gradient-start: #3c2b00;
+  --lumo-gradient-mid: #886200;
+  --lumo-gradient-end: #d39a00;
+}
+
+/* Sonserina - Alex */
+html[data-accent="sonserina"] {
+  --lumo-accent: #237a4d;
+  --lumo-accent-strong: #185d3a;
+  --lumo-accent-light: #52ad77;
+  --lumo-accent-rgb: 35, 122, 77;
+  --lumo-surface-purple: #eaf8f0;
+  --lumo-gradient-start: #0c2e1c;
+  --lumo-gradient-mid: #155b38;
+  --lumo-gradient-end: #237a4d;
+}
+
+/* Grifinória - Marcos */
+html[data-accent="grifinoria"] {
+  --lumo-accent: #a52338;
+  --lumo-accent-strong: #7f1829;
+  --lumo-accent-light: #d05467;
+  --lumo-accent-rgb: 165, 35, 56;
+  --lumo-surface-purple: #fff0f2;
+  --lumo-gradient-start: #3e0b15;
+  --lumo-gradient-mid: #711425;
+  --lumo-gradient-end: #a52338;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --lumo-bg: #111016;
+  --lumo-surface: #1a1821;
+  --lumo-surface-soft: #15131b;
+  --lumo-text: #f6f3fb;
+  --lumo-text-soft: #b5afc1;
+  --lumo-border: #332e3d;
+  --lumo-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+
+  --lumo-accent: #9b7cff;
+  --lumo-accent-strong: #b397ff;
+  --lumo-accent-light: #c4b1ff;
+  --lumo-accent-rgb: 155, 124, 255;
+  --lumo-surface-purple: #241d35;
+}
+
+html[data-theme="dark"][data-accent="corvinal"] {
+  --lumo-accent: #68a7e8;
+  --lumo-accent-strong: #8bbcf0;
+  --lumo-accent-light: #a7cef5;
+  --lumo-accent-rgb: 104, 167, 232;
+  --lumo-surface-purple: #162536;
+}
+
+html[data-theme="dark"][data-accent="lufa-lufa"] {
+  --lumo-accent: #f0bd35;
+  --lumo-accent-strong: #ffd468;
+  --lumo-accent-light: #ffe19a;
+  --lumo-accent-rgb: 240, 189, 53;
+  --lumo-surface-purple: #2d2613;
+}
+
+html[data-theme="dark"][data-accent="sonserina"] {
+  --lumo-accent: #59c985;
+  --lumo-accent-strong: #7bdc9f;
+  --lumo-accent-light: #a0e9ba;
+  --lumo-accent-rgb: 89, 201, 133;
+  --lumo-surface-purple: #172a20;
+}
+
+html[data-theme="dark"][data-accent="grifinoria"] {
+  --lumo-accent: #e35d71;
+  --lumo-accent-strong: #f08090;
+  --lumo-accent-light: #f5a3af;
+  --lumo-accent-rgb: 227, 93, 113;
+  --lumo-surface-purple: #321921;
+}
+
+body {
+  background: var(--lumo-bg);
+  color: var(--lumo-text);
+  transition: background-color .2s ease, color .2s ease;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
 }
 
 button,
 input,
 textarea,
-select{
-  font:inherit;
+select {
+  font: inherit;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .dashboard,
+html[data-theme="dark"] .page {
+  background: var(--lumo-bg) !important;
+  color: var(--lumo-text) !important;
+}
+
+html[data-theme="dark"] .header {
+  background: #17151d !important;
+  border-color: var(--lumo-border) !important;
+}
+
+html[data-theme="dark"] .sidebar {
+  background: #15131b !important;
+  border-color: var(--lumo-border) !important;
+}
+
+html[data-theme="dark"] .profile-text h3,
+html[data-theme="dark"] .title-area h1,
+html[data-theme="dark"] .section-title,
+html[data-theme="dark"] .xp-level,
+html[data-theme="dark"] .coins,
+html[data-theme="dark"] .streak {
+  color: var(--lumo-text) !important;
+}
+
+html[data-theme="dark"] .profile-text p,
+html[data-theme="dark"] .title-area p,
+html[data-theme="dark"] .xp-text,
+html[data-theme="dark"] .menu {
+  color: var(--lumo-text-soft) !important;
+}
+
+html[data-theme="dark"] .menu:hover,
+html[data-theme="dark"] .menu.active {
+  color: var(--lumo-accent) !important;
+  background: rgba(var(--lumo-accent-rgb), .10) !important;
+}
+
+html[data-theme="dark"] .avatar-dropdown,
+html[data-theme="dark"] .config-card,
+html[data-theme="dark"] .area-card,
+html[data-theme="dark"] .config-panel,
+html[data-theme="dark"] .quiz-card,
+html[data-theme="dark"] .quiz-summary,
+html[data-theme="dark"] .side-card,
+html[data-theme="dark"] .subject-card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .mastery-card,
+html[data-theme="dark"] .panel {
+  background: var(--lumo-surface) !important;
+  border-color: var(--lumo-border) !important;
+  color: var(--lumo-text) !important;
+}
+
+html[data-theme="dark"] .avatar-dropdown-item,
+html[data-theme="dark"] .config-card-title,
+html[data-theme="dark"] .config-field-group label,
+html[data-theme="dark"] .config-input input,
+html[data-theme="dark"] .quiz-context,
+html[data-theme="dark"] .quiz-comando,
+html[data-theme="dark"] .quiz-alternative,
+html[data-theme="dark"] .subject-card h3,
+html[data-theme="dark"] .stat-text strong,
+html[data-theme="dark"] .panel h3 {
+  color: var(--lumo-text) !important;
+}
+
+html[data-theme="dark"] .config-input,
+html[data-theme="dark"] .quiz-alternative,
+html[data-theme="dark"] .xp-bar {
+  background: #201d28 !important;
+  border-color: var(--lumo-border) !important;
+}
+
+html[data-theme="dark"] .avatar-dropdown-item:hover {
+  background: var(--lumo-surface-purple) !important;
+}
+
+html[data-theme="dark"] .auth-page {
+  background: var(--lumo-bg) !important;
+  color: var(--lumo-text) !important;
+}
+
+html[data-theme="dark"] .auth-card {
+  background: var(--lumo-surface) !important;
+  color: var(--lumo-text) !important;
+  box-shadow: 0 25px 70px rgba(0,0,0,.35) !important;
+}
+
+html[data-theme="dark"] .auth-card p,
+html[data-theme="dark"] .bottom-text {
+  color: var(--lumo-text-soft) !important;
+}
+
+html[data-theme="dark"] .input-box {
+  background: #211e29 !important;
+  border-color: var(--lumo-border) !important;
+}
+
+html[data-theme="dark"] .input-box input {
+  color: var(--lumo-text) !important;
 }

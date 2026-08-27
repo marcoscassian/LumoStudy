@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from database.db import get_session
-from models.models import DiaEstudo, ProgressoTema, Prova, Questao, QuestaoEditorial, RespostaUsuario
+from models.models import DiaEstudo, ProgressoTema, Prova, Questao, QuestaoEditorial, RespostaUsuario, TentativaSimulado
 from routes.login_routes import UsuarioLogado
 from services.progresso_service import recalcular_streak, recompensar_questao
 
@@ -409,6 +409,13 @@ def corrigir_questoes(
     acertos = 0
     xp_ganhos = 0
     coins_ganhas = 0
+
+    if payload.tentativa_simulado_id is not None:
+        tentativa = session.get(TentativaSimulado, payload.tentativa_simulado_id)
+        if not tentativa or tentativa.usuario_id != usuario.id:
+            raise HTTPException(status_code=404, detail="Tentativa de simulado não encontrada")
+        if tentativa.finalizada:
+            raise HTTPException(status_code=409, detail="Este simulado já foi finalizado")
 
     for resposta in payload.respostas:
         dados = _ler_json_questao(resposta.prova, resposta.index)

@@ -1,0 +1,11 @@
+Adicione as quatro fotos de perfil nesta pasta com estes nomes:
+
+perfil1.png  -> Ludimila -> Corvinal (tema azul)
+perfil2.png  -> Ícaro     -> Lufa-Lufa (tema dourado/amarelo)
+perfil3.png  -> Alex      -> Sonserina (tema verde)
+perfil4.png  -> Marcos    -> Grifinória (tema vermelho)
+
+Ao equipar uma foto, a casa e a cor do site mudam automaticamente.
+Nas Configurações existe a opção "Roxo padrão" para manter o tema original.
+
+Se preferir usar JPG, altere também os caminhos correspondentes em backend/database/createdb.py e frontend/app/components/theme-provider.js.

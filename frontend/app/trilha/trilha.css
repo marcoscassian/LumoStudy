@@ -73,7 +73,7 @@ body {
 }
 
 .logo-small span {
-    color: #6336e8;
+    color: var(--lumo-accent);
     font-size: 30px;
     font-weight: 700;
     letter-spacing: -0.6px;
@@ -126,7 +126,7 @@ body {
     row-gap: 5px;
     align-items: center;
     padding-left: 22px;
-    border-left: 1px solid #eee8f5;
+    border-left: 1px solid rgba(var(--lumo-accent-rgb), .12);
 }
 
 .xp-level {
@@ -153,14 +153,14 @@ body {
     grid-row: 2;
     width: 155px;
     height: 11px;
-    background: #eeeaf5;
+    background: rgba(var(--lumo-accent-rgb), .14);
     border-radius: 10px;
     overflow: hidden;
 }
 
 .xp-fill {
     height: 100%;
-    background: linear-gradient(90deg, #6934ec, #8b38ff);
+    background: linear-gradient(90deg, var(--lumo-accent), var(--lumo-accent-light));
     border-radius: inherit;
 }
 
@@ -169,7 +169,7 @@ body {
     align-items: center;
     gap: 10px;
     padding-left: 18px;
-    border-left: 1px solid #eee8f5;
+    border-left: 1px solid rgba(var(--lumo-accent-rgb), .12);
 }
 
 .avatar {
@@ -204,7 +204,7 @@ body {
 }
 
 .header-avatar-chevron.open {
-    color: #6336e8;
+    color: var(--lumo-accent);
     transform: rotate(180deg);
 }
 
@@ -215,7 +215,7 @@ body {
     min-width: 230px;
     padding: 9px;
     background: #fff;
-    border: 1px solid #ece6f8;
+    border: 1px solid rgba(var(--lumo-accent-rgb), .16);
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(44, 28, 75, .14);
     opacity: 0;
@@ -247,7 +247,7 @@ body {
 }
 
 .avatar-dropdown-item:hover {
-    background: #f5f0ff;
+    background: var(--lumo-surface-purple);
 }
 
 .avatar-dropdown-item--danger {
@@ -268,8 +268,8 @@ body {
 
     padding: 30px 0 18px;
 
-    background: #f7f5fc;
-    border-right: 1px solid #eee9f5;
+    background: var(--lumo-surface-purple);
+    border-right: 1px solid rgba(var(--lumo-accent-rgb), .12);
     overflow-x: hidden;
 
     justify-self: start;
@@ -352,18 +352,18 @@ nav {
 }
 
 .menu:hover {
-    background: rgba(99, 54, 232, .045);
-    color: #6336e8;
+    background: rgba(var(--lumo-accent-rgb), .045);
+    color: var(--lumo-accent);
 }
 
 .menu.active {
-    color: #6336e8;
-    background: rgba(99, 54, 232, .065);
-    border-left-color: #6336e8;
+    color: var(--lumo-accent);
+    background: rgba(var(--lumo-accent-rgb), .065);
+    border-left-color: var(--lumo-accent);
 }
 
 .menu.active svg {
-    color: #6336e8;
+    color: var(--lumo-accent);
 }
 
 .magic-card {
@@ -416,10 +416,10 @@ nav {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #8538ff;
+    border: 1px solid var(--lumo-accent);
     border-radius: 50%;
     background: transparent;
-    color: #8538ff;
+    color: var(--lumo-accent);
     cursor: pointer;
     box-shadow: none;
 }
@@ -437,7 +437,7 @@ nav {
     padding: 14px 16px;
     border-radius: 13px;
     background: #fff;
-    border: 1px solid #e8ddff;
+    border: 1px solid rgba(var(--lumo-accent-rgb), .24);
     box-shadow: 0 10px 25px rgba(23, 20, 34, .12);
     z-index: 20;
 }
@@ -482,7 +482,7 @@ nav {
 }
 
 .subject-card.purple {
-    background: #f7f1ff;
+    background: var(--lumo-surface-purple);
 }
 
 .subject-card.green {
@@ -617,7 +617,7 @@ nav {
     width: 100%;
     padding: 19px;
     border-radius: 24px;
-    background: #f7f1ff;
+    background: var(--lumo-surface-purple);
     box-shadow: none;
 }
 
@@ -658,8 +658,8 @@ nav {
     justify-content: center;
     border-radius: 50%;
     background: conic-gradient(
-        #7b2cff 0 58%,
-        #e7dafa 58% 100%
+        var(--lumo-accent) 0 58%,
+        rgba(var(--lumo-accent-rgb), .18) 58% 100%
     );
     position: relative;
 }
@@ -670,7 +670,7 @@ nav {
     width: 104px;
     height: 104px;
     border-radius: 50%;
-    background: #f7f1ff;
+    background: var(--lumo-surface-purple);
 }
 
 .circle-value {
@@ -767,7 +767,7 @@ nav {
 }
 
 .week .active {
-    background: #7028f5;
+    background: var(--lumo-accent);
 }
 
 .week .active::after {
@@ -811,7 +811,7 @@ nav {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #d4c7ed;
+    background: rgba(var(--lumo-accent-rgb), .32);
     border-radius: 10px;
 }
 

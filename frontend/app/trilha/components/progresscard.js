@@ -10,7 +10,7 @@ export default function ProgressCard({ progress = 0, completed = 0, total = 0, l
       <div
         className="circle circle--large"
         style={{
-          background: `conic-gradient(#7b2cff 0 ${percentual}%, #e7dafa ${percentual}% 100%)`,
+          background: `conic-gradient(var(--lumo-accent) 0 ${percentual}%, rgba(var(--lumo-accent-rgb), .18) ${percentual}% 100%)`,
         }}
         aria-label={`${percentual}% de progresso geral`}
       >

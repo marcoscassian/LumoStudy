@@ -13,7 +13,7 @@ export default function ProfileHero({ user }) {
       <div className="profile-hero-content">
         <div className="profile-hero-top">
           <div className="profile-hero-user">
-            <div className="profile-hero-avatar"><img src={user.avatar} alt={user.name} /></div>
+            <div className="profile-hero-avatar"><img onError={(e) => { e.currentTarget.src = "/avatar.png"; }} src={user.avatar} alt={user.name} /></div>
             <div className="profile-hero-info">
               <span className="profile-hero-greeting">Olá, Bruxo!</span>
               <h1>{user.name}</h1>

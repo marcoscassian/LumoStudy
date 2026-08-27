@@ -10,6 +10,9 @@ from routes import (
     admin_routes,
     flashcards_routes,
     login_routes,
+    loja_routes,
+    ranking_routes,
+    conquistas_routes,
     questoes_routes,
     simulados_routes,
     trilha_routes,
@@ -47,6 +50,9 @@ app.include_router(admin_routes.router)
 app.include_router(flashcards_routes.router)
 app.include_router(trilha_routes.router)
 app.include_router(simulados_routes.router)
+app.include_router(loja_routes.router)
+app.include_router(ranking_routes.router)
+app.include_router(conquistas_routes.router)
 
 # Os JSONs continuam sendo a fonte dos enunciados e das imagens.
 PROVAS_DIR = Path(__file__).resolve().parent / "database" / "provas"

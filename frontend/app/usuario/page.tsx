@@ -39,6 +39,7 @@ const CASA_NOME: Record<string, string> = {
   grifinoria: "Grifinória",
   sonserina: "Sonserina",
   lufalufa: "Lufa-Lufa",
+  "lufa-lufa": "Lufa-Lufa",
 };
 
 const GOAL_VISUAL: Record<string, { icon: any; color: string }> = {

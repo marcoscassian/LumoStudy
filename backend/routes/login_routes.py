@@ -136,6 +136,10 @@ def login(
         "streak": usuario.streak,
         "xp": usuario.xp,
         "is_admin": usuario.is_admin,
+        "casa": usuario.casa,
+        "avatar_url": usuario.avatar_url,
+        "modo_escuro": usuario.modo_escuro,
+        "tema_roxo_padrao": usuario.tema_roxo_padrao,
     }
 
 
@@ -157,6 +161,8 @@ def get_me(
         "is_admin": usuario.is_admin,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
+        "modo_escuro": usuario.modo_escuro,
+        "tema_roxo_padrao": usuario.tema_roxo_padrao,
     }
 
 

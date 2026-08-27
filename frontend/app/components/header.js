@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, User } from "lucide-react";
+import { aplicarTema } from "./theme-provider";
 
 export default function Header() {
   const router = useRouter();
@@ -24,6 +25,12 @@ export default function Header() {
         if (!response.ok) return;
 
         const data = await response.json();
+        aplicarTema(
+          Boolean(data.modo_escuro),
+          data.casa || null,
+          Boolean(data.tema_roxo_padrao),
+          data.avatar_url || "/avatar.png"
+        );
         setStats({
           coins: Number(data.coins ?? 0),
           streak: Number(data.streak ?? 0),
@@ -136,7 +143,7 @@ export default function Header() {
             aria-expanded={isMenuOpen}
             aria-haspopup="menu"
           >
-            <img src={stats.avatar} className="avatar" alt="Perfil" />
+            <img src={stats.avatar} className="avatar" alt="Perfil" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
             <ChevronDown className={`header-avatar-chevron ${isMenuOpen ? "open" : ""}`} size={18} />
           </button>
 

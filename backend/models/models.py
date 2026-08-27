@@ -23,6 +23,8 @@ class Usuarios(SQLModel, table=True):
     is_admin: bool = Field(default=False, nullable=False)
     casa: str = Field(default="corvinal", max_length=30, nullable=False)
     avatar_url: str = Field(default="/avatar.png", max_length=255, nullable=False)
+    modo_escuro: bool = Field(default=False, nullable=False)
+    tema_roxo_padrao: bool = Field(default=False, nullable=False)
 
 
 class Area(SQLModel, table=True):
@@ -120,6 +122,8 @@ class Simulado(SQLModel, table=True):
     tempo_limite_minutos: int | None = Field(default=None)
     ativo: bool = Field(default=True, nullable=False, index=True)
     criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    dia_prova: int | None = Field(default=None, nullable=True, index=True)
+    quantidade_questoes: int | None = Field(default=None, nullable=True, index=True)
 
 
 class SimuladoQuestao(SQLModel, table=True):
@@ -224,3 +228,32 @@ class MetaUsuario(SQLModel, table=True):
     periodo: str = Field(max_length=20, nullable=False, index=True)
     tipo: str = Field(max_length=30, nullable=False, index=True)
     valor_meta: int = Field(nullable=False)
+
+
+class ItemLoja(SQLModel, table=True):
+    __tablename__ = "itens_loja"
+    __table_args__ = MYSQL_TABLE
+
+    id: int | None = Field(default=None, primary_key=True)
+    nome: str = Field(max_length=80, nullable=False, unique=True, index=True)
+    slug: str = Field(max_length=80, nullable=False, unique=True, index=True)
+    descricao: str | None = Field(default=None, max_length=255)
+    preco_coins: int = Field(default=10, nullable=False)
+    arquivo: str = Field(max_length=255, nullable=False)
+    tipo: str = Field(default="avatar", max_length=30, nullable=False, index=True)
+    casa: str | None = Field(default=None, max_length=30, nullable=True)
+    ativo: bool = Field(default=True, nullable=False, index=True)
+
+
+class UsuarioItem(SQLModel, table=True):
+    __tablename__ = "usuario_itens"
+    __table_args__ = (
+        UniqueConstraint("usuario_id", "item_id", name="uq_usuario_item"),
+        MYSQL_TABLE,
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    item_id: int = Field(foreign_key="itens_loja.id", ondelete="CASCADE", nullable=False, index=True)
+    comprado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    equipado: bool = Field(default=False, nullable=False, index=True)

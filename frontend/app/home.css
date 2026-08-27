@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #5b2cff;
+  color: var(--lumo-accent);
   font-size: 22px;
   font-weight: 700;
 }
@@ -45,34 +45,34 @@
 }
 
 .btn-primary-small {
-  background: #6b00ff;
+  background: var(--lumo-accent);
   color: #fff;
   padding: 11px 18px;
 }
 
 .btn-primary-small:hover {
-  background: #5b00db;
+  background: var(--lumo-accent-strong);
 }
 
 .btn-outline {
-  color: #6b00ff;
-  border: 1px solid #6b00ff;
+  color: var(--lumo-accent);
+  border: 1px solid var(--lumo-accent);
   background: #fff;
   padding: 11px 18px;
 }
 
 .btn-outline:hover {
-  background: #f6f0ff;
+  background: var(--lumo-surface-purple);
 }
 
 .btn-primary {
-  background: #6b00ff;
+  background: var(--lumo-accent);
   color: #fff;
   padding: 15px 25px;
 }
 
 .btn-primary:hover {
-  background: #5b00db;
+  background: var(--lumo-accent-strong);
 }
 
 .hero {
@@ -126,8 +126,8 @@
 
 .hero-badge {
   display: inline-block;
-  background: #efe4ff;
-  color: #6b00ff;
+  background: var(--lumo-surface-purple);
+  color: var(--lumo-accent);
   padding: 8px 14px;
   border-radius: 999px;
   font-size: 14px;
@@ -143,7 +143,7 @@
 }
 
 .hero h1 strong {
-  color: #6b00ff;
+  color: var(--lumo-accent);
   letter-spacing: -1px;
 }
 
@@ -180,7 +180,7 @@
 }
 
 .study-left span {
-  color: #6b00ff;
+  color: var(--lumo-accent);
   font-size: 13px;
   font-weight: 700;
 }
@@ -194,7 +194,7 @@
 }
 
 .study-left h2 strong {
-  color: #6b00ff;
+  color: var(--lumo-accent);
 }
 
 .study-left p {
@@ -204,8 +204,8 @@
 
 .study-card {
   width: 380px;
-  background: #f6ebff;
-  border: 2px solid #b067ff;
+  background: var(--lumo-surface-purple);
+  border: 2px solid var(--lumo-accent-light);
   border-radius: 18px;
   padding: 30px;
 }
@@ -224,7 +224,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #6b00ff;
+  background: var(--lumo-accent);
   color: white;
   font-size: 14px;
 }
@@ -252,7 +252,7 @@
 }
 
 .houses > span {
-  color: #6b00ff;
+  color: var(--lumo-accent);
   font-size: 13px;
   font-weight: 700;
 }
@@ -266,7 +266,7 @@
 }
 
 .houses h2 strong {
-  color: #6b00ff;
+  color: var(--lumo-accent);
 }
 
 .houses p {

@@ -30,7 +30,7 @@ from database.configdb import (  # noqa: E402
     SERVER_URL,
 )
 from database.db import engine  # noqa: E402
-from models.models import Area, Prova, Questao, Simulado, SimuladoQuestao, Tema, Usuarios  # noqa: E402
+from models.models import Area, ItemLoja, Prova, Questao, Simulado, SimuladoQuestao, Tema, Usuarios  # noqa: E402
 from services.progresso_service import garantir_metas_padrao  # noqa: E402
 
 PROVAS_DIR = BACKEND_DIR / "database" / "provas"
@@ -224,50 +224,127 @@ def semear_catalogo() -> tuple[int, int, int]:
                 questoes_count += 1
             session.commit()
 
-        # Cinco modelos simples: 4 por área + 1 geral, 12 questões cada.
+        # Simulados no formato ENEM. O usuário escolhe o dia e se quer
+        # fazer 25 questões ou as 90 questões do dia. O cronômetro usa o
+        # tempo oficial do dia escolhido: 5h30 no Dia 1 e 5h no Dia 2.
         simulados_specs = [
-            ("Linguagens - treino rápido", "linguagens"),
-            ("Ciências Humanas - treino rápido", "ciencias-humanas"),
-            ("Matemática - treino rápido", "matematica"),
-            ("Ciências da Natureza - treino rápido", "ciencias-natureza"),
+            (1, 25, 330, "ENEM - Dia 1 · 25 questões"),
+            (1, 90, 330, "ENEM - Dia 1 · prova completa"),
+            (2, 25, 300, "ENEM - Dia 2 · 25 questões"),
+            (2, 90, 300, "ENEM - Dia 2 · prova completa"),
         ]
         simulados_count = 0
-        for nome, area_slug in simulados_specs:
-            simulado = session.exec(select(Simulado).where(Simulado.nome == nome)).first()
+
+        # Desativa os simulados rápidos antigos sem apagar tentativas passadas.
+        for antigo in session.exec(select(Simulado).where(Simulado.dia_prova == None)).all():  # noqa: E711
+            antigo.ativo = False
+            session.add(antigo)
+        session.commit()
+
+        areas_dia = {
+            1: [areas_por_slug["linguagens"].id, areas_por_slug["ciencias-humanas"].id],
+            2: [areas_por_slug["ciencias-natureza"].id, areas_por_slug["matematica"].id],
+        }
+
+        for dia, quantidade, tempo, nome in simulados_specs:
+            simulado = session.exec(
+                select(Simulado).where(
+                    Simulado.dia_prova == dia,
+                    Simulado.quantidade_questoes == quantidade,
+                )
+            ).first()
             if not simulado:
-                simulado = Simulado(nome=nome, descricao="12 questões para prática rápida.", tempo_limite_minutos=36)
+                simulado = Simulado(
+                    nome=nome,
+                    descricao=(
+                        "Linguagens e Ciências Humanas" if dia == 1
+                        else "Ciências da Natureza e Matemática"
+                    ),
+                    tempo_limite_minutos=tempo,
+                    dia_prova=dia,
+                    quantidade_questoes=quantidade,
+                    ativo=True,
+                )
                 session.add(simulado)
                 session.commit()
                 session.refresh(simulado)
-            if not session.exec(select(SimuladoQuestao).where(SimuladoQuestao.simulado_id == simulado.id)).first():
-                area = areas_por_slug[area_slug]
-                questoes = session.exec(
-                    select(Questao).where(Questao.area_id == area.id, Questao.ativa == True).order_by(Questao.id).limit(12)  # noqa: E712
-                ).all()
-                for ordem, questao in enumerate(questoes, start=1):
-                    session.add(SimuladoQuestao(simulado_id=simulado.id, questao_id=questao.id, ordem=ordem))
+            else:
+                simulado.nome = nome
+                simulado.tempo_limite_minutos = tempo
+                simulado.ativo = True
+                session.add(simulado)
+                session.commit()
+
+            existentes = session.exec(
+                select(SimuladoQuestao).where(SimuladoQuestao.simulado_id == simulado.id)
+            ).all()
+            if len(existentes) != quantidade:
+                for vinculo in existentes:
+                    session.delete(vinculo)
+                session.commit()
+
+                ids_areas = areas_dia[dia]
+                qtd_primeira = (quantidade + 1) // 2
+                qtd_segunda = quantidade - qtd_primeira
+                selecionadas = []
+                for area_id, limite in zip(ids_areas, [qtd_primeira, qtd_segunda]):
+                    selecionadas.extend(
+                        session.exec(
+                            select(Questao)
+                            .where(Questao.area_id == area_id, Questao.ativa == True)  # noqa: E712
+                            .order_by(Questao.id)
+                            .limit(limite)
+                        ).all()
+                    )
+                for ordem, questao in enumerate(selecionadas, start=1):
+                    session.add(
+                        SimuladoQuestao(
+                            simulado_id=simulado.id,
+                            questao_id=questao.id,
+                            ordem=ordem,
+                        )
+                    )
                 session.commit()
             simulados_count += 1
 
-        geral_nome = "Simulado geral - treino rápido"
-        geral = session.exec(select(Simulado).where(Simulado.nome == geral_nome)).first()
-        if not geral:
-            geral = Simulado(nome=geral_nome, descricao="12 questões misturando as quatro áreas.", tempo_limite_minutos=36)
-            session.add(geral)
-            session.commit()
-            session.refresh(geral)
-        if not session.exec(select(SimuladoQuestao).where(SimuladoQuestao.simulado_id == geral.id)).first():
-            ordem = 1
-            for area_slug, _ in AREAS:
-                area = areas_por_slug[area_slug]
-                questoes = session.exec(
-                    select(Questao).where(Questao.area_id == area.id, Questao.ativa == True).order_by(Questao.id).limit(3)  # noqa: E712
-                ).all()
-                for questao in questoes:
-                    session.add(SimuladoQuestao(simulado_id=geral.id, questao_id=questao.id, ordem=ordem))
-                    ordem += 1
-            session.commit()
-        simulados_count += 1
+        # Itens da loja. As imagens são propositalmente apenas referenciadas;
+        # basta adicionar depois os arquivos em frontend/public/loja/.
+        itens_loja = [
+            ("Ludimila", "ludimila", "/loja/perfil1.png", "corvinal"),
+            ("Ícaro", "icaro", "/loja/perfil2.png", "lufa-lufa"),
+            ("Alex", "alex", "/loja/perfil3.png", "sonserina"),
+            ("Marcos", "marcos", "/loja/perfil4.png", "grifinoria"),
+        ]
+        for nome_item, slug_item, arquivo, casa_item in itens_loja:
+            item = session.exec(select(ItemLoja).where(ItemLoja.slug == slug_item)).first()
+            if not item:
+                item = ItemLoja(
+                    nome=nome_item,
+                    slug=slug_item,
+                    descricao=f"Foto de perfil de {nome_item}",
+                    preco_coins=10,
+                    arquivo=arquivo,
+                    tipo="avatar",
+                    casa=casa_item,
+                    ativo=True,
+                )
+            else:
+                item.nome = nome_item
+                item.preco_coins = 10
+                item.arquivo = arquivo
+                item.casa = casa_item
+                item.ativo = True
+            session.add(item)
+        session.commit()
+
+        # Sincroniza a casa dos usuários que já usam um dos avatares da loja.
+        casa_por_arquivo = {arquivo: casa for _, _, arquivo, casa in itens_loja}
+        for usuario in session.exec(select(Usuarios)).all():
+            casa_avatar = casa_por_arquivo.get(usuario.avatar_url)
+            if casa_avatar and usuario.casa != casa_avatar:
+                usuario.casa = casa_avatar
+                session.add(usuario)
+        session.commit()
 
         # Garante as metas padrão também para usuários que já existiam antes
         # da migration 0004. Para novos cadastros, a rota de usuário também
