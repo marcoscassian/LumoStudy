@@ -1,7 +1,7 @@
 import json
 import random
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
@@ -13,6 +13,7 @@ from sqlmodel import Session, select
 from database.db import get_session
 from models.models import DiaEstudo, ProgressoTema, Prova, Questao, QuestaoEditorial, RespostaUsuario
 from routes.login_routes import UsuarioLogado
+from services.progresso_service import recalcular_streak, recompensar_questao
 
 router = APIRouter(prefix="/questoes", tags=["questoes"])
 
@@ -347,6 +348,7 @@ class RespostaEnviada(BaseModel):
     prova: str
     index: str
     letra: str
+    tempo_segundos: int | None = 0
 
 
 class CorrecaoRequest(BaseModel):
@@ -354,7 +356,13 @@ class CorrecaoRequest(BaseModel):
     tentativa_simulado_id: int | None = None
 
 
-def _registrar_dia_estudo(session: Session, usuario_id: int, questoes: int = 0, flashcards: int = 0) -> DiaEstudo:
+def _registrar_dia_estudo(
+    session: Session,
+    usuario_id: int,
+    questoes: int = 0,
+    flashcards: int = 0,
+    tempo_segundos: int = 0,
+) -> DiaEstudo:
     hoje = date.today()
     dia = session.exec(
         select(DiaEstudo).where(DiaEstudo.usuario_id == usuario_id, DiaEstudo.data == hoje)
@@ -363,26 +371,9 @@ def _registrar_dia_estudo(session: Session, usuario_id: int, questoes: int = 0, 
         dia = DiaEstudo(usuario_id=usuario_id, data=hoje)
     dia.questoes_respondidas += questoes
     dia.flashcards_revisados += flashcards
+    dia.tempo_segundos += max(0, min(int(tempo_segundos or 0), 3600))
     session.add(dia)
     return dia
-
-
-def _recalcular_streak(session: Session, usuario) -> None:
-    datas = session.exec(
-        select(DiaEstudo.data)
-        .where(DiaEstudo.usuario_id == usuario.id)
-        .order_by(DiaEstudo.data.desc())
-    ).all()
-    esperada = date.today()
-    streak = 0
-    for data_estudo in datas:
-        if data_estudo == esperada:
-            streak += 1
-            esperada -= timedelta(days=1)
-        elif data_estudo < esperada:
-            break
-    usuario.streak = streak
-    session.add(usuario)
 
 
 def _atualizar_progresso_questao(session: Session, usuario_id: int, questao: Questao, correta: bool) -> None:
@@ -416,6 +407,8 @@ def corrigir_questoes(
     """Corrige e registra cada resposta no histórico do usuário."""
     detalhes = []
     acertos = 0
+    xp_ganhos = 0
+    coins_ganhas = 0
 
     for resposta in payload.respostas:
         dados = _ler_json_questao(resposta.prova, resposta.index)
@@ -431,6 +424,7 @@ def corrigir_questoes(
         if correta:
             acertos += 1
 
+        tempo_resposta = max(0, min(int(resposta.tempo_segundos or 0), 3600))
         session.add(
             RespostaUsuario(
                 usuario_id=usuario.id,
@@ -438,10 +432,16 @@ def corrigir_questoes(
                 tentativa_simulado_id=payload.tentativa_simulado_id,
                 alternativa_escolhida=str(resposta.letra).strip().upper(),
                 correta=correta,
+                tempo_segundos=tempo_resposta,
             )
         )
-        _registrar_dia_estudo(session, usuario.id, questoes=1)
+        _registrar_dia_estudo(
+            session, usuario.id, questoes=1, tempo_segundos=tempo_resposta
+        )
         _atualizar_progresso_questao(session, usuario.id, questao, correta)
+        xp, coins = recompensar_questao(usuario, correta)
+        xp_ganhos += xp
+        coins_ganhas += coins
 
         editorial = _buscar_editorial(session, resposta.prova, resposta.index)
         detalhes.append({
@@ -453,11 +453,15 @@ def corrigir_questoes(
             "resolucao": editorial.resolucao if editorial else None,
         })
 
-    _recalcular_streak(session, usuario)
+    recalcular_streak(session, usuario)
+    session.add(usuario)
     session.commit()
 
     return {
         "acertos": acertos,
         "total": len(payload.respostas),
+        "xp_ganhos": xp_ganhos,
+        "coins_ganhas": coins_ganhas,
+        "saldo": {"xp": usuario.xp, "coins": usuario.coins, "streak": usuario.streak},
         "detalhes": detalhes,
     }

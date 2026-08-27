@@ -30,7 +30,8 @@ from database.configdb import (  # noqa: E402
     SERVER_URL,
 )
 from database.db import engine  # noqa: E402
-from models.models import Area, Prova, Questao, Simulado, SimuladoQuestao, Tema  # noqa: E402
+from models.models import Area, Prova, Questao, Simulado, SimuladoQuestao, Tema, Usuarios  # noqa: E402
+from services.progresso_service import garantir_metas_padrao  # noqa: E402
 
 PROVAS_DIR = BACKEND_DIR / "database" / "provas"
 
@@ -268,13 +269,28 @@ def semear_catalogo() -> tuple[int, int, int]:
             session.commit()
         simulados_count += 1
 
+        # Garante as metas padrão também para usuários que já existiam antes
+        # da migration 0004. Para novos cadastros, a rota de usuário também
+        # cria essas metas automaticamente.
+        for usuario in session.exec(select(Usuarios)).all():
+            garantir_metas_padrao(session, usuario.id)
+        session.commit()
+
     return provas_count, questoes_count, simulados_count
 
 
-def main() -> None:
+def inicializar_banco() -> tuple[int, int, int]:
+    """Cria banco, atualiza schema e sincroniza dados iniciais.
+
+    É idempotente: pode ser chamado em toda inicialização do FastAPI.
+    """
     criar_banco()
     aplicar_migrations()
-    provas, questoes, simulados = semear_catalogo()
+    return semear_catalogo()
+
+
+def main() -> None:
+    provas, questoes, simulados = inicializar_banco()
     print(f"Catálogo sincronizado: {provas} provas, {questoes} questões e {simulados} simulados.")
     print("Banco MySQL do LumoStudy pronto para uso.")
 

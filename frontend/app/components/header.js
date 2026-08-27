@@ -7,43 +7,37 @@ import { ChevronDown, LogOut, User } from "lucide-react";
 
 export default function Header() {
   const router = useRouter();
-  const [stats, setStats] = useState({ coins: 0, streak: 0, xp: 0 });
+  const [stats, setStats] = useState({ coins: 0, streak: 0, xp: 0, avatar: "/avatar.png" });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-
-    if (!token) {
-      return;
-    }
+    if (!token) return;
 
     const fetchUserStats = async () => {
       try {
         const response = await fetch("http://127.0.0.1:8000/login/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
-
-        if (!response.ok) {
-          return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
-        const nextStats = {
+        setStats({
           coins: Number(data.coins ?? 0),
           streak: Number(data.streak ?? 0),
           xp: Number(data.xp ?? 0),
-        };
-
-        setStats(nextStats);
+          avatar: data.avatar_url || "/avatar.png",
+        });
       } catch (error) {
         console.error("Erro ao buscar stats do usuário:", error);
       }
     };
 
     fetchUserStats();
+    window.addEventListener("lumostudy:stats-changed", fetchUserStats);
+    return () => window.removeEventListener("lumostudy:stats-changed", fetchUserStats);
   }, []);
 
   useEffect(() => {
@@ -142,7 +136,7 @@ export default function Header() {
             aria-expanded={isMenuOpen}
             aria-haspopup="menu"
           >
-            <img src="/avatar.png" className="avatar" alt="Perfil" />
+            <img src={stats.avatar} className="avatar" alt="Perfil" />
             <ChevronDown className={`header-avatar-chevron ${isMenuOpen ? "open" : ""}`} size={18} />
           </button>
 

@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 from database.db import get_session
 from models.models import DiaEstudo, Flashcard, ProgressoTema, Questao, RevisaoFlashcard
 from routes.login_routes import UsuarioLogado
+from services.progresso_service import recalcular_streak, recompensar_flashcard
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/flashcards", tags=["flashcards"])
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/flashcards", tags=["flashcards"])
 
 class RevisaoPayload(BaseModel):
     resultado: str
+    tempo_segundos: int | None = 0
 
 
 @router.get("")
@@ -32,7 +34,7 @@ def listar_flashcards(
     return session.exec(consulta.order_by(Flashcard.atualizado_em.desc())).all()
 
 
-def _registrar_dia(session: Session, usuario_id: int) -> None:
+def _registrar_dia(session: Session, usuario_id: int, tempo_segundos: int = 0) -> None:
     hoje = date.today()
     dia = session.exec(
         select(DiaEstudo).where(DiaEstudo.usuario_id == usuario_id, DiaEstudo.data == hoje)
@@ -40,25 +42,8 @@ def _registrar_dia(session: Session, usuario_id: int) -> None:
     if not dia:
         dia = DiaEstudo(usuario_id=usuario_id, data=hoje)
     dia.flashcards_revisados += 1
+    dia.tempo_segundos += max(0, min(int(tempo_segundos or 0), 3600))
     session.add(dia)
-
-
-def _atualizar_streak(session: Session, usuario) -> None:
-    datas = session.exec(
-        select(DiaEstudo.data)
-        .where(DiaEstudo.usuario_id == usuario.id)
-        .order_by(DiaEstudo.data.desc())
-    ).all()
-    esperada = date.today()
-    streak = 0
-    for data_estudo in datas:
-        if data_estudo == esperada:
-            streak += 1
-            esperada -= timedelta(days=1)
-        elif data_estudo < esperada:
-            break
-    usuario.streak = streak
-    session.add(usuario)
 
 
 def _atualizar_progresso(session: Session, usuario_id: int, flashcard: Flashcard) -> None:
@@ -116,9 +101,16 @@ def registrar_revisao(
         intervalo_dias=intervalo,
     )
     session.add(revisao)
-    _registrar_dia(session, usuario.id)
+    _registrar_dia(session, usuario.id, payload.tempo_segundos or 0)
     _atualizar_progresso(session, usuario.id, flashcard)
-    _atualizar_streak(session, usuario)
+    xp, coins = recompensar_flashcard(usuario)
+    recalcular_streak(session, usuario)
+    session.add(usuario)
     session.commit()
     session.refresh(revisao)
-    return revisao
+    return {
+        "revisao": revisao,
+        "xp_ganhos": xp,
+        "coins_ganhas": coins,
+        "saldo": {"xp": usuario.xp, "coins": usuario.coins, "streak": usuario.streak},
+    }

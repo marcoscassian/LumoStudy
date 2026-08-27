@@ -13,6 +13,33 @@ Configuração atual:
 
 A configuração fica em `database/configdb.py` e a conexão usada pela API em `database/db.py`.
 
+## Inicialização automática
+
+Não é mais obrigatório executar `database/createdb.py` antes de iniciar o backend.
+
+Ao executar:
+
+```cmd
+python -m uvicorn main:app --reload --port 8000
+```
+
+ou simplesmente:
+
+```cmd
+python main.py
+```
+
+o FastAPI executa automaticamente, antes de aceitar requisições:
+
+1. criação/verificação do banco `lumostudy`;
+2. `alembic upgrade head`;
+3. cadastro das quatro áreas e dos temas base;
+4. indexação das provas e questões dos JSONs locais;
+5. criação dos simulados iniciais;
+6. criação das metas padrão dos usuários existentes.
+
+`python database\createdb.py` continua disponível caso seja necessário inicializar/sincronizar o banco manualmente.
+
 ## Primeira instalação
 
 Na pasta `backend`:
@@ -21,22 +48,10 @@ Na pasta `backend`:
 py -m venv env
 env\Scripts\activate
 pip install -r requirements.txt
-python database\createdb.py
-```
-
-`createdb.py`:
-
-1. cria/verifica o banco `lumostudy`;
-2. executa `alembic upgrade head`;
-3. cadastra as quatro áreas e os temas base;
-4. indexa as provas e as questões dos JSONs locais no MySQL;
-5. cria cinco modelos iniciais de simulado.
-
-Depois inicie a API:
-
-```cmd
 python -m uvicorn main:app --reload --port 8000
 ```
+
+O MySQL precisa estar iniciado em `localhost:3306` e o usuário `root` deve aceitar conexão sem senha, conforme `database/configdb.py`.
 
 ## Alterações futuras nos models
 

@@ -11,6 +11,7 @@ from starlette import status
 
 from database.db import get_session
 from models.models import Usuarios
+from services.progresso_service import recalcular_streak
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -140,8 +141,12 @@ def login(
 
 @router.get("/me")
 def get_me(
-    usuario: Annotated[Usuarios, Depends(get_usuario)]
+    usuario: Annotated[Usuarios, Depends(get_usuario)],
+    session: SessionDep,
 ):
+    recalcular_streak(session, usuario)
+    session.commit()
+    session.refresh(usuario)
     return {
         "id": usuario.id,
         "nome": usuario.nome,
@@ -150,6 +155,8 @@ def get_me(
         "streak": usuario.streak,
         "xp": usuario.xp,
         "is_admin": usuario.is_admin,
+        "casa": usuario.casa,
+        "avatar_url": usuario.avatar_url,
     }
 
 

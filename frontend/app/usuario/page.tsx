@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Star,
@@ -11,6 +11,7 @@ import {
   Award,
   CheckCircle2,
   HelpCircle,
+  XCircle,
 } from "lucide-react";
 
 import "../trilha/trilha.css";
@@ -24,53 +25,54 @@ import MasteryCard from "./components/masterycard";
 import RecentActivities from "./components/recentactivities";
 import GoalsCard from "./components/goalscard";
 
-const mockOverview = [
-  { icon: BookOpen, value: "1.235", label: "Questões respondidas", color: "purple" },
-  { icon: Layers, value: "125", label: "Flashcards revisados", color: "green" },
-  { icon: TrendingUp, value: "76%", label: "Taxa de acertos", color: "blue" },
-  { icon: FileText, value: "23", label: "Simulados resolvido", color: "yellow" },
-  { icon: Award, value: "56", label: "Temas concluídos", color: "pink" },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-const mockMastery = [
-  { title: "Linguagens, Códigos e suas Tecnologias", image: "/linguagenscard.png", percent: 76, color: "purple" },
-  { title: "Ciências Humanas e suas Tecnologias", image: "/cienciashumanas.png", percent: 76, color: "green" },
-  { title: "Matemática e suas Tecnologias", image: "/matematica.png", percent: 76, color: "blue" },
-  { title: "Ciências da Natureza e suas Tecnologias", image: "/natureza.png", percent: 76, color: "yellow" },
-  { title: "Geral", image: null, percent: 86, color: "purple", general: true },
-];
-
-const mockActivities = [
-  { id: 1, icon: CheckCircle2, color: "blue", title: "Você respondeu 20 questões de Matemática sem cometer nenhum erro", subject: "Matemática e suas tecnologias", time: "Hoje" },
-  { id: 2, icon: FileText, color: "purple", title: "Você concluiu o simulado do ENEM 2024", subject: "Simulados", time: "Hoje" },
-  { id: 3, icon: Layers, color: "green", title: "Você respondeu 100 flashcards de ciências da natureza", subject: "Ciências da natureza e suas tecnologias", time: "Ontem" },
-  { id: 4, icon: BookOpen, color: "yellow", title: "Você escreveu 1 redação", subject: "Redações", time: "06/07" },
-  { id: 5, icon: CheckCircle2, color: "blue", title: "Você completou um bloco de Ciências Humanas", subject: "Ciências Humanas", time: "05/07" },
-  { id: 6, icon: BookOpen, color: "purple", title: "Você iniciou uma nova sequência de estudos", subject: "Linguagens", time: "04/07" },
-];
-
-const mockGoals = {
-  Diário: [
-    { label: "Tempo de estudo", current: 40, total: 60, icon: BookOpen, color: "purple" },
-    { label: "Flashcards", current: 13, total: 15, icon: Layers, color: "red" },
-    { label: "Questões", current: 20, total: 25, icon: HelpCircle, color: "green" },
-  ],
-  Semanal: [
-    { label: "Tempo de estudo", current: 210, total: 360, icon: BookOpen, color: "purple" },
-    { label: "Flashcards", current: 68, total: 90, icon: Layers, color: "red" },
-    { label: "Questões", current: 95, total: 150, icon: HelpCircle, color: "green" },
-  ],
-  Mensal: [
-    { label: "Tempo de estudo", current: 840, total: 1500, icon: BookOpen, color: "purple" },
-    { label: "Flashcards", current: 260, total: 400, icon: Layers, color: "red" },
-    { label: "Questões", current: 410, total: 600, icon: HelpCircle, color: "green" },
-  ],
+const AREA_VISUAL: Record<string, { image: string; color: string }> = {
+  linguagens: { image: "/linguagenscard.png", color: "purple" },
+  "ciencias-humanas": { image: "/cienciashumanas.png", color: "green" },
+  matematica: { image: "/matematica.png", color: "blue" },
+  "ciencias-natureza": { image: "/natureza.png", color: "yellow" },
 };
+
+const CASA_NOME: Record<string, string> = {
+  corvinal: "Corvinal",
+  grifinoria: "Grifinória",
+  sonserina: "Sonserina",
+  lufalufa: "Lufa-Lufa",
+};
+
+const GOAL_VISUAL: Record<string, { icon: any; color: string }> = {
+  tempo_estudo: { icon: BookOpen, color: "purple" },
+  flashcards: { icon: Layers, color: "red" },
+  questoes: { icon: HelpCircle, color: "green" },
+};
+
+const ACTIVITY_VISUAL: Record<string, { icon: any; color: string }> = {
+  questao_correta: { icon: CheckCircle2, color: "blue" },
+  questao_errada: { icon: XCircle, color: "yellow" },
+  flashcard: { icon: Layers, color: "green" },
+  simulado: { icon: FileText, color: "purple" },
+};
+
+function formatarQuando(valor: string) {
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return "";
+
+  const hoje = new Date();
+  const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const inicioData = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+  const diferencaDias = Math.round((inicioHoje.getTime() - inicioData.getTime()) / 86400000);
+
+  if (diferencaDias === 0) return "Hoje";
+  if (diferencaDias === 1) return "Ontem";
+  return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
 
 export default function UsuarioPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -79,10 +81,12 @@ export default function UsuarioPage() {
       return;
     }
 
-    async function loadProfile() {
+    async function loadDashboard() {
       try {
-        const response = await fetch("http://127.0.0.1:8000/usuarios/me/perfil", {
+        setError("");
+        const response = await fetch(`${API_BASE}/usuarios/me/dashboard`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
 
         if (response.status === 401) {
@@ -91,44 +95,126 @@ export default function UsuarioPage() {
           return;
         }
 
-        if (!response.ok) throw new Error("Não foi possível carregar o perfil");
-        const data = await response.json();
-        setUser(data);
-      } catch (error) {
-        console.error(error);
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.detail || "Não foi possível carregar o perfil");
+        }
+
+        setDashboard(await response.json());
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.message || "Não foi possível carregar o perfil.");
       } finally {
         setLoading(false);
       }
     }
 
-    loadProfile();
+    loadDashboard();
   }, [router]);
 
-  function openQuestions(area: string) {
-    router.push(`/questoes?area=${encodeURIComponent(area)}`);
+  function openQuestions(areaSlug: string) {
+    if (!areaSlug) return;
+    router.push(`/questoes?area=${encodeURIComponent(areaSlug)}`);
   }
+
+  const viewModel = useMemo(() => {
+    if (!dashboard) return null;
+
+    const user = dashboard.usuario || {};
+    const overview = dashboard.visao_geral || {};
+    const currentXp = Number(user.xp || 0);
+    const level = Math.floor(currentXp / 1000) + 1;
+    const nextLevelXp = level * 1000;
+    const casaSlug = String(user.casa || "corvinal").toLowerCase();
+
+    const profileUser = {
+      name: user.nome || "Bruxo",
+      avatar: user.avatar_url || "/avatar.png",
+      house: CASA_NOME[casaSlug] || user.casa || "Corvinal",
+      houseSlug: casaSlug,
+      level,
+      currentXp,
+      nextLevelXp,
+      coins: Number(user.coins || 0),
+      streak: Number(user.streak || 0),
+    };
+
+    const overviewCards = [
+      { icon: BookOpen, value: Number(overview.questoes_respondidas || 0).toLocaleString("pt-BR"), label: "Questões respondidas", color: "purple" },
+      { icon: Layers, value: Number(overview.flashcards_revisados || 0).toLocaleString("pt-BR"), label: "Flashcards revisados", color: "green" },
+      { icon: TrendingUp, value: `${Number(overview.taxa_acertos || 0)}%`, label: "Taxa de acertos", color: "blue" },
+      { icon: FileText, value: Number(overview.simulados_resolvidos || 0).toLocaleString("pt-BR"), label: "Simulados resolvidos", color: "yellow" },
+      { icon: Award, value: Number(overview.temas_concluidos || 0).toLocaleString("pt-BR"), label: "Temas concluídos", color: "pink" },
+    ];
+
+    const mastery: any[] = (dashboard.dominio_areas || []).map((area: any) => ({
+      title: area.nome,
+      slug: area.slug,
+      image: AREA_VISUAL[area.slug]?.image || null,
+      percent: Number(area.percentual || 0),
+      color: AREA_VISUAL[area.slug]?.color || "purple",
+    }));
+    mastery.push({
+      title: "Geral",
+      slug: "",
+      image: null,
+      percent: Number(dashboard.dominio_geral || 0),
+      color: "purple",
+      general: true,
+    });
+
+    const activities = (dashboard.atividades_recentes || []).map((activity: any) => {
+      const visual = ACTIVITY_VISUAL[activity.tipo] || ACTIVITY_VISUAL.questao_correta;
+      return {
+        id: activity.id,
+        icon: visual.icon,
+        color: visual.color,
+        title: activity.title,
+        subject: activity.subject,
+        time: formatarQuando(activity.ocorrido_em),
+      };
+    });
+
+    const goals: Record<string, any[]> = {};
+    Object.entries(dashboard.metas || {}).forEach(([period, items]: [string, any]) => {
+      goals[period] = (items || []).map((goal: any) => {
+        const visual = GOAL_VISUAL[goal.tipo] || GOAL_VISUAL.questoes;
+        return {
+          label: goal.label,
+          current: Number(goal.current || 0),
+          total: Number(goal.total || 0),
+          icon: visual.icon,
+          color: visual.color,
+        };
+      });
+    });
+
+    return { profileUser, overviewCards, mastery, activities, goals };
+  }, [dashboard]);
 
   if (loading) {
-    return <main className="dashboard"><Header /><div className="content"><p>Carregando perfil...</p></div></main>;
+    return (
+      <main className="dashboard">
+        <Header />
+        <div className="dashboard-body dashboard-body--profile">
+          <Sidebar />
+          <section className="content profile-content"><p>Carregando perfil...</p></section>
+        </div>
+      </main>
+    );
   }
 
-  if (!user) return null;
-
-  const currentXp = Number(user.xp || 0);
-  const level = Math.floor(currentXp / 100) + 1;
-  const nextLevelXp = level * 100;
-
-  const profileUser = {
-    name: user.nome,
-    avatar: "/avatar.png",
-    house: "Corvinal",
-    houseSlug: "corvinal",
-    level,
-    currentXp,
-    nextLevelXp,
-    coins: Number(user.coins || 0),
-    streak: Number(user.streak || 0),
-  };
+  if (error || !viewModel) {
+    return (
+      <main className="dashboard">
+        <Header />
+        <div className="dashboard-body dashboard-body--profile">
+          <Sidebar />
+          <section className="content profile-content"><p>{error || "Não foi possível carregar o perfil."}</p></section>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="dashboard">
@@ -136,31 +222,31 @@ export default function UsuarioPage() {
       <div className="dashboard-body dashboard-body--profile">
         <Sidebar />
         <section className="content profile-content">
-          <ProfileHero user={profileUser} />
+          <ProfileHero user={viewModel.profileUser} />
 
           <div>
             <div className="section-title"><Star size={18} />Seu progresso geral</div>
             <div className="stats-grid">
-              {mockOverview.map((stat) => <StatCard key={stat.label} {...stat} />)}
+              {viewModel.overviewCards.map((stat: any) => <StatCard key={stat.label} {...stat} />)}
             </div>
           </div>
 
           <div>
             <div className="section-title">Domínio por área</div>
             <div className="mastery-grid">
-              {mockMastery.map((area) => (
+              {viewModel.mastery.map((area: any) => (
                 <MasteryCard
                   key={area.title}
                   {...area}
-                  onContinue={() => openQuestions(area.title)}
+                  onContinue={() => area.slug && openQuestions(area.slug)}
                 />
               ))}
             </div>
           </div>
 
           <div className="profile-panels">
-            <RecentActivities activities={mockActivities} />
-            <GoalsCard goalsByPeriod={mockGoals} />
+            <RecentActivities activities={viewModel.activities} />
+            <GoalsCard goalsByPeriod={viewModel.goals} />
           </div>
         </section>
       </div>

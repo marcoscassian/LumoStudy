@@ -743,3 +743,9 @@
     justify-content: center;
   }
 }
+.activity-empty {
+  color: #8a8a98;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 8px 0;
+}

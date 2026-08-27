@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -39,6 +39,7 @@ export default function SessaoDeQuestoesPage() {
   const [corrigindo, setCorrigindo] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
+  const inicioQuestaoRef = useRef(Date.now());
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -83,6 +84,10 @@ export default function SessaoDeQuestoesPage() {
     carregarQuestoes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkingAuth, area, quantidade, nivel]);
+
+  useEffect(() => {
+    inicioQuestaoRef.current = Date.now();
+  }, [indiceAtual, questoes.length]);
 
   useEffect(() => {
     if (loading || erro || finalizado || questoes.length === 0) return;
@@ -138,7 +143,12 @@ export default function SessaoDeQuestoesPage() {
         },
         body: JSON.stringify({
           respostas: [
-            { prova: questaoAtual.prova, index: questaoAtual.index, letra: letraSelecionada },
+            {
+              prova: questaoAtual.prova,
+              index: questaoAtual.index,
+              letra: letraSelecionada,
+              tempo_segundos: Math.max(1, Math.round((Date.now() - inicioQuestaoRef.current) / 1000)),
+            },
           ],
         }),
       });
@@ -149,6 +159,7 @@ export default function SessaoDeQuestoesPage() {
       if (!detalhe) throw new Error("Não foi possível corrigir a questão.");
 
       setResultados((prev) => ({ ...prev, [indiceAtual]: detalhe }));
+      window.dispatchEvent(new Event("lumostudy:stats-changed"));
     } catch (err) {
       console.error(err);
       setErro("Não foi possível corrigir sua resposta. Tente novamente.");

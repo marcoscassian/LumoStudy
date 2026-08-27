@@ -21,6 +21,8 @@ class Usuarios(SQLModel, table=True):
     streak: int = Field(default=0, nullable=False)
     xp: int = Field(default=0, nullable=False)
     is_admin: bool = Field(default=False, nullable=False)
+    casa: str = Field(default="corvinal", max_length=30, nullable=False)
+    avatar_url: str = Field(default="/avatar.png", max_length=255, nullable=False)
 
 
 class Area(SQLModel, table=True):
@@ -208,3 +210,17 @@ class ProgressoTema(SQLModel, table=True):
     flashcards_revisados: int = Field(default=0, nullable=False)
     atualizado_em: datetime = Field(default_factory=datetime.now, nullable=False)
     concluido_em: datetime | None = Field(default=None)
+
+
+class MetaUsuario(SQLModel, table=True):
+    __tablename__ = "metas_usuario"
+    __table_args__ = (
+        UniqueConstraint("usuario_id", "periodo", "tipo", name="uq_meta_usuario_periodo_tipo"),
+        MYSQL_TABLE,
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    periodo: str = Field(max_length=20, nullable=False, index=True)
+    tipo: str = Field(max_length=30, nullable=False, index=True)
+    valor_meta: int = Field(nullable=False)

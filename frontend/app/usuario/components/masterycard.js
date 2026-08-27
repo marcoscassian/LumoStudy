@@ -10,7 +10,7 @@ export default function MasteryCard({ image, title, percent, color, general = fa
       </div>
       <strong className="mastery-percent">{percent}%</strong>
       <h4>{title}</h4>
-      <button type="button" className="mastery-btn" onClick={onContinue}>Continuar</button>
+      {!general && <button type="button" className="mastery-btn" onClick={onContinue}>Continuar</button>}
     </div>
   );
 }

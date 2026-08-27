@@ -1,9 +1,11 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from database.createdb import inicializar_banco
 from routes import (
     admin_routes,
     flashcards_routes,
@@ -14,7 +16,21 @@ from routes import (
     usuario_routes,
 )
 
-app = FastAPI(title="LumoStudy API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Não é mais necessário executar createdb.py manualmente.
+    # Ao iniciar o backend, ele cria o banco MySQL caso não exista, aplica
+    # todas as migrations e sincroniza as questões/simulados automaticamente.
+    provas, questoes, simulados = inicializar_banco()
+    print(
+        f"LumoStudy pronto: {provas} provas, {questoes} questões e "
+        f"{simulados} simulados sincronizados no MySQL."
+    )
+    yield
+
+
+app = FastAPI(title="LumoStudy API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,3 +57,8 @@ if PROVAS_DIR.exists():
 @app.get("/")
 def home():
     return {"mensagem": "API do LumoStudy funcionando com MySQL"}
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)

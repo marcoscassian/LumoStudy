@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 from database.db import get_session
 from models.models import Prova, Questao, RespostaUsuario, Simulado, SimuladoQuestao, TentativaSimulado
 from routes.login_routes import UsuarioLogado
+from services.progresso_service import recompensar_simulado
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/simulados", tags=["simulados"])
@@ -92,7 +93,14 @@ def finalizar_simulado(tentativa_id: int, usuario: UsuarioLogado, session: Sessi
     tentativa.finalizado_em = datetime.now()
     tentativa.tempo_gasto_segundos = max(0, int((tentativa.finalizado_em - tentativa.iniciado_em).total_seconds()))
     tentativa.finalizada = True
+    xp, coins = recompensar_simulado(usuario)
     session.add(tentativa)
+    session.add(usuario)
     session.commit()
     session.refresh(tentativa)
-    return tentativa
+    return {
+        "tentativa": tentativa,
+        "xp_ganhos": xp,
+        "coins_ganhas": coins,
+        "saldo": {"xp": usuario.xp, "coins": usuario.coins, "streak": usuario.streak},
+    }
