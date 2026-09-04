@@ -275,7 +275,6 @@ export default function ConfiguracoesPage() {
                       <span><i className="house-dot slytherin"/> Alex · Sonserina</span>
                       <span><i className="house-dot gryff"/> Marcos · Grifinória</span>
                     </div>
-                    <p className="theme-help">A preferência fica salva no MySQL e é aplicada automaticamente em todas as páginas.</p>
                   </div>
 
                   <button type="submit" className="primary-action" style={{width:"100%"}} disabled={salvando}>

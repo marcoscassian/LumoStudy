@@ -140,12 +140,6 @@ export default function LojaPage() {
               </div>
             )}
 
-            <div className="page-card" style={{padding:18, marginTop:18}}>
-              <strong>Onde colocar as imagens?</strong>
-              <p className="muted" style={{marginTop:5, lineHeight:1.5}}>
-                Adicione depois em <code>frontend/public/loja/</code>: <code>perfil1.png</code> (Ludimila), <code>perfil2.png</code> (Ícaro), <code>perfil3.png</code> (Alex) e <code>perfil4.png</code> (Marcos).
-              </p>
-            </div>
           </div>
         </section>
       </div>
