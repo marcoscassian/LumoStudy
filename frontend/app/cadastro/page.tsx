@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Mail, Lock, Eye, UserRound, UserPlus } from "lucide-react";
 import "../auth.css";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
 export default function CadastroPage() {
   const router = useRouter();
 
@@ -20,7 +22,7 @@ export default function CadastroPage() {
   async function handleRegister(e: any) {
     e.preventDefault();
 
-    const response = await fetch("http://127.0.0.1:8000/usuarios/", {
+    const response = await fetch(`${API_BASE}/usuarios/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

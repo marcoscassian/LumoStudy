@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+from config_env import carregar_env
 
 from database.createdb import inicializar_banco
 from routes import (
@@ -22,9 +25,6 @@ from routes import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Não é mais necessário executar createdb.py manualmente.
-    # Ao iniciar o backend, ele cria o banco MySQL caso não exista, aplica
-    # todas as migrations e sincroniza as questões/simulados automaticamente.
     provas, questoes, simulados = inicializar_banco()
     print(
         f"LumoStudy pronto: {provas} provas, {questoes} questões e "
@@ -33,11 +33,24 @@ async def lifespan(app: FastAPI):
     yield
 
 
+carregar_env()
+
 app = FastAPI(title="LumoStudy API", lifespan=lifespan)
+
+origens_padrao = ["http://localhost:3000", "http://127.0.0.1:3000"]
+origens_extra = [
+    origem.strip().rstrip("/")
+    for origem in os.getenv("CORS_ORIGINS", "").split(",")
+    if origem.strip()
+]
+frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+if frontend_url:
+    origens_extra.append(frontend_url)
+origens = list(dict.fromkeys(origens_padrao + origens_extra))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=origens,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

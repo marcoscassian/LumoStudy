@@ -27,6 +27,18 @@ class Usuarios(SQLModel, table=True):
     tema_roxo_padrao: bool = Field(default=False, nullable=False)
 
 
+class RecuperacaoSenha(SQLModel, table=True):
+    __tablename__ = "recuperacoes_senha"
+    __table_args__ = MYSQL_TABLE
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    token_hash: str = Field(max_length=64, nullable=False, unique=True, index=True)
+    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    expira_em: datetime = Field(nullable=False, index=True)
+    usado_em: datetime | None = Field(default=None, nullable=True, index=True)
+
+
 class Area(SQLModel, table=True):
     __tablename__ = "areas"
     __table_args__ = MYSQL_TABLE

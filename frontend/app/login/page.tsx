@@ -7,6 +7,8 @@ import { Mail, Lock, Eye, LogIn } from "lucide-react";
 import "../auth.css";
 import { aplicarTema } from "../components/theme-provider";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,7 +30,7 @@ export default function LoginPage() {
     formData.append("password", password);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/login/", {
+      const response = await fetch(`${API_BASE}/login/`, {
         method: "POST",
         body: formData,
       });
@@ -59,7 +61,7 @@ export default function LoginPage() {
       // Network or CORS error
       setTipoMensagem("erro");
       setMensagem(
-        "Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://127.0.0.1:8000"
+        `Não foi possível conectar ao servidor em ${API_BASE}. Verifique se o backend está rodando.`
       );
       console.error("Login fetch error:", err);
     }
@@ -115,6 +117,10 @@ export default function LoginPage() {
               onClick={() => setShowPassword(!showPassword)}
               style={{ cursor: "pointer" }}
             />
+          </div>
+
+          <div className="auth-link-row">
+            <Link href="/esqueci-senha">Esqueci minha senha</Link>
           </div>
 
           <button type="submit">

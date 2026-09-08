@@ -189,3 +189,38 @@ small {
   border: 1px solid #f5b5b5;
 }
 
+
+.auth-link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: -8px 0 18px;
+}
+
+.auth-back-link {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+.auth-back-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-success-button {
+  min-height: 50px;
+  border-radius: 11px;
+  background: var(--lumo-accent);
+  color: #fff !important;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 25px rgba(var(--lumo-accent-rgb), .25);
+}
+
+button:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}

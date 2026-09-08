@@ -48,3 +48,29 @@ Para garantir uma interface veloz, otimizada e reativa (quase como um passe de m
 
 > "A felicidade pode ser encontrada, mesmo nas horas mais difíceis, se alguém se lembrar de acender a luz." 
 > — **Alvo Dumbledore**
+
+---
+
+## 🔐 Recuperação de senha
+
+A recuperação de senha usa o Gmail `lumostudy934@gmail.com` e token de uso único salvo apenas como hash no MySQL.
+
+1. Abra `backend/.env`.
+2. Coloque a senha de app do Google em:
+
+```env
+EMAIL_PASSWORD=SUA_SENHA_DE_APP
+```
+
+3. Inicie o backend normalmente. A migration `0007` cria automaticamente a tabela `recuperacoes_senha`.
+4. Na tela de login, use **Esqueci minha senha**.
+
+O link expira em 30 minutos e só pode ser usado uma vez.
+
+> Nunca coloque a senha de app no GitHub. O arquivo `.env` é ignorado pelo Git.
+
+## 🌐 Contas compartilhadas entre computadores
+
+Usar `MYSQL_HOST=localhost` cria um banco diferente em cada computador. Para todas as máquinas enxergarem as mesmas contas, configure um **MySQL remoto/central** usando `DATABASE_URL` no `backend/.env`.
+
+Veja `BANCO_COMPARTILHADO.md` para o passo a passo.

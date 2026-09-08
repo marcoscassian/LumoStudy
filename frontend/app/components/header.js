@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import { aplicarTema } from "./theme-provider";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 export default function Header() {
   const router = useRouter();
   const [stats, setStats] = useState({ coins: 0, streak: 0, xp: 0, avatar: "/avatar.png" });
@@ -18,7 +19,7 @@ export default function Header() {
 
     const fetchUserStats = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/login/me", {
+        const response = await fetch(`${API_BASE}/login/me`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         });
@@ -68,7 +69,7 @@ export default function Header() {
 
     try {
       if (token) {
-        await fetch("http://127.0.0.1:8000/login/logout", {
+        await fetch(`${API_BASE}/login/logout`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,

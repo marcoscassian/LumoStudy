@@ -1,9 +1,3 @@
-"""Cria o banco MySQL, aplica o Alembic e indexa as provas locais.
-
-Uso, a partir da pasta backend:
-    python database/createdb.py
-"""
-
 from __future__ import annotations
 
 import json
@@ -22,6 +16,9 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from database.configdb import (  # noqa: E402
+    AUTO_CREATE_DATABASE,
+    DATABASE_MODE,
+    DATABASE_URL_OBJECT,
     MYSQL_CHARSET,
     MYSQL_DATABASE,
     MYSQL_HOST,
@@ -103,19 +100,30 @@ def escolher_tema(area_slug: str, dados: dict) -> str:
 
 def criar_banco() -> None:
     print(
-        f"Conectando ao MySQL em {MYSQL_HOST}:{MYSQL_PORT} como {MYSQL_USER} "
+        f"Conectando ao MySQL {DATABASE_MODE} em {MYSQL_HOST}:{MYSQL_PORT} como {MYSQL_USER} "
         f"e preparando '{MYSQL_DATABASE}'..."
     )
-    servidor = create_engine(SERVER_URL, isolation_level="AUTOCOMMIT", pool_pre_ping=True)
-    with servidor.connect() as conn:
-        conn.execute(
-            text(
-                f"CREATE DATABASE IF NOT EXISTS `{MYSQL_DATABASE}` "
-                f"CHARACTER SET {MYSQL_CHARSET} COLLATE utf8mb4_unicode_ci"
+
+    if AUTO_CREATE_DATABASE:
+        servidor = create_engine(SERVER_URL, isolation_level="AUTOCOMMIT", pool_pre_ping=True)
+        with servidor.connect() as conn:
+            conn.execute(
+                text(
+                    f"CREATE DATABASE IF NOT EXISTS `{MYSQL_DATABASE}` "
+                    f"CHARACTER SET {MYSQL_CHARSET} COLLATE utf8mb4_unicode_ci"
+                )
             )
-        )
-    servidor.dispose()
-    print(f"Banco '{MYSQL_DATABASE}' criado/verificado.")
+        servidor.dispose()
+        print(f"Banco '{MYSQL_DATABASE}' criado/verificado.")
+        return
+
+    # Em um MySQL remoto/gerenciado, o schema geralmente já é fornecido pelo
+    # serviço e CREATE DATABASE é bloqueado. Neste modo só validamos a conexão.
+    teste = create_engine(DATABASE_URL_OBJECT, pool_pre_ping=True)
+    with teste.connect() as conn:
+        conn.execute(text("SELECT 1"))
+    teste.dispose()
+    print(f"Banco remoto '{MYSQL_DATABASE}' conectado/verificado.")
 
 
 def aplicar_migrations() -> None:
