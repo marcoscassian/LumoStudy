@@ -18,6 +18,7 @@ from starlette import status
 from config_env import carregar_env
 from database.db import get_session
 from models.models import RecuperacaoSenha, Usuarios
+from repositories.usuario_repository import UsuarioRepository
 from services.email_service import (
     RESET_TOKEN_MINUTES,
     email_configurado,
@@ -51,6 +52,10 @@ class RedefinirSenhaPayload(BaseModel):
 
 def validar_senha(senha: str, senha_hash: str) -> bool:
     return senha_context.verify(password=senha, hash=senha_hash)
+
+
+def get_usuario_repository(session: SessionDep) -> UsuarioRepository:
+    return UsuarioRepository(session)
 
 
 def create_access_token(data: dict, expires: timedelta | None = None):
@@ -106,9 +111,8 @@ def login(
     session: SessionDep,
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
-    usuario = session.exec(
-        select(Usuarios).where(Usuarios.email == form_data.username)
-    ).first()
+    repo = UsuarioRepository(session)
+    usuario = repo.get_by_email(form_data.username)
 
     if not usuario or not validar_senha(form_data.password, usuario.senha_hash):
         raise HTTPException(status_code=401, detail="Usuário/senha incorreta")

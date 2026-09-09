@@ -26,8 +26,8 @@
 }
 
 .hat {
-  font-size: 42px;
-  line-height: 32px;
+  font-size: 28px;
+  line-height: 26px;
 }
 
 .auth-card {
@@ -162,9 +162,9 @@ small {
 }
 
 .logo {
-  width: 140px;
+  width: 92px;
   display: block;
-  margin: 0 auto -30px auto;
+  margin: 0 auto -20px auto;
 }
 
 .mensagem {

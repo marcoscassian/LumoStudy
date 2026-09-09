@@ -19,16 +19,22 @@ from models.models import (
     RespostaUsuario,
     RevisaoFlashcard,
     Simulado,
-    Tema,
     TentativaSimulado,
     Usuarios,
 )
+from repositories.usuario_repository import UsuarioRepository
 from routes.login_routes import UsuarioLogado
+from schemas.usuario_schema import UsuarioCreate, UsuarioUpdate
 from services.progresso_service import garantir_metas_padrao, recalcular_streak
+from services.usuario_service import UsuarioService
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 senha_context = PasswordHash.recommended()
+
+
+def get_usuario_service(session: SessionDep) -> UsuarioService:
+    return UsuarioService(UsuarioRepository(session))
 
 
 def _perfil_publico(usuario: Usuarios) -> dict:
@@ -223,13 +229,17 @@ def _montar_atividades(session: Session, usuario_id: int, limite: int = 12) -> l
 
 
 @router.get("/me/perfil")
-def get_meu_perfil(usuario: UsuarioLogado, session: SessionDep):
+def get_meu_perfil(
+    usuario: UsuarioLogado,
+    session: SessionDep,
+    service: UsuarioService = Depends(get_usuario_service),
+):
     """Retorna os dados públicos do perfil do usuário autenticado."""
     garantir_metas_padrao(session, usuario.id)
     recalcular_streak(session, usuario)
     session.commit()
     session.refresh(usuario)
-    return _perfil_publico(usuario)
+    return service.perfil_publico(usuario)
 
 
 @router.get("/me/dashboard")
@@ -296,117 +306,48 @@ def update_meu_perfil(
     dados: dict,
     usuario: UsuarioLogado,
     session: SessionDep,
+    service: UsuarioService = Depends(get_usuario_service),
 ):
     """Atualiza nome, e-mail e/ou senha do usuário autenticado."""
-    nome = dados.get("nome")
-    email = dados.get("email")
-    senha_atual = dados.get("senha_atual")
-    nova_senha = dados.get("nova_senha")
-    modo_escuro = dados.get("modo_escuro")
-    tema_roxo_padrao = dados.get("tema_roxo_padrao")
-
-    if nome is not None:
-        nome = str(nome).strip()
-        if not nome:
-            raise HTTPException(status_code=400, detail="Nome não pode ficar vazio")
-        usuario.nome = nome
-
-    if email is not None:
-        email = str(email).strip().lower()
-        if not email:
-            raise HTTPException(status_code=400, detail="E-mail não pode ficar vazio")
-
-        outro_usuario = session.exec(
-            select(Usuarios).where(
-                Usuarios.email == email,
-                Usuarios.id != usuario.id,
-            )
-        ).first()
-        if outro_usuario:
-            raise HTTPException(status_code=400, detail="E-mail já cadastrado")
-        usuario.email = email
-
-    if modo_escuro is not None:
-        usuario.modo_escuro = bool(modo_escuro)
-
-    if tema_roxo_padrao is not None:
-        usuario.tema_roxo_padrao = bool(tema_roxo_padrao)
-
-    if nova_senha is not None and str(nova_senha).strip():
-        nova_senha = str(nova_senha).strip()
-        if not senha_atual or not senha_context.verify(password=senha_atual, hash=usuario.senha_hash):
-            raise HTTPException(status_code=400, detail="Senha atual incorreta")
-        if len(nova_senha) < 6:
-            raise HTTPException(status_code=400, detail="A nova senha deve ter pelo menos 6 caracteres")
-        usuario.senha_hash = senha_context.hash(nova_senha)
-
-    session.add(usuario)
-    session.commit()
-    session.refresh(usuario)
-    return _perfil_publico(usuario)
+    usuario_atualizado = service.atualizar_perfil(usuario, UsuarioUpdate.model_validate(dados))
+    session.refresh(usuario_atualizado)
+    return service.perfil_publico(usuario_atualizado)
 
 
 @router.get("/", response_model=list[Usuarios])
-def get_usuarios(session: SessionDep):
-    return session.exec(select(Usuarios)).all()
+def get_usuarios(session: SessionDep, service: UsuarioService = Depends(get_usuario_service)):
+    return service.listar_usuarios()
 
 
 @router.get("/{id}", response_model=Usuarios)
-def get_usuario_by_id(id: int, session: SessionDep):
-    usuario = session.get(Usuarios, id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    return usuario
+def get_usuario_by_id(id: int, session: SessionDep, service: UsuarioService = Depends(get_usuario_service)):
+    return service.obter_por_id(id)
 
 
 @router.post("/", response_model=Usuarios)
-def create_usuario(usuario: Usuarios, session: SessionDep):
-    usuario_existente = session.exec(
-        select(Usuarios).where(Usuarios.email == usuario.email)
-    ).first()
-    if usuario_existente:
-        raise HTTPException(status_code=400, detail="E-mail já cadastrado")
-
-    usuario.senha_hash = senha_context.hash(usuario.senha_hash)
-    usuario.is_admin = False
-    usuario.coins = 0
-    usuario.streak = 0
-    usuario.xp = 0
-    usuario.casa = usuario.casa or "corvinal"
-    usuario.avatar_url = usuario.avatar_url or "/avatar.png"
-    usuario.modo_escuro = bool(usuario.modo_escuro)
-    usuario.tema_roxo_padrao = bool(usuario.tema_roxo_padrao)
-
-    session.add(usuario)
-    session.commit()
-    session.refresh(usuario)
-    garantir_metas_padrao(session, usuario.id)
-    session.commit()
-    return usuario
+def create_usuario(
+    usuario: UsuarioCreate,
+    session: SessionDep,
+    service: UsuarioService = Depends(get_usuario_service),
+):
+    return service.criar_usuario(usuario)
 
 
 @router.delete("/{id}")
-def delete_usuario(id: int, session: SessionDep):
-    usuario = session.get(Usuarios, id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    session.delete(usuario)
-    session.commit()
+def delete_usuario(id: int, session: SessionDep, service: UsuarioService = Depends(get_usuario_service)):
+    usuario = service.obter_por_id(id)
+    service.repo.delete(usuario)
     return {"mensagem": "Usuário excluído com sucesso"}
 
 
 @router.put("/{id}", response_model=Usuarios)
-def update_usuario(id: int, usuario_atualizado: Usuarios, session: SessionDep):
-    usuario = session.get(Usuarios, id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
-    usuario.nome = usuario_atualizado.nome
-    usuario.email = usuario_atualizado.email
-    if usuario_atualizado.senha_hash:
-        usuario.senha_hash = senha_context.hash(usuario_atualizado.senha_hash)
-
-    session.add(usuario)
-    session.commit()
-    session.refresh(usuario)
-    return usuario
+def update_usuario(
+    id: int,
+    usuario_atualizado: UsuarioUpdate,
+    session: SessionDep,
+    service: UsuarioService = Depends(get_usuario_service),
+):
+    usuario = service.obter_por_id(id)
+    usuario_alterado = service.atualizar_perfil(usuario, usuario_atualizado)
+    session.refresh(usuario_alterado)
+    return usuario_alterado
