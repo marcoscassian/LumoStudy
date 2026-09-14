@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import Session, select
 
 from database.db import get_session
@@ -12,6 +12,30 @@ from services.progresso_service import recalcular_streak, recompensar_flashcard
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/flashcards", tags=["flashcards"])
+
+MATERIAS_FLASHCARD = [
+    "Linguagens",
+    "Ciências Humanas",
+    "Matemática",
+    "Ciências da Natureza",
+]
+
+
+class FlashcardCreatePayload(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    frente: str = Field(min_length=1, max_length=5000)
+    verso: str = Field(min_length=1, max_length=10000)
+    disciplina: str = Field(min_length=1, max_length=100)
+    conteudo_principal: str = Field(min_length=1, max_length=150)
+
+    @field_validator("disciplina", "conteudo_principal")
+    @classmethod
+    def validar_texto(cls, valor: str):
+        valor = valor.strip()
+        if not valor:
+            raise ValueError("Este campo não pode ficar vazio")
+        return valor
 
 
 class RevisaoPayload(BaseModel):
@@ -67,6 +91,34 @@ def _atualizar_progresso(session: Session, usuario_id: int, flashcard: Flashcard
     if progresso.status == "concluido" and progresso.concluido_em is None:
         progresso.concluido_em = datetime.now()
     session.add(progresso)
+
+
+@router.post("", status_code=201)
+def criar_flashcard(
+    payload: FlashcardCreatePayload,
+    usuario: UsuarioLogado,
+    session: SessionDep,
+):
+    flashcard = Flashcard(
+        frente=payload.frente,
+        verso=payload.verso,
+        disciplina=payload.disciplina,
+        conteudo_principal=payload.conteudo_principal,
+        criado_por=usuario.id,
+    )
+    session.add(flashcard)
+    session.commit()
+    session.refresh(flashcard)
+    return {
+        "id": flashcard.id,
+        "frente": flashcard.frente,
+        "verso": flashcard.verso,
+        "disciplina": flashcard.disciplina,
+        "conteudo_principal": flashcard.conteudo_principal,
+        "ativo": flashcard.ativo,
+        "criado_por": flashcard.criado_por,
+        "criado_em": flashcard.criado_em,
+    }
 
 
 @router.post("/{flashcard_id}/revisoes", status_code=201)

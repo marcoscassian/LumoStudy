@@ -10,12 +10,27 @@ import styles from "./flashcards.module.css";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 type Flashcard = { id: number; frente: string; verso: string; disciplina: string; conteudo_principal: string };
 
+type FlashcardForm = {
+  frente: string;
+  verso: string;
+  disciplina: string;
+  conteudo_principal: string;
+};
+
+const MATERIAS = ["Linguagens", "Ciências Humanas", "Matemática", "Ciências da Natureza"];
 const REVISOES = [
   { value: "errei", label: "Errei" },
   { value: "dificil", label: "Difícil" },
   { value: "bom", label: "Bom" },
   { value: "facil", label: "Fácil" },
 ];
+
+const emptyForm: FlashcardForm = {
+  frente: "",
+  verso: "",
+  disciplina: "Matemática",
+  conteudo_principal: "",
+};
 
 export default function FlashcardsPage() {
   const router = useRouter();
@@ -24,6 +39,9 @@ export default function FlashcardsPage() {
   const [disciplina, setDisciplina] = useState("");
   const [reviewed, setReviewed] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState<number | null>(null);
+  const [form, setForm] = useState<FlashcardForm>(emptyForm);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [creating, setCreating] = useState(false);
   const startedAt = useRef<Record<number, number>>({});
 
   useEffect(() => {
@@ -37,6 +55,55 @@ export default function FlashcardsPage() {
 
   const disciplinas = useMemo(() => Array.from(new Set(cards.map((item) => item.disciplina))).sort(), [cards]);
   const filtered = disciplina ? cards.filter((item) => item.disciplina === disciplina) : cards;
+
+  async function criarFlashcard(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.replace("/login?next=/flashcards");
+      return;
+    }
+
+    const payload = {
+      frente: form.frente.trim(),
+      verso: form.verso.trim(),
+      disciplina: form.disciplina.trim(),
+      conteudo_principal: form.conteudo_principal.trim() || "Geral",
+    };
+
+    if (!payload.frente || !payload.verso || !payload.disciplina || !payload.conteudo_principal) {
+      alert("Preencha frente, resposta, matéria e tema antes de salvar.");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const response = await fetch(`${API}/flashcards`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.detail || "Não foi possível criar o flashcard.");
+      }
+
+      setCards((current) => [data, ...current]);
+      setForm(emptyForm);
+      setShowCreateForm(false);
+      setDisciplina(data.disciplina || "");
+      window.dispatchEvent(new Event("lumostudy:stats-changed"));
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Não foi possível criar o flashcard.");
+    } finally {
+      setCreating(false);
+    }
+  }
 
   function toggle(id: number) {
     setFlipped((current) => {
@@ -97,7 +164,47 @@ export default function FlashcardsPage() {
             <option value="">Todas as disciplinas</option>
             {disciplinas.map((value) => <option key={value}>{value}</option>)}
           </select>
+          <button type="button" onClick={() => setShowCreateForm((value) => !value)}>
+            {showCreateForm ? "Cancelar" : "Criar flashcard"}
+          </button>
         </div>
+
+        {showCreateForm && (
+          <form onSubmit={criarFlashcard} className={styles.createForm}>
+            <div className={styles.fieldGroup}>
+              <label>
+                Frente
+                <textarea value={form.frente} onChange={(e) => setForm((current) => ({ ...current, frente: e.target.value }))} placeholder="Ex.: Qual é a fórmula do perímetro?" required />
+              </label>
+              <label>
+                Resposta
+                <textarea value={form.verso} onChange={(e) => setForm((current) => ({ ...current, verso: e.target.value }))} placeholder="Ex.: P = 2 × (a + b)" required />
+              </label>
+            </div>
+            <div className={styles.fieldGroup}>
+              <label>
+                Matéria
+                <select value={form.disciplina} onChange={(e) => setForm((current) => ({ ...current, disciplina: e.target.value }))}>
+                  {MATERIAS.map((value) => <option key={value} value={value}>{value}</option>)}
+                  <option value="Outro">Outro</option>
+                </select>
+              </label>
+              <label>
+                Tema
+                <input
+                  value={form.conteudo_principal}
+                  onChange={(e) => setForm((current) => ({ ...current, conteudo_principal: e.target.value }))}
+                  placeholder="Ex.: Geometria, Literatura, Ecologia..."
+                />
+              </label>
+            </div>
+            <div className={styles.actionsRow}>
+              <button type="submit" disabled={creating}>
+                {creating ? "Salvando..." : "Salvar flashcard"}
+              </button>
+            </div>
+          </form>
+        )}
 
         {filtered.length ? (
           <div className={styles.grid}>
