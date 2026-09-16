@@ -37,20 +37,30 @@ carregar_env()
 
 app = FastAPI(title="LumoStudy API", lifespan=lifespan)
 
-origens_padrao = ["http://localhost:3000", "http://127.0.0.1:3000"]
-origens_extra = [
-    origem.strip().rstrip("/")
-    for origem in os.getenv("CORS_ORIGINS", "").split(",")
-    if origem.strip()
-]
-frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
-if frontend_url:
-    origens_extra.append(frontend_url)
-origens = list(dict.fromkeys(origens_padrao + origens_extra))
+
+def get_cors_origins() -> list[str]:
+    origens_padrao = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+    ]
+    origens_extra = [
+        origem.strip().rstrip("/")
+        for origem in os.getenv("CORS_ORIGINS", "").split(",")
+        if origem.strip()
+    ]
+    frontend_url = os.getenv("FRONTEND_URL", "").strip().rstrip("/")
+    if frontend_url:
+        origens_extra.append(frontend_url)
+    return list(dict.fromkeys(origens_padrao + origens_extra))
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origens,
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

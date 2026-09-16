@@ -11,8 +11,7 @@ import SubjectCard from "./components/subjectcard";
 import ProgressCard from "./components/progresscard";
 import StreakCard from "./components/streakcard";
 import RewardCard from "./components/rewardcard";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "../lib/api";
 
 const EMPTY_TRAIL = {
   progresso_geral: 0,

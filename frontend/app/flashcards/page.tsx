@@ -6,8 +6,7 @@ import Sidebar from "../components/sidebar";
 import Header from "../components/header";
 import "../trilha/trilha.css";
 import styles from "./flashcards.module.css";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE as API } from "../lib/api";
 type Flashcard = { id: number; frente: string; verso: string; disciplina: string; conteudo_principal: string };
 
 type FlashcardForm = {

@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Eye, Lock, Save } from "lucide-react";
 import "../auth.css";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "../lib/api";
 
 export default function RedefinirSenhaPage() {
   const [token, setToken] = useState("");

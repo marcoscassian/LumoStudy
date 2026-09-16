@@ -82,6 +82,10 @@ html[data-accent="grifinoria"] {
   --lumo-gradient-end: #a52338;
 }
 
+html[data-public-theme="true"] {
+  color-scheme: light;
+}
+
 html[data-theme="dark"] {
   color-scheme: dark;
   --lumo-bg: #111016;
@@ -147,6 +151,17 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+html[data-public-theme="true"] body,
+html[data-public-theme="true"] .dashboard,
+html[data-public-theme="true"] .page,
+html[data-public-theme="true"] .auth-page,
+html[data-public-theme="true"] .auth-card,
+html[data-public-theme="true"] .brand,
+html[data-public-theme="true"] .bottom-text {
+  background: #f3f5fc !important;
+  color: #15132b !important;
 }
 
 html[data-theme="dark"] body,

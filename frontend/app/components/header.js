@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import { aplicarTema } from "./theme-provider";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "../lib/api";
 export default function Header() {
   const router = useRouter();
   const [stats, setStats] = useState({ coins: 0, streak: 0, xp: 0, avatar: "/avatar.png" });

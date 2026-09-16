@@ -60,17 +60,17 @@ export default function Sidebar() {
           <span>Simulados</span>
         </Link>
 
-        <Link href="/ranking" className={`menu ${isActive("/ranking") ? "active" : ""}`}>
+        <Link href="" className={`menu ${isActive("/ranking") ? "active" : ""}`}>
           <Trophy size={20} />
           <span>Ranking</span>
         </Link>
 
-        <Link href="/loja" className={`menu ${isActive("/loja") ? "active" : ""}`}>
+        <Link href="" className={`menu ${isActive("/loja") ? "active" : ""}`}>
           <ShoppingCart size={20} />
           <span>Loja</span>
         </Link>
 
-        <Link href="/conquistas" className={`menu ${isActive("/conquistas") ? "active" : ""}`}>
+        <Link href="" className={`menu ${isActive("/conquistas") ? "active" : ""}`}>
           <Award size={20} />
           <span>Conquistas</span>
         </Link>

@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, UserRound, UserPlus } from "lucide-react";
 import "../auth.css";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "../lib/api";
 
 export default function CadastroPage() {
   const router = useRouter();

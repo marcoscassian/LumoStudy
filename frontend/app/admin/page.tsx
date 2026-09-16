@@ -4,8 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { BookOpenCheck, CreditCard, LockKeyhole, Pencil, Plus, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import styles from "./admin.module.css";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE as API } from "../lib/api";
 const emptyCard = { frente: "", verso: "", disciplina: "", conteudo_principal: "", prova: "", numero_questao: "", ativo: true };
 
 type Editorial = { resolucao?: string; disciplina?: string; conteudo_principal?: string };

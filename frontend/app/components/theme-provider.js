@@ -1,6 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
+import { usePathname } from "next/navigation";
+
+const ROTAS_PUBLICAS = new Set([
+  "/",
+  "/login",
+  "/cadastro",
+  "/esqueci-senha",
+  "/redefinir-senha",
+]);
+
+export function isPublicThemeRoute(pathname = "") {
+  return ROTAS_PUBLICAS.has(pathname);
+}
+
+export function aplicarThemePorRota(pathname = "", savedTheme = "light") {
+  const isPublic = isPublicThemeRoute(pathname);
+  const shouldUseDark = !isPublic && savedTheme === "dark";
+
+  document.documentElement.dataset.publicTheme = String(isPublic);
+  document.documentElement.dataset.theme = shouldUseDark ? "dark" : "light";
+
+  return shouldUseDark;
+}
 
 export const CASAS_POR_AVATAR = {
   "/loja/perfil1.png": "corvinal",
@@ -25,12 +48,21 @@ export function resolverCorDoTema(avatarUrl, temaRoxoPadrao = false) {
   return casaDaFoto(avatarUrl) || "padrao";
 }
 
-export function aplicarTema(escuro, casa = null, temaRoxoPadrao = false, avatarUrl = null) {
+/**
+ * @param {boolean} escuro
+ * @param {string | undefined} [casa]
+ * @param {boolean} [temaRoxoPadrao]
+ * @param {string | undefined} [avatarUrl]
+ */
+export function aplicarTema(escuro, casa = undefined, temaRoxoPadrao = false, avatarUrl = undefined) {
   if (typeof document === "undefined") return;
 
-  const dark = Boolean(escuro);
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
+  const isPublic = isPublicThemeRoute(pathname);
+  const dark = Boolean(escuro) && !isPublic;
   const corTema = resolverCorDoTema(avatarUrl, temaRoxoPadrao);
 
+  document.documentElement.dataset.publicTheme = String(isPublic);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
   document.documentElement.dataset.accent = corTema;
 
@@ -50,11 +82,25 @@ export function aplicarTema(escuro, casa = null, temaRoxoPadrao = false, avatarU
 }
 
 export default function ThemeProvider() {
-  useEffect(() => {
-    const salvo = localStorage.getItem("lumostudy_theme");
+  const pathname = usePathname();
+
+  useLayoutEffect(() => {
+    const salvo = localStorage.getItem("lumostudy_theme") || "light";
     const accentSalvo = localStorage.getItem("lumostudy_accent") || "padrao";
-    document.documentElement.dataset.theme = salvo === "dark" ? "dark" : "light";
+    aplicarThemePorRota(pathname, salvo);
     document.documentElement.dataset.accent = accentSalvo;
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleThemeEvent = () => {
+      const salvo = localStorage.getItem("lumostudy_theme") || "light";
+      const accentSalvo = localStorage.getItem("lumostudy_accent") || "padrao";
+      aplicarThemePorRota(window.location.pathname, salvo);
+      document.documentElement.dataset.accent = accentSalvo;
+    };
+
+    window.addEventListener("lumostudy:theme-changed", handleThemeEvent);
+    return () => window.removeEventListener("lumostudy:theme-changed", handleThemeEvent);
   }, []);
 
   return null;

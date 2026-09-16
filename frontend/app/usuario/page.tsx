@@ -24,8 +24,7 @@ import StatCard from "./components/statcard";
 import MasteryCard from "./components/masterycard";
 import RecentActivities from "./components/recentactivities";
 import GoalsCard from "./components/goalscard";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "../lib/api";
 
 const AREA_VISUAL: Record<string, { image: string; color: string }> = {
   linguagens: { image: "/linguagenscard.png", color: "purple" },

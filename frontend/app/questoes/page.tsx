@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, PlayCircle, Sparkles, Zap, Flame } from "lucide-react";
 
@@ -49,7 +49,9 @@ const NIVEIS = [
   { value: "dificil", label: "Difícil", icon: Flame, color: "nivel-dificil" },
 ];
 
-function encontrarAreaPorTexto(texto) {
+type Area = (typeof AREAS)[number];
+
+function encontrarAreaPorTexto(texto: string | null): Area | null {
   if (!texto) return null;
   const normalizado = texto.toLowerCase();
 
@@ -61,11 +63,11 @@ function encontrarAreaPorTexto(texto) {
   return null;
 }
 
-export default function QuestoesPage() {
+function QuestoesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [selectedArea, setSelectedArea] = useState(null);
+  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
   const [quantidade, setQuantidade] = useState(10);
   const [nivel, setNivel] = useState("medio");
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -134,7 +136,7 @@ export default function QuestoesPage() {
             </div>
           )}
 
-          {step === "config" && (
+          {step === "config" && selectedArea && (
             <div className="config-panel">
               <button type="button" className="config-back" onClick={() => setSelectedArea(null)}>
                 <ArrowLeft size={16} /> Trocar área
@@ -190,5 +192,13 @@ export default function QuestoesPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function QuestoesPage() {
+  return (
+    <Suspense fallback={null}>
+      <QuestoesPageContent />
+    </Suspense>
   );
 }

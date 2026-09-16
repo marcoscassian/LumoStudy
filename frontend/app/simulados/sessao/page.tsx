@@ -7,8 +7,7 @@ import { ChevronLeft, ChevronRight, Clock3, Send, X } from "lucide-react";
 import "../../trilha/trilha.css";
 import "../../sidebar-pages.css";
 import Header from "../../components/header";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "../../lib/api";
 
 function formatarTempo(total: number) {
   const segundos = Math.max(0, total);

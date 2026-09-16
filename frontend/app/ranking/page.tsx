@@ -8,8 +8,7 @@ import "../trilha/trilha.css";
 import "../sidebar-pages.css";
 import Header from "../components/header";
 import Sidebar from "../components/sidebar";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+import { API_BASE } from "../lib/api";
 
 export default function RankingPage() {
   const router = useRouter();

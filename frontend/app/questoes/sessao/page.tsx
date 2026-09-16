@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
 
@@ -8,17 +8,38 @@ import "../../trilha/trilha.css";
 import "../questoes.css";
 
 import Header from "../../components/header";
+import { API_BASE } from "../../lib/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+type Alternativa = {
+  letra: string;
+  texto: string;
+  imagem?: string | null;
+};
 
-function formatarTempo(totalSegundos) {
+type Questao = {
+  prova: string;
+  index: number;
+  assunto?: string;
+  enunciado?: string;
+  imagens: string[];
+  comando?: string;
+  alternativas: Alternativa[];
+};
+
+type Resultado = {
+  correta: boolean;
+  gabarito: string;
+  resolucao?: string;
+};
+
+function formatarTempo(totalSegundos: number) {
   const segundos = Math.max(0, totalSegundos);
   const minutos = Math.floor(segundos / 60);
   const resto = segundos % 60;
   return `${String(minutos).padStart(2, "0")}:${String(resto).padStart(2, "0")}`;
 }
 
-export default function SessaoDeQuestoesPage() {
+function SessaoDeQuestoesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -29,12 +50,12 @@ export default function SessaoDeQuestoesPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
-  const [questoes, setQuestoes] = useState([]);
+  const [questoes, setQuestoes] = useState<Questao[]>([]);
   const [indiceAtual, setIndiceAtual] = useState(0);
 
-  const [selecionadas, setSelecionadas] = useState({});
-  const [riscadas, setRiscadas] = useState({});
-  const [resultados, setResultados] = useState({});
+  const [selecionadas, setSelecionadas] = useState<Record<number, string>>({});
+  const [riscadas, setRiscadas] = useState<Record<number, Set<string>>>({});
+  const [resultados, setResultados] = useState<Record<number, Resultado>>({});
 
   const [corrigindo, setCorrigindo] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
@@ -63,7 +84,8 @@ export default function SessaoDeQuestoesPage() {
       setErro("");
 
       try {
-        const params = new URLSearchParams({ area, quantidade, nivel });
+        const areaValida = area ?? "";
+        const params = new URLSearchParams({ area: areaValida, quantidade, nivel });
         const response = await fetch(`${API_BASE}/questoes/gerar?${params.toString()}`);
 
         if (!response.ok) {
@@ -73,9 +95,10 @@ export default function SessaoDeQuestoesPage() {
 
         const data = await response.json();
         setQuestoes(data.questoes || []);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(err);
-        setErro(err.message || "Não foi possível conectar ao servidor.");
+        const mensagem = err instanceof Error ? err.message : "Não foi possível conectar ao servidor.";
+        setErro(mensagem);
       } finally {
         setLoading(false);
       }
@@ -108,7 +131,7 @@ export default function SessaoDeQuestoesPage() {
   const acertos = Object.values(resultados).filter((r) => r.correta).length;
   const respondidas = Object.keys(resultados).length;
 
-  const toggleRiscada = useCallback((indice, letra) => {
+  const toggleRiscada = useCallback((indice: number, letra: string) => {
     setRiscadas((prev) => {
       const atual = new Set(prev[indice] || []);
       if (atual.has(letra)) atual.delete(letra);
@@ -123,7 +146,7 @@ export default function SessaoDeQuestoesPage() {
     });
   }, []);
 
-  function handleSelecionar(letra) {
+  function handleSelecionar(letra: string) {
     if (resultadoAtual || riscadasAtuais.has(letra)) return;
     setSelecionadas((prev) => ({ ...prev, [indiceAtual]: letra }));
   }
@@ -356,5 +379,13 @@ export default function SessaoDeQuestoesPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SessaoDeQuestoesPage() {
+  return (
+    <Suspense fallback={null}>
+      <SessaoDeQuestoesPageContent />
+    </Suspense>
   );
 }

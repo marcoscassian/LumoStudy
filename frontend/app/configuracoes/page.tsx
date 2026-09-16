@@ -229,7 +229,7 @@ export default function ConfiguracoesPage() {
                     </div>
                   </div>
 
-                  <div className="page-card appearance-card accent-settings-card">
+                  {/* <div className="page-card appearance-card accent-settings-card">
                     <div className="page-card-header">
                       <div>
                         <h3><Palette size={18} style={{verticalAlign:"-3px", marginRight:7}}/> Cor do LumoStudy</h3>
@@ -275,7 +275,7 @@ export default function ConfiguracoesPage() {
                       <span><i className="house-dot slytherin"/> Alex · Sonserina</span>
                       <span><i className="house-dot gryff"/> Marcos · Grifinória</span>
                     </div>
-                  </div>
+                  </div> */}
 
                   <button type="submit" className="primary-action" style={{width:"100%"}} disabled={salvando}>
                     <Save size={18}/>{salvando ? "Salvando..." : "Salvar configurações"}
