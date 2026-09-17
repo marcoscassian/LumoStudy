@@ -51,7 +51,11 @@ class RedefinirSenhaPayload(BaseModel):
 
 
 def validar_senha(senha: str, senha_hash: str) -> bool:
-    return senha_context.verify(password=senha, hash=senha_hash)
+    try:
+        return senha_context.verify(password=senha, hash=senha_hash)
+    except Exception:
+        # Evita erro 500 caso exista algum registro antigo/corrompido no banco.
+        return False
 
 
 def get_usuario_repository(session: SessionDep) -> UsuarioRepository:

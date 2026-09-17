@@ -22,7 +22,7 @@ if DATABASE_URL_ENV:
     MYSQL_HOST = DATABASE_URL_OBJECT.host or "localhost"
     MYSQL_PORT = int(DATABASE_URL_OBJECT.port or 3306)
     MYSQL_USER = DATABASE_URL_OBJECT.username or "root"
-    MYSQL_PASSWORD = DATABASE_URL_OBJECT.password or ""
+    MYSQL_PASSWORD = DATABASE_URL_OBJECT.password or "icaro"
     MYSQL_DATABASE = DATABASE_URL_OBJECT.database or os.getenv("MYSQL_DATABASE", "lumostudy")
     if not DATABASE_URL_OBJECT.database:
         DATABASE_URL_OBJECT = DATABASE_URL_OBJECT.set(database=MYSQL_DATABASE)
@@ -33,7 +33,7 @@ else:
     MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
     MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
     MYSQL_USER = os.getenv("MYSQL_USER", "root")
-    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "admin")
+    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "icaro")
     MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "lumostudy")
 
     def _url(database: str | None) -> URL:

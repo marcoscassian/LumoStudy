@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Eye, Lock, Save } from "lucide-react";
 import "../auth.css";
-import { API_BASE } from "../lib/api";
+import { API_BASE, formatApiError } from "../lib/api";
 
 export default function RedefinirSenhaPage() {
   const [token, setToken] = useState("");
@@ -52,7 +52,7 @@ export default function RedefinirSenhaPage() {
 
       if (!response.ok) {
         setTipo("erro");
-        setMensagem(data.detail || "Não foi possível alterar a senha.");
+        setMensagem(formatApiError(data.detail, "Não foi possível alterar a senha."));
         return;
       }
 

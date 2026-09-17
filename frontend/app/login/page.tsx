@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, LogIn } from "lucide-react";
 import "../auth.css";
 import { aplicarTema } from "../components/theme-provider";
-import { API_BASE } from "../lib/api";
+import { API_BASE, formatApiError } from "../lib/api";
 
 function LoginPageContent() {
   const router = useRouter();
@@ -20,12 +20,12 @@ function LoginPageContent() {
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
 
-  async function handleLogin(e: any) {
+  async function handleLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const formData = new FormData();
 
-    formData.append("username", email);
+    formData.append("username", email.trim().toLowerCase());
     formData.append("password", password);
 
     try {
@@ -35,10 +35,17 @@ function LoginPageContent() {
       });
 
       // If server returned non-JSON (e.g. HTML error), guard against parse errors
-      let data: any = {};
+      let data: {
+        access_token?: string;
+        detail?: unknown;
+        modo_escuro?: boolean;
+        casa?: string;
+        tema_roxo_padrao?: boolean;
+        avatar_url?: string;
+      } = {};
       try {
         data = await response.json();
-      } catch (err) {
+      } catch {
         data = {};
       }
 
@@ -54,7 +61,9 @@ function LoginPageContent() {
         router.push(nextUrl || "/trilha");
       } else {
         setTipoMensagem("erro");
-        setMensagem(data.detail || "E-mail ou senha inválidos.");
+        setMensagem(
+          formatApiError(data.detail, "E-mail ou senha inválidos.")
+        );
       }
     } catch (err) {
       // Network or CORS error

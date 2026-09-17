@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, UserRound, UserPlus } from "lucide-react";
 import "../auth.css";
-import { API_BASE } from "../lib/api";
+import { API_BASE, formatApiError } from "../lib/api";
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -18,33 +18,49 @@ export default function CadastroPage() {
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
 
-  async function handleRegister(e: any) {
+  async function handleRegister(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setMensagem("");
 
-    const response = await fetch(`${API_BASE}/usuarios/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        nome: username,
-        email: email,
-        senha_hash: password,
-      }),
-    });
+    try {
+      const response = await fetch(`${API_BASE}/usuarios/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nome: username.trim(),
+          email: email.trim().toLowerCase(),
+          senha_hash: password,
+        }),
+      });
 
-    const data = await response.json();
+      let data: { detail?: unknown } = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
 
-    if (response.ok) {
-      setTipoMensagem("sucesso");
-      setMensagem("Conta criada com sucesso!");
+      if (response.ok) {
+        setTipoMensagem("sucesso");
+        setMensagem("Conta criada com sucesso!");
 
-      setTimeout(() => {
-        router.push("/login");
-      }, 1000);
-    } else {
+        setTimeout(() => {
+          router.push("/login");
+        }, 1000);
+      } else {
+        setTipoMensagem("erro");
+        setMensagem(
+          formatApiError(data.detail, "Não foi possível criar a conta.")
+        );
+      }
+    } catch (err) {
       setTipoMensagem("erro");
-      setMensagem(data.detail || "Não foi possível criar a conta.");
+      setMensagem(
+        `Não foi possível conectar ao servidor em ${API_BASE}. Verifique se o backend está rodando.`
+      );
+      console.error("Cadastro fetch error:", err);
     }
   }
 
@@ -77,6 +93,7 @@ export default function CadastroPage() {
               placeholder="Seu nome"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              minLength={2}
               required
             />
           </div>
@@ -103,6 +120,7 @@ export default function CadastroPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
               required
             />
 

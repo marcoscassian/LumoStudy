@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mail, Send } from "lucide-react";
 import "../auth.css";
-import { API_BASE } from "../lib/api";
+import { API_BASE, formatApiError } from "../lib/api";
 
 export default function EsqueciSenhaPage() {
   const [email, setEmail] = useState("");
@@ -27,7 +27,7 @@ export default function EsqueciSenhaPage() {
 
       if (!response.ok) {
         setTipo("erro");
-        setMensagem(data.detail || "Não foi possível enviar o e-mail.");
+        setMensagem(formatApiError(data.detail, "Não foi possível enviar o e-mail."));
         return;
       }
 
