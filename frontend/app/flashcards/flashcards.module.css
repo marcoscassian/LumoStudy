@@ -1,76 +1,271 @@
+.dashboardBody {
+  grid-template-columns: 250px minmax(0, 1fr);
+}
+
 .content {
-  margin-left: 280px;
-  padding: 110px 34px 50px;
-  min-height: 100vh;
-  background: linear-gradient(180deg, rgba(106, 82, 187, 0.06), transparent 20%), var(--lumo-bg);
+  min-width: 0;
+  padding: 30px 38px 52px;
+  background:
+    radial-gradient(circle at 88% 4%, rgba(var(--lumo-accent-rgb), 0.09), transparent 24%),
+    linear-gradient(180deg, rgba(var(--lumo-accent-rgb), 0.025), transparent 28%),
+    var(--lumo-bg);
 }
 
-.head {
-  max-width: 1100px;
-  margin: 0 auto 24px;
+.shell {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
-.head h1 {
-  color: var(--lumo-text);
-  font-size: clamp(2.2rem, 4vw, 3rem);
-  margin: 0;
-}
-
-.head p {
-  color: var(--lumo-text-soft);
-  margin-top: 8px;
-  font-size: 1rem;
-}
-
-.filters {
-  max-width: 1100px;
-  margin: 0 auto 18px;
+.hero {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 28px;
+  min-height: 190px;
+  padding: 30px 32px;
+  border: 1px solid var(--lumo-border);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 90% 15%, rgba(var(--lumo-accent-rgb), 0.18), transparent 31%),
+    linear-gradient(135deg, var(--lumo-surface) 0%, var(--lumo-surface) 52%, var(--lumo-surface-purple) 100%);
+  box-shadow: var(--lumo-shadow);
 }
 
-.filters select,
-.filters button,
-.createForm button,
+.hero::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -72px;
+  bottom: -115px;
+  border-radius: 50%;
+  border: 34px solid rgba(var(--lumo-accent-rgb), 0.07);
+  pointer-events: none;
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 1;
+  max-width: 650px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(var(--lumo-accent-rgb), 0.16);
+  border-radius: 999px;
+  background: var(--lumo-surface-purple);
+  color: var(--lumo-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 13px 0 8px;
+  color: var(--lumo-text);
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.hero p {
+  max-width: 610px;
+  color: var(--lumo-text-soft);
+  font-size: 0.96rem;
+  line-height: 1.62;
+}
+
+.heroStats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(128px, 1fr));
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.statCard {
+  min-width: 132px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px 16px;
+  border: 1px solid var(--lumo-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 9px 25px rgba(38, 28, 66, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+:global(html[data-theme="dark"]) .statCard {
+  background: rgba(26, 24, 33, 0.82);
+}
+
+.statIcon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--lumo-surface-purple);
+  color: var(--lumo-accent);
+}
+
+.statCard div {
+  min-width: 0;
+}
+
+.statCard strong,
+.statCard span:last-child {
+  display: block;
+}
+
+.statCard strong {
+  color: var(--lumo-text);
+  font-size: 1.12rem;
+  line-height: 1.1;
+}
+
+.statCard span:last-child {
+  margin-top: 3px;
+  color: var(--lumo-text-soft);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 22px 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--lumo-border);
+  border-radius: 18px;
+  background: var(--lumo-surface);
+  box-shadow: 0 8px 26px rgba(42, 32, 67, 0.045);
+}
+
+.filterControl {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.filterControl label {
+  color: var(--lumo-text-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.filterControl select,
 .createForm select,
 .createForm textarea,
 .createForm input {
   font: inherit;
-}
-
-.filters select {
-  min-width: 220px;
-  border: 1px solid rgba(var(--lumo-accent-rgb), 0.2);
-  border-radius: 12px;
-  padding: 12px 14px;
-  background: var(--lumo-surface);
   color: var(--lumo-text);
-  box-shadow: 0 10px 24px rgba(92, 75, 160, 0.06);
+  border: 1px solid var(--lumo-border);
+  outline: none;
+  background: var(--lumo-bg);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.filters button,
-.createForm button {
-  border: 0;
+.filterControl select {
+  min-width: 260px;
+  height: 44px;
+  padding: 0 42px 0 13px;
   border-radius: 12px;
-  padding: 12px 18px;
+  cursor: pointer;
+}
+
+.filterControl select:focus,
+.createForm select:focus,
+.createForm textarea:focus,
+.createForm input:focus {
+  border-color: rgba(var(--lumo-accent-rgb), 0.55);
+  box-shadow: 0 0 0 3px rgba(var(--lumo-accent-rgb), 0.1);
+}
+
+.createToggle,
+.createForm button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 13px;
+  padding: 0 18px;
   background: linear-gradient(135deg, var(--lumo-accent-strong), var(--lumo-accent));
   color: white;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 12px 28px rgba(121, 92, 222, 0.23);
+  box-shadow: 0 10px 24px rgba(var(--lumo-accent-rgb), 0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.createToggle:hover,
+.createForm button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 13px 28px rgba(var(--lumo-accent-rgb), 0.26);
+}
+
+.createForm button:disabled {
+  opacity: 0.62;
+  cursor: wait;
+  transform: none;
 }
 
 .createForm {
-  max-width: 1100px;
-  margin: 0 auto 22px;
-  background: var(--lumo-surface);
+  margin: 0 0 22px;
+  padding: 24px;
   border: 1px solid var(--lumo-border);
   border-radius: 22px;
-  padding: 22px;
-  box-shadow: 0 18px 40px rgba(25, 30, 60, 0.06);
+  background: var(--lumo-surface);
+  box-shadow: var(--lumo-shadow);
+}
+
+.formHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--lumo-border);
+}
+
+.formHeading span {
+  color: var(--lumo-accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.formHeading h2 {
+  margin-top: 4px;
+  color: var(--lumo-text);
+  font-size: 1.2rem;
+}
+
+.formHeading p {
+  max-width: 390px;
+  align-self: flex-end;
+  color: var(--lumo-text-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: right;
 }
 
 .fieldGroup {
@@ -85,37 +280,35 @@
   flex-direction: column;
   gap: 8px;
   color: var(--lumo-text);
-  font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .createForm textarea,
 .createForm input,
 .createForm select {
-  border: 1px solid rgba(var(--lumo-accent-rgb), 0.2);
+  width: 100%;
+  min-height: 46px;
   border-radius: 12px;
-  background: var(--lumo-bg);
-  color: var(--lumo-text);
-  padding: 12px 14px;
-  min-height: 48px;
+  padding: 11px 13px;
 }
 
 .createForm textarea {
+  min-height: 104px;
   resize: vertical;
-  min-height: 96px;
+  line-height: 1.45;
 }
 
 .actionsRow {
   display: flex;
   justify-content: flex-end;
+  margin-top: 4px;
 }
 
 .grid {
-  max-width: 1100px;
-  margin: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
   align-items: start;
 }
 
@@ -125,23 +318,23 @@
 
 .card {
   width: 100%;
-  min-height: 250px;
+  min-height: 286px;
+  display: block;
   border: 0;
   padding: 0;
   background: transparent;
-  perspective: 1000px;
+  perspective: 1200px;
   cursor: pointer;
   text-align: left;
-  display: block;
 }
 
 .inner {
   position: relative;
-  display: block;
   width: 100%;
-  height: 250px;
-  transition: transform 0.5s ease;
+  height: 286px;
+  display: block;
   transform-style: preserve-3d;
+  transition: transform 0.52s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .flipped {
@@ -151,123 +344,364 @@
 .face {
   position: absolute;
   inset: 0;
-  backface-visibility: hidden;
-  border-radius: 22px;
-  padding: 22px;
-  box-shadow: 0 18px 36px rgba(19, 20, 35, 0.08);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  padding: 24px;
+  overflow: hidden;
+  border-radius: 23px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 14px 35px rgba(27, 21, 45, 0.085);
 }
 
 .front {
-  background: linear-gradient(160deg, var(--lumo-surface), rgba(122, 95, 208, 0.03));
   border: 1px solid var(--lumo-border);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(var(--lumo-accent-rgb), 0.1), transparent 35%),
+    linear-gradient(155deg, var(--lumo-surface) 0%, var(--lumo-surface) 68%, var(--lumo-surface-purple) 100%);
+}
+
+.front::after {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  right: -58px;
+  bottom: -58px;
+  border-radius: 50%;
+  border: 22px solid rgba(var(--lumo-accent-rgb), 0.07);
 }
 
 .back {
   transform: rotateY(180deg);
-  background: linear-gradient(145deg, var(--lumo-accent-strong), var(--lumo-accent));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.14), transparent 34%),
+    linear-gradient(145deg, var(--lumo-gradient-start), var(--lumo-gradient-mid) 58%, var(--lumo-gradient-end));
   color: white;
 }
 
-.face h2 {
-  font-size: 1.15rem;
-  line-height: 1.5;
-  margin: 0;
-  color: inherit;
+.cardTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meta,
+.cardNumber,
+.topic {
+  position: relative;
+  z-index: 1;
 }
 
 .meta {
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 27px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--lumo-surface-purple);
   color: var(--lumo-accent);
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
 }
 
 .back .meta {
-  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.cardNumber {
+  color: var(--lumo-text-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.back .cardNumber {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.topic {
+  margin-top: 23px;
+  color: var(--lumo-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.face h2 {
+  position: relative;
+  z-index: 1;
+  margin: 13px 0 auto;
+  color: inherit;
+  font-size: clamp(1.12rem, 2vw, 1.32rem);
+  font-weight: 750;
+  line-height: 1.48;
+  overflow-wrap: anywhere;
+}
+
+.back h2 {
+  margin-top: 30px;
 }
 
 .hint {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  margin-top: 20px;
+  color: var(--lumo-text-soft);
   font-size: 0.72rem;
-  color: #8b93a8;
+  font-weight: 700;
 }
 
 .back .hint {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.76);
 }
 
 .reviewBox {
-  margin-top: 12px;
-  background: var(--lumo-surface);
+  margin-top: 11px;
+  padding: 15px 16px 14px;
   border: 1px solid var(--lumo-border);
-  border-radius: 16px;
-  padding: 12px 14px;
-  box-shadow: 0 10px 24px rgba(24, 26, 37, 0.05);
+  border-radius: 17px;
+  background: var(--lumo-surface);
+  box-shadow: 0 8px 24px rgba(26, 20, 42, 0.055);
 }
 
-.reviewBox > span {
+.reviewHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+
+.reviewHeading span {
   display: block;
-  color: var(--lumo-purple);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
+  color: var(--lumo-text);
+  font-size: 0.79rem;
+  font-weight: 850;
+}
+
+.reviewHeading small {
+  display: block;
+  margin-top: 3px;
+  color: var(--lumo-text-soft);
+  font-size: 0.67rem;
 }
 
 .reviewActions {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
 .reviewActions button {
+  min-width: 0;
+  min-height: 38px;
   border: 1px solid var(--lumo-border);
-  background: rgba(106, 82, 187, 0.04);
-  color: var(--lumo-purple);
   border-radius: 10px;
-  padding: 8px 6px;
+  background: var(--lumo-bg);
+  color: var(--lumo-text-soft);
   font-size: 0.7rem;
-  font-weight: 800;
+  font-weight: 850;
   cursor: pointer;
+  transition: 0.17s ease;
 }
 
-.reviewActions button:hover { background: rgba(106, 82, 187, 0.09); }
-.reviewActions button:disabled { opacity: 0.7; cursor: wait; }
+.reviewActions button:hover {
+  border-color: rgba(var(--lumo-accent-rgb), 0.28);
+  background: var(--lumo-surface-purple);
+  color: var(--lumo-accent);
+}
+
+.reviewActions button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .reviewActions .reviewSelected {
-  background: linear-gradient(135deg, var(--lumo-accent-strong), var(--lumo-accent));
   border-color: transparent;
+  background: linear-gradient(135deg, var(--lumo-accent-strong), var(--lumo-accent));
   color: white;
+  box-shadow: 0 7px 16px rgba(var(--lumo-accent-rgb), 0.18);
 }
 
-.reviewBox small {
-  display: block;
-  margin-top: 8px;
-  color: #16a34a;
-  font-size: 0.72rem;
+.savedMessage {
+  margin-top: 9px;
+  color: #16854a;
+  font-size: 0.69rem;
+  font-weight: 750;
 }
 
 .empty {
-  max-width: 1100px;
-  margin: auto;
+  min-height: 245px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px;
+  border: 1px dashed rgba(var(--lumo-accent-rgb), 0.28);
+  border-radius: 22px;
   background: var(--lumo-surface);
-  border-radius: 18px;
-  padding: 48px 30px;
   text-align: center;
+}
+
+.emptyIcon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 13px;
+  border-radius: 16px;
+  background: var(--lumo-surface-purple);
+  color: var(--lumo-accent);
+}
+
+.empty h2 {
+  color: var(--lumo-text);
+  font-size: 1rem;
+}
+
+.empty p {
+  margin-top: 5px;
   color: var(--lumo-text-soft);
-  border: 1px solid var(--lumo-border);
+  font-size: 0.82rem;
 }
 
-@media (max-width: 900px) {
-  .content { margin-left: 0; padding: 95px 18px 40px; }
-  .fieldGroup { grid-template-columns: 1fr; }
+@media (max-width: 1100px) {
+  .dashboardBody {
+    grid-template-columns: 215px minmax(0, 1fr);
+  }
+
+  .content {
+    padding: 26px 26px 44px;
+  }
+
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .heroStats {
+    width: 100%;
+  }
+
+  .statCard {
+    justify-content: center;
+  }
 }
 
-@media (max-width: 420px) {
-  .reviewActions { grid-template-columns: repeat(2, 1fr); }
-  .filters { flex-direction: column; align-items: stretch; }
-  .filters select, .filters button, .createForm button { width: 100%; }
+@media (max-width: 860px) {
+  .dashboardBody {
+    grid-template-columns: 1fr;
+  }
+
+  .content {
+    padding: 22px 18px 36px;
+  }
+
+  .hero {
+    min-height: auto;
+    padding: 24px;
+    border-radius: 22px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .formHeading {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .formHeading p {
+    align-self: auto;
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: 18px 14px 30px;
+  }
+
+  .hero {
+    padding: 21px 18px;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .heroStats {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .statCard {
+    min-width: 0;
+    justify-content: flex-start;
+    padding: 12px;
+  }
+
+  .statIcon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filterControl select,
+  .createToggle {
+    width: 100%;
+  }
+
+  .filterControl select {
+    min-width: 0;
+  }
+
+  .fieldGroup {
+    grid-template-columns: 1fr;
+  }
+
+  .createForm {
+    padding: 18px;
+  }
+
+  .card,
+  .inner {
+    min-height: 276px;
+    height: 276px;
+  }
+
+  .face {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 430px) {
+  .heroStats {
+    grid-template-columns: 1fr;
+  }
+
+  .reviewActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card,
+  .inner {
+    min-height: 295px;
+    height: 295px;
+  }
 }

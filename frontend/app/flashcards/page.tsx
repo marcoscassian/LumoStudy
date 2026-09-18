@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { BookOpen, Layers3, Plus, RotateCcw, Sparkles, X } from "lucide-react";
 import Sidebar from "../components/sidebar";
 import Header from "../components/header";
 import "../trilha/trilha.css";
 import styles from "./flashcards.module.css";
 import { API_BASE as API } from "../lib/api";
+
 type Flashcard = { id: number; frente: string; verso: string; disciplina: string; conteudo_principal: string };
 
 type FlashcardForm = {
@@ -23,6 +25,8 @@ const REVISOES = [
   { value: "bom", label: "Bom" },
   { value: "facil", label: "Fácil" },
 ];
+
+const currentTimestamp = () => Date.now();
 
 const emptyForm: FlashcardForm = {
   frente: "",
@@ -111,7 +115,7 @@ export default function FlashcardsPage() {
         next.delete(id);
       } else {
         next.add(id);
-        startedAt.current[id] = Date.now();
+        startedAt.current[id] = currentTimestamp();
       }
       return next;
     });
@@ -124,8 +128,8 @@ export default function FlashcardsPage() {
 
     setSaving(id);
     try {
-      const inicio = startedAt.current[id] || Date.now();
-      const tempo = Math.max(1, Math.round((Date.now() - inicio) / 1000));
+      const inicio = startedAt.current[id] || currentTimestamp();
+      const tempo = Math.max(1, Math.round((currentTimestamp() - inicio) / 1000));
       const response = await fetch(`${API}/flashcards/${id}/revisoes`, {
         method: "POST",
         headers: {
@@ -139,7 +143,7 @@ export default function FlashcardsPage() {
         throw new Error(data.detail || "Não foi possível registrar a revisão.");
       }
       setReviewed((current) => ({ ...current, [id]: resultado }));
-      startedAt.current[id] = Date.now();
+      startedAt.current[id] = currentTimestamp();
       window.dispatchEvent(new Event("lumostudy:stats-changed"));
     } catch (error) {
       console.error(error);
@@ -150,106 +154,161 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <div className="page">
+    <main className="dashboard">
       <Header />
-      <Sidebar />
-      <main className={styles.content}>
-        <header className={styles.head}>
-          <h1>Flashcards</h1>
-          <p>Vire o cartão e informe como foi sua revisão. O resultado fica salvo no seu progresso.</p>
-        </header>
-        <div className={styles.filters}>
-          <select value={disciplina} onChange={(e) => setDisciplina(e.target.value)}>
-            <option value="">Todas as disciplinas</option>
-            {disciplinas.map((value) => <option key={value}>{value}</option>)}
-          </select>
-          <button type="button" onClick={() => setShowCreateForm((value) => !value)}>
-            {showCreateForm ? "Cancelar" : "Criar flashcard"}
-          </button>
-        </div>
+      <div className={`dashboard-body ${styles.dashboardBody}`}>
+        <Sidebar />
 
-        {showCreateForm && (
-          <form onSubmit={criarFlashcard} className={styles.createForm}>
-            <div className={styles.fieldGroup}>
-              <label>
-                Frente
-                <textarea value={form.frente} onChange={(e) => setForm((current) => ({ ...current, frente: e.target.value }))} placeholder="Ex.: Qual é a fórmula do perímetro?" required />
-              </label>
-              <label>
-                Resposta
-                <textarea value={form.verso} onChange={(e) => setForm((current) => ({ ...current, verso: e.target.value }))} placeholder="Ex.: P = 2 × (a + b)" required />
-              </label>
-            </div>
-            <div className={styles.fieldGroup}>
-              <label>
-                Matéria
-                <select value={form.disciplina} onChange={(e) => setForm((current) => ({ ...current, disciplina: e.target.value }))}>
-                  {MATERIAS.map((value) => <option key={value} value={value}>{value}</option>)}
-                  <option value="Outro">Outro</option>
-                </select>
-              </label>
-              <label>
-                Tema
-                <input
-                  value={form.conteudo_principal}
-                  onChange={(e) => setForm((current) => ({ ...current, conteudo_principal: e.target.value }))}
-                  placeholder="Ex.: Geometria, Literatura, Ecologia..."
-                />
-              </label>
-            </div>
-            <div className={styles.actionsRow}>
-              <button type="submit" disabled={creating}>
-                {creating ? "Salvando..." : "Salvar flashcard"}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {filtered.length ? (
-          <div className={styles.grid}>
-            {filtered.map((item) => (
-              <div className={styles.cardWrap} key={item.id}>
-                <button type="button" className={styles.card} onClick={() => toggle(item.id)} aria-label="Virar flashcard">
-                  <span className={`${styles.inner} ${flipped.has(item.id) ? styles.flipped : ""}`}>
-                    <span className={`${styles.face} ${styles.front}`}>
-                      <span className={styles.meta}>{item.disciplina} · {item.conteudo_principal}</span>
-                      <h2>{item.frente}</h2>
-                      <span className={styles.hint}>Clique para ver a resposta</span>
-                    </span>
-                    <span className={`${styles.face} ${styles.back}`}>
-                      <span className={styles.meta}>Resposta</span>
-                      <h2>{item.verso}</h2>
-                      <span className={styles.hint}>Agora avalie sua revisão abaixo</span>
-                    </span>
-                  </span>
-                </button>
-
-                {flipped.has(item.id) && (
-                  <div className={styles.reviewBox}>
-                    <span>Como foi?</span>
-                    <div className={styles.reviewActions}>
-                      {REVISOES.map((review) => (
-                        <button
-                          type="button"
-                          key={review.value}
-                          disabled={saving === item.id}
-                          className={reviewed[item.id] === review.value ? styles.reviewSelected : ""}
-                          onClick={() => registrarRevisao(item.id, review.value)}
-                        >
-                          {review.label}
-                        </button>
-                      ))}
-                    </div>
-                    {reviewed[item.id] && <small>Revisão registrada no seu perfil.</small>}
-                  </div>
-                )}
+        <section className={styles.content}>
+          <div className={styles.shell}>
+            <section className={styles.hero}>
+              <div className={styles.heroCopy}>
+                <span className={styles.eyebrow}><Sparkles size={14} /> Revisão inteligente</span>
+                <h1>Flashcards</h1>
+                <p>Revise os conteúdos, vire o cartão para conferir a resposta e registre como foi seu desempenho.</p>
               </div>
-            ))}
+
+              <div className={styles.heroStats} aria-label="Resumo dos flashcards">
+                <div className={styles.statCard}>
+                  <span className={styles.statIcon}><Layers3 size={19} /></span>
+                  <div>
+                    <strong>{cards.length}</strong>
+                    <span>{cards.length === 1 ? "flashcard" : "flashcards"}</span>
+                  </div>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statIcon}><BookOpen size={19} /></span>
+                  <div>
+                    <strong>{filtered.length}</strong>
+                    <span>na seleção</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.toolbar}>
+              <div className={styles.filterControl}>
+                <label htmlFor="flashcard-disciplina">Filtrar por disciplina</label>
+                <select id="flashcard-disciplina" value={disciplina} onChange={(e) => setDisciplina(e.target.value)}>
+                  <option value="">Todas as disciplinas</option>
+                  {disciplinas.map((value) => <option key={value}>{value}</option>)}
+                </select>
+              </div>
+
+              <button type="button" className={styles.createToggle} onClick={() => setShowCreateForm((value) => !value)}>
+                {showCreateForm ? <X size={18} /> : <Plus size={18} />}
+                {showCreateForm ? "Cancelar" : "Criar flashcard"}
+              </button>
+            </section>
+
+            {showCreateForm && (
+              <form onSubmit={criarFlashcard} className={styles.createForm}>
+                <div className={styles.formHeading}>
+                  <div>
+                    <span>Novo cartão</span>
+                    <h2>Crie seu próprio flashcard</h2>
+                  </div>
+                  <p>Preencha a pergunta, a resposta e organize por matéria e tema.</p>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label>
+                    Frente
+                    <textarea value={form.frente} onChange={(e) => setForm((current) => ({ ...current, frente: e.target.value }))} placeholder="Ex.: Qual é a fórmula do perímetro?" required />
+                  </label>
+                  <label>
+                    Resposta
+                    <textarea value={form.verso} onChange={(e) => setForm((current) => ({ ...current, verso: e.target.value }))} placeholder="Ex.: P = 2 × (a + b)" required />
+                  </label>
+                </div>
+                <div className={styles.fieldGroup}>
+                  <label>
+                    Matéria
+                    <select value={form.disciplina} onChange={(e) => setForm((current) => ({ ...current, disciplina: e.target.value }))}>
+                      {MATERIAS.map((value) => <option key={value} value={value}>{value}</option>)}
+                      <option value="Outro">Outro</option>
+                    </select>
+                  </label>
+                  <label>
+                    Tema
+                    <input
+                      value={form.conteudo_principal}
+                      onChange={(e) => setForm((current) => ({ ...current, conteudo_principal: e.target.value }))}
+                      placeholder="Ex.: Geometria, Literatura, Ecologia..."
+                    />
+                  </label>
+                </div>
+                <div className={styles.actionsRow}>
+                  <button type="submit" disabled={creating}>
+                    {creating ? "Salvando..." : "Salvar flashcard"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {filtered.length ? (
+              <div className={styles.grid}>
+                {filtered.map((item, index) => (
+                  <article className={styles.cardWrap} key={item.id}>
+                    <button type="button" className={styles.card} onClick={() => toggle(item.id)} aria-label="Virar flashcard">
+                      <span className={`${styles.inner} ${flipped.has(item.id) ? styles.flipped : ""}`}>
+                        <span className={`${styles.face} ${styles.front}`}>
+                          <span className={styles.cardTopline}>
+                            <span className={styles.meta}>{item.disciplina}</span>
+                            <span className={styles.cardNumber}>#{String(index + 1).padStart(2, "0")}</span>
+                          </span>
+                          <span className={styles.topic}>{item.conteudo_principal}</span>
+                          <h2>{item.frente}</h2>
+                          <span className={styles.hint}><RotateCcw size={14} /> Clique para ver a resposta</span>
+                        </span>
+                        <span className={`${styles.face} ${styles.back}`}>
+                          <span className={styles.cardTopline}>
+                            <span className={styles.meta}>Resposta</span>
+                            <span className={styles.cardNumber}>#{String(index + 1).padStart(2, "0")}</span>
+                          </span>
+                          <h2>{item.verso}</h2>
+                          <span className={styles.hint}><RotateCcw size={14} /> Clique para voltar à pergunta</span>
+                        </span>
+                      </span>
+                    </button>
+
+                    {flipped.has(item.id) && (
+                      <div className={styles.reviewBox}>
+                        <div className={styles.reviewHeading}>
+                          <div>
+                            <span>Como foi sua revisão?</span>
+                            <small>Escolha uma opção para salvar no seu progresso.</small>
+                          </div>
+                        </div>
+                        <div className={styles.reviewActions}>
+                          {REVISOES.map((review) => (
+                            <button
+                              type="button"
+                              key={review.value}
+                              disabled={saving === item.id}
+                              className={reviewed[item.id] === review.value ? styles.reviewSelected : ""}
+                              onClick={() => registrarRevisao(item.id, review.value)}
+                            >
+                              {review.label}
+                            </button>
+                          ))}
+                        </div>
+                        {reviewed[item.id] && <p className={styles.savedMessage}>Revisão registrada no seu perfil.</p>}
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.empty}>
+                <span className={styles.emptyIcon}><BookOpen size={24} /></span>
+                <h2>Nenhum flashcard encontrado</h2>
+                <p>Ainda não há flashcards ativos para esta seleção.</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className={styles.empty}>Ainda não há flashcards ativos para esta seleção.</div>
-        )}
-      </main>
-    </div>
+        </section>
+      </div>
+    </main>
   );
 }
