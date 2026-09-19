@@ -24,7 +24,9 @@ def carregar_env() -> None:
             valor = valor[1:-1]
 
         if chave:
-            os.environ[chave] = valor
+            # Variáveis definidas pelo sistema/serviço de hospedagem têm
+            # prioridade sobre o arquivo local .env.
+            os.environ.setdefault(chave, valor)
 
 
 def env_bool(nome: str, padrao: bool = False) -> bool:

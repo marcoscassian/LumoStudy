@@ -8,6 +8,8 @@ from config_env import env_bool
 
 MYSQL_CHARSET = os.getenv("MYSQL_CHARSET", "utf8mb4")
 DATABASE_URL_ENV = os.getenv("DATABASE_URL", "").strip()
+MYSQL_SSL_CA = os.getenv("MYSQL_SSL_CA", "").strip()
+MYSQL_SSL_VERIFY = env_bool("MYSQL_SSL_VERIFY", True)
 
 
 def _normalizar_url(valor: str):
@@ -22,7 +24,7 @@ if DATABASE_URL_ENV:
     MYSQL_HOST = DATABASE_URL_OBJECT.host or "localhost"
     MYSQL_PORT = int(DATABASE_URL_OBJECT.port or 3306)
     MYSQL_USER = DATABASE_URL_OBJECT.username or "root"
-    MYSQL_PASSWORD = DATABASE_URL_OBJECT.password or "icaro"
+    MYSQL_PASSWORD = DATABASE_URL_OBJECT.password or ""
     MYSQL_DATABASE = DATABASE_URL_OBJECT.database or os.getenv("MYSQL_DATABASE", "lumostudy")
     if not DATABASE_URL_OBJECT.database:
         DATABASE_URL_OBJECT = DATABASE_URL_OBJECT.set(database=MYSQL_DATABASE)
@@ -33,7 +35,7 @@ else:
     MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
     MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
     MYSQL_USER = os.getenv("MYSQL_USER", "root")
-    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "icaro")
+    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
     MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "lumostudy")
 
     def _url(database: str | None) -> URL:
@@ -54,5 +56,13 @@ else:
 
 if DATABASE_URL_OBJECT.drivername.startswith("mysql") and "charset" not in DATABASE_URL_OBJECT.query:
     DATABASE_URL_OBJECT = DATABASE_URL_OBJECT.update_query_dict({"charset": MYSQL_CHARSET})
+
+if DATABASE_URL_OBJECT.drivername.startswith("mysql") and MYSQL_SSL_CA:
+    ssl_query = {
+        "ssl_ca": os.path.expanduser(MYSQL_SSL_CA),
+        "ssl_verify_cert": "true" if MYSQL_SSL_VERIFY else "false",
+    }
+    DATABASE_URL_OBJECT = DATABASE_URL_OBJECT.update_query_dict(ssl_query)
+    SERVER_URL = SERVER_URL.update_query_dict(ssl_query)
 
 DATABASE_URL = DATABASE_URL_OBJECT.render_as_string(hide_password=False)

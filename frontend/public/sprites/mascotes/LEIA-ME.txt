@@ -1,0 +1,14 @@
+SPRITES DE MASCOTES
+
+Substitua os PNGs mantendo os mesmos nomes.
+Formato obrigatório: spritesheet horizontal com 6 quadros de 64x64 px.
+Tamanho total: 384x64 px, PNG com transparência.
+
+Arquivos:
+- coruja.png (padrão/grátis)
+- gato.png (loja)
+- sapo.png (loja)
+- rato.png (loja)
+- serpente.png (loja)
+
+Ordem sugerida dos 6 quadros: parado 1, parado 2, piscar, carta 1, carta 2, reação.

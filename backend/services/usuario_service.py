@@ -3,8 +3,10 @@ from __future__ import annotations
 from fastapi import HTTPException
 from pwdlib import PasswordHash
 
+from models.models import Notificacao
 from repositories.usuario_repository import UsuarioRepository
 from schemas.usuario_schema import PerfilPublico, UsuarioCreate, UsuarioUpdate
+from services.identidade_service import casa_do_curso, normalizar_curso
 from services.progresso_service import garantir_metas_padrao
 
 senha_context = PasswordHash.recommended()
@@ -28,18 +30,32 @@ class UsuarioService:
         if self.repo.get_by_email(email):
             raise HTTPException(status_code=400, detail="E-mail já cadastrado")
 
+        curso = normalizar_curso(data.curso)
+        casa = casa_do_curso(curso)
         usuario = self.repo.create(
             UsuarioCreate(
                 nome=data.nome,
                 email=email,
                 senha_hash=senha_context.hash(data.senha_hash),
-                casa=data.casa,
-                avatar_url=data.avatar_url,
-                modo_escuro=data.modo_escuro,
-                tema_roxo_padrao=data.tema_roxo_padrao,
+                curso=curso,
+                casa=casa,
+                avatar_url="/avatar.png",
+                mascote_slug="coruja",
+                mascote_url="/sprites/mascotes/coruja.png",
+                modo_escuro=False,
+                tema_roxo_padrao=False,
             )
         )
         garantir_metas_padrao(self.repo.session, usuario.id)
+        self.repo.session.add(
+            Notificacao(
+                usuario_id=usuario.id,
+                titulo="Sua carta chegou!",
+                mensagem="Bem-vindo ao LumoStudy. Sua coruja ficará aqui para entregar avisos, conquistas e lembretes de estudo.",
+                tipo="boas_vindas",
+                rota="/trilha",
+            )
+        )
         self.repo.session.commit()
         return usuario
 
@@ -71,6 +87,7 @@ class UsuarioService:
             if len(nova_senha) < 6:
                 raise HTTPException(status_code=400, detail="A nova senha deve ter pelo menos 6 caracteres")
             usuario.senha_hash = senha_context.hash(nova_senha)
+            usuario.auth_version += 1
 
         return self.repo.save(usuario)
 

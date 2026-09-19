@@ -27,7 +27,7 @@ from database.configdb import (  # noqa: E402
     SERVER_URL,
 )
 from database.db import engine  # noqa: E402
-from models.models import Area, ItemLoja, Prova, Questao, Simulado, SimuladoQuestao, Tema, Usuarios  # noqa: E402
+from models.models import Area, ItemLoja, Prova, Questao, Simulado, SimuladoQuestao, Tema, UsuarioItem, Usuarios  # noqa: E402
 from services.progresso_service import garantir_metas_padrao  # noqa: E402
 
 PROVAS_DIR = BACKEND_DIR / "database" / "provas"
@@ -315,43 +315,157 @@ def semear_catalogo() -> tuple[int, int, int]:
                 session.commit()
             simulados_count += 1
 
-        # Itens da loja. As imagens são propositalmente apenas referenciadas;
-        # basta adicionar depois os arquivos em frontend/public/loja/.
-        itens_loja = [
-            ("Ludimila", "ludimila", "/loja/perfil1.png", "corvinal"),
-            ("Ícaro", "icaro", "/loja/perfil2.png", "lufa-lufa"),
-            ("Alex", "alex", "/loja/perfil3.png", "sonserina"),
-            ("Marcos", "marcos", "/loja/perfil4.png", "grifinoria"),
+        # Identidade visual: cada curso corresponde a uma casa. Os avatares
+        # são cosméticos e nunca alteram a casa do usuário.
+        casas = {
+            "corvinal": "Corvinal",
+            "grifinoria": "Grifinória",
+            "sonserina": "Sonserina",
+            "lufa-lufa": "Lufa-Lufa",
+        }
+        curso_por_casa = {
+            "grifinoria": "informatica",
+            "sonserina": "eletro",
+            "corvinal": "vestuario",
+            "lufa-lufa": "textil",
+        }
+        desenvolvedores = [
+            ("Ludimila", "ludimila", "/loja/perfil1.png"),
+            ("Ícaro", "icaro", "/loja/perfil2.png"),
+            ("Alex", "alex", "/loja/perfil3.png"),
+            ("Marcos", "marcos", "/loja/perfil4.png"),
         ]
-        for nome_item, slug_item, arquivo, casa_item in itens_loja:
+
+        # Os quatro itens antigos ficam desativados, mas continuam no banco para
+        # não quebrar referências históricas de compras.
+        for slug_legado in ["ludimila", "icaro", "alex", "marcos"]:
+            legado = session.exec(select(ItemLoja).where(ItemLoja.slug == slug_legado)).first()
+            if legado:
+                legado.ativo = False
+                session.add(legado)
+        session.commit()
+
+        avatares_por_chave: dict[tuple[str, str], ItemLoja] = {}
+        for casa_slug, casa_nome in casas.items():
+            for nome_dev, slug_dev, _arquivo_legado in desenvolvedores:
+                slug_item = f"avatar-{slug_dev}-{casa_slug}"
+                arquivo = f"/loja/avatares/{casa_slug}/{slug_dev}.png"
+                nome_item = f"{nome_dev} · {casa_nome}"
+                item = session.exec(select(ItemLoja).where(ItemLoja.slug == slug_item)).first()
+                if not item:
+                    item = ItemLoja(
+                        nome=nome_item,
+                        slug=slug_item,
+                        descricao=f"Versão {casa_nome} de {nome_dev}",
+                        preco_coins=10,
+                        arquivo=arquivo,
+                        tipo="avatar",
+                        casa=casa_slug,
+                        ativo=True,
+                    )
+                else:
+                    item.nome = nome_item
+                    item.descricao = f"Versão {casa_nome} de {nome_dev}"
+                    item.preco_coins = 10
+                    item.arquivo = arquivo
+                    item.tipo = "avatar"
+                    item.casa = casa_slug
+                    item.ativo = True
+                session.add(item)
+                session.commit()
+                session.refresh(item)
+                avatares_por_chave[(slug_dev, casa_slug)] = item
+
+        # Mascotes compráveis. A coruja não é item da loja: ela é grátis e
+        # padrão para toda conta. As sprites podem ser substituídas depois sem
+        # alterar nenhuma rota ou componente.
+        mascotes = [
+            ("Gato", "mascote-gato", "/sprites/mascotes/gato.png", 50),
+            ("Sapo", "mascote-sapo", "/sprites/mascotes/sapo.png", 60),
+            ("Rato", "mascote-rato", "/sprites/mascotes/rato.png", 75),
+            ("Serpente", "mascote-serpente", "/sprites/mascotes/serpente.png", 100),
+        ]
+        for nome_item, slug_item, arquivo, preco in mascotes:
             item = session.exec(select(ItemLoja).where(ItemLoja.slug == slug_item)).first()
             if not item:
                 item = ItemLoja(
                     nome=nome_item,
                     slug=slug_item,
-                    descricao=f"Foto de perfil de {nome_item}",
-                    preco_coins=10,
+                    descricao=f"Mascote {nome_item.lower()} para entregar suas notificações",
+                    preco_coins=preco,
                     arquivo=arquivo,
-                    tipo="avatar",
-                    casa=casa_item,
+                    tipo="mascote",
+                    casa=None,
                     ativo=True,
                 )
             else:
                 item.nome = nome_item
-                item.preco_coins = 10
+                item.descricao = f"Mascote {nome_item.lower()} para entregar suas notificações"
+                item.preco_coins = preco
                 item.arquivo = arquivo
-                item.casa = casa_item
+                item.tipo = "mascote"
+                item.casa = None
                 item.ativo = True
             session.add(item)
         session.commit()
 
-        # Sincroniza a casa dos usuários que já usam um dos avatares da loja.
-        casa_por_arquivo = {arquivo: casa for _, _, arquivo, casa in itens_loja}
+        # Compatibilidade com contas existentes: casa antiga -> curso e avatar
+        # antigo -> equivalente da mesma pessoa dentro da casa atual.
+        legado_por_arquivo = {arquivo: slug for _, slug, arquivo in desenvolvedores}
+        legados_por_slug = {
+            item.slug: item
+            for item in session.exec(
+                select(ItemLoja).where(ItemLoja.slug.in_(["ludimila", "icaro", "alex", "marcos"]))
+            ).all()
+        }
         for usuario in session.exec(select(Usuarios)).all():
-            casa_avatar = casa_por_arquivo.get(usuario.avatar_url)
-            if casa_avatar and usuario.casa != casa_avatar:
-                usuario.casa = casa_avatar
-                session.add(usuario)
+            if usuario.casa not in casas:
+                usuario.casa = "grifinoria"
+            usuario.curso = curso_por_casa.get(usuario.casa, "informatica")
+            if not usuario.mascote_slug:
+                usuario.mascote_slug = "coruja"
+            if not usuario.mascote_url:
+                usuario.mascote_url = "/sprites/mascotes/coruja.png"
+
+            dev_slug = legado_por_arquivo.get(usuario.avatar_url)
+            if dev_slug:
+                novo = avatares_por_chave.get((dev_slug, usuario.casa))
+                if novo:
+                    usuario.avatar_url = novo.arquivo
+
+            # Se a pessoa já tinha comprado um dos 4 avatares antigos, transfere
+            # a posse para a versão equivalente da casa atual.
+            for dev_slug, legado in legados_por_slug.items():
+                posse_antiga = session.exec(
+                    select(UsuarioItem).where(
+                        UsuarioItem.usuario_id == usuario.id,
+                        UsuarioItem.item_id == legado.id,
+                    )
+                ).first()
+                if not posse_antiga:
+                    continue
+                novo_item = avatares_por_chave.get((dev_slug, usuario.casa))
+                if not novo_item:
+                    continue
+                posse_nova = session.exec(
+                    select(UsuarioItem).where(
+                        UsuarioItem.usuario_id == usuario.id,
+                        UsuarioItem.item_id == novo_item.id,
+                    )
+                ).first()
+                if not posse_nova:
+                    posse_nova = UsuarioItem(
+                        usuario_id=usuario.id,
+                        item_id=novo_item.id,
+                        equipado=bool(posse_antiga.equipado),
+                    )
+                    session.add(posse_nova)
+                elif posse_antiga.equipado:
+                    posse_nova.equipado = True
+                    session.add(posse_nova)
+                posse_antiga.equipado = False
+                session.add(posse_antiga)
+            session.add(usuario)
         session.commit()
 
         # Garante as metas padrão também para usuários que já existiam antes

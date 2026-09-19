@@ -1,0 +1,6 @@
+AVATARES POR CASA
+
+Existem 16 slots: 4 desenvolvedores x 4 casas.
+Substitua os arquivos mantendo nomes e pastas.
+Casas: corvinal, grifinoria, sonserina, lufa-lufa.
+Arquivos em cada pasta: ludimila.png, icaro.png, alex.png, marcos.png.

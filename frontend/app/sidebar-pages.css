@@ -505,3 +505,10 @@ html[data-theme="dark"] .shop-house-badge.house-corvinal { color: #9dccff; backg
 html[data-theme="dark"] .shop-house-badge.house-lufa-lufa { color: #ffe08a; background: #3b3013; }
 html[data-theme="dark"] .shop-house-badge.house-sonserina { color: #8ee2ad; background: #193725; }
 html[data-theme="dark"] .shop-house-badge.house-grifinoria { color: #ff9baa; background: #421d25; }
+
+.shop-section-gap { margin-top: 34px; }
+.shop-mascot-wrap { display: flex; align-items: center; justify-content: center; }
+.default-mascot-card { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; padding: 18px 22px; }
+.default-mascot-card > div { flex: 1; }
+.default-mascot-card p { margin-top: 4px; color: var(--lumo-text-soft); }
+.shop-status { display: inline-flex; align-items: center; gap: 4px; }

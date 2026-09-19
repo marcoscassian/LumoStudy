@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 from pwdlib import PasswordHash
 from sqlalchemy import func
 from sqlmodel import Session, select
@@ -23,14 +24,24 @@ from models.models import (
     Usuarios,
 )
 from repositories.usuario_repository import UsuarioRepository
-from routes.login_routes import UsuarioLogado
-from schemas.usuario_schema import UsuarioCreate, UsuarioUpdate
+from routes.login_routes import AdminLogado, UsuarioLogado, criar_token_usuario
+from schemas.usuario_schema import PerfilPublico, UsuarioCreate, UsuarioUpdate
 from services.progresso_service import garantir_metas_padrao, recalcular_streak
 from services.usuario_service import UsuarioService
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 senha_context = PasswordHash.recommended()
+
+
+class MetaAtualizacao(BaseModel):
+    periodo: Literal["diario", "semanal", "mensal"]
+    tipo: Literal["tempo_estudo", "flashcards", "questoes"]
+    valor_meta: int = Field(ge=1, le=100000)
+
+
+class MetasAtualizacaoPayload(BaseModel):
+    metas: list[MetaAtualizacao] = Field(min_length=1, max_length=9)
 
 
 def get_usuario_service(session: SessionDep) -> UsuarioService:
@@ -46,8 +57,11 @@ def _perfil_publico(usuario: Usuarios) -> dict:
         "coins": usuario.coins,
         "streak": usuario.streak,
         "xp": usuario.xp,
+        "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
+        "mascote_slug": usuario.mascote_slug,
+        "mascote_url": usuario.mascote_url,
         "modo_escuro": usuario.modo_escuro,
         "tema_roxo_padrao": usuario.tema_roxo_padrao,
     }
@@ -301,6 +315,48 @@ def get_dashboard_perfil(usuario: UsuarioLogado, session: SessionDep):
     }
 
 
+@router.get("/me/metas")
+def get_metas_usuario(usuario: UsuarioLogado, session: SessionDep):
+    garantir_metas_padrao(session, usuario.id)
+    session.commit()
+    return _montar_metas(session, usuario.id)
+
+
+@router.put("/me/metas")
+def update_metas_usuario(
+    payload: MetasAtualizacaoPayload,
+    usuario: UsuarioLogado,
+    session: SessionDep,
+):
+    garantir_metas_padrao(session, usuario.id)
+    metas = session.exec(
+        select(MetaUsuario).where(MetaUsuario.usuario_id == usuario.id)
+    ).all()
+    por_chave = {(meta.periodo, meta.tipo): meta for meta in metas}
+
+    chaves_recebidas: set[tuple[str, str]] = set()
+    for item in payload.metas:
+        chave = (item.periodo, item.tipo)
+        if chave in chaves_recebidas:
+            raise HTTPException(status_code=400, detail="Meta duplicada na solicitação")
+        chaves_recebidas.add(chave)
+
+        meta = por_chave.get(chave)
+        if meta is None:
+            meta = MetaUsuario(
+                usuario_id=usuario.id,
+                periodo=item.periodo,
+                tipo=item.tipo,
+                valor_meta=item.valor_meta,
+            )
+        else:
+            meta.valor_meta = item.valor_meta
+        session.add(meta)
+
+    session.commit()
+    return {"mensagem": "Metas atualizadas com sucesso", "metas": _montar_metas(session, usuario.id)}
+
+
 @router.put("/me/perfil")
 def update_meu_perfil(
     dados: dict,
@@ -311,43 +367,60 @@ def update_meu_perfil(
     """Atualiza nome, e-mail e/ou senha do usuário autenticado."""
     usuario_atualizado = service.atualizar_perfil(usuario, UsuarioUpdate.model_validate(dados))
     session.refresh(usuario_atualizado)
-    return service.perfil_publico(usuario_atualizado)
+    perfil = service.perfil_publico(usuario_atualizado)
+    perfil["access_token"] = criar_token_usuario(usuario_atualizado)
+    return perfil
 
 
-@router.get("/", response_model=list[Usuarios])
-def get_usuarios(session: SessionDep, service: UsuarioService = Depends(get_usuario_service)):
-    return service.listar_usuarios()
+@router.get("/", response_model=list[PerfilPublico])
+def get_usuarios(
+    admin: AdminLogado,
+    session: SessionDep,
+    service: UsuarioService = Depends(get_usuario_service),
+):
+    return [service.perfil_publico(usuario) for usuario in service.listar_usuarios()]
 
 
-@router.get("/{id}", response_model=Usuarios)
-def get_usuario_by_id(id: int, session: SessionDep, service: UsuarioService = Depends(get_usuario_service)):
-    return service.obter_por_id(id)
+@router.get("/{id}", response_model=PerfilPublico)
+def get_usuario_by_id(
+    id: int,
+    admin: AdminLogado,
+    session: SessionDep,
+    service: UsuarioService = Depends(get_usuario_service),
+):
+    return service.perfil_publico(service.obter_por_id(id))
 
 
-@router.post("/", response_model=Usuarios)
+@router.post("/", response_model=PerfilPublico, status_code=201)
 def create_usuario(
     usuario: UsuarioCreate,
     session: SessionDep,
     service: UsuarioService = Depends(get_usuario_service),
 ):
-    return service.criar_usuario(usuario)
+    return service.perfil_publico(service.criar_usuario(usuario))
 
 
 @router.delete("/{id}")
-def delete_usuario(id: int, session: SessionDep, service: UsuarioService = Depends(get_usuario_service)):
+def delete_usuario(
+    id: int,
+    admin: AdminLogado,
+    session: SessionDep,
+    service: UsuarioService = Depends(get_usuario_service),
+):
     usuario = service.obter_por_id(id)
     service.repo.delete(usuario)
     return {"mensagem": "Usuário excluído com sucesso"}
 
 
-@router.put("/{id}", response_model=Usuarios)
+@router.put("/{id}", response_model=PerfilPublico)
 def update_usuario(
     id: int,
     usuario_atualizado: UsuarioUpdate,
+    admin: AdminLogado,
     session: SessionDep,
     service: UsuarioService = Depends(get_usuario_service),
 ):
     usuario = service.obter_por_id(id)
     usuario_alterado = service.atualizar_perfil(usuario, usuario_atualizado)
     session.refresh(usuario_alterado)
-    return usuario_alterado
+    return service.perfil_publico(usuario_alterado)

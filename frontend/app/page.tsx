@@ -45,7 +45,7 @@ export default function HomePage() {
               Começar agora
             </Link>
 
-            <Link href="#" className="btn-outline">
+            <Link href="#como-funciona" className="btn-outline">
               Ver como funciona
             </Link>
           </div>
@@ -58,7 +58,7 @@ export default function HomePage() {
           />
         </div>
       </section>
-      <section className="study-section">
+      <section className="study-section" id="como-funciona">
 
     <div className="study-left">
 

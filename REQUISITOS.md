@@ -33,10 +33,11 @@ Permitir que novos utilizadores criem uma conta para salvar seu progresso nas tr
 
   * Nome de utilizador ou nome de bruxo;
   * E-mail;
-  * Senha segura.
+  * Senha segura;
+  * Curso no IFRN Campus Caicó: Informática, Eletro, Vestuário ou Têxtil.
 
 **Saída e condição posterior**
-A conta deve ser criada com sucesso e os dados devem ser armazenados no banco de dados.
+A conta deve ser criada com sucesso e os dados devem ser armazenados no banco de dados. O curso selecionado deve definir a casa e o tema visual inicial da conta.
 
 ---
 
@@ -252,6 +253,59 @@ Permitir a troca de moedas virtuais obtidas durante as atividades por itens cosm
 * Confirmação da compra;
 * Desconto das moedas utilizadas;
 * Item adicionado ao inventário do utilizador.
+
+---
+
+### 📅 RF14 - Cronograma Personalizado de Estudos
+
+**Descrição**
+Gerar um plano semanal adaptativo de estudos a partir do tempo disponível e do desempenho do utilizador.
+
+**Prioridade:** 🟡 **Recomendado**
+
+**Entrada e condição anterior**
+
+* Utilizador autenticado;
+* Definição da quantidade de horas de estudo por dia;
+* Escolha de um ou mais períodos do dia: manhã, tarde e/ou noite.
+
+**Saída e condição posterior**
+
+* Geração automática dos próximos 7 dias de estudo;
+* Distribuição de questões, flashcards e simulados dentro do tempo informado;
+* Questões em nível misto, combinando níveis fácil, médio e difícil;
+* Priorização de áreas com menor aproveitamento sem excluir as demais áreas do ENEM;
+* Possibilidade de recalcular o cronograma conforme o desempenho do utilizador;
+* Registro das atividades concluídas no banco de dados.
+
+---
+
+### 🏰 RF15 - Identidade por Curso e Casa
+
+**Descrição**
+Relacionar cada curso do IFRN Campus Caicó a uma casa temática, usando essa associação para definir a aparência da conta.
+
+**Saída e condição posterior**
+
+* O curso escolhido no cadastro define a casa do usuário;
+* A casa define a cor principal da interface;
+* A Loja deve exibir somente os quatro avatares correspondentes à casa do usuário;
+* Trocar a foto de perfil não deve alterar o curso nem a casa.
+
+---
+
+### 🦉 RF16 - Mascotes e Central de Notificações
+
+**Descrição**
+Disponibilizar uma mascote na barra lateral para representar a central de notificações do usuário.
+
+**Saída e condição posterior**
+
+* A coruja deve ser o mascote padrão e gratuito;
+* Outros mascotes podem ser comprados na Loja e equipados sem substituir o avatar;
+* A carta do mascote deve abrir as notificações;
+* O sistema deve informar a quantidade de notificações não lidas;
+* O usuário deve poder marcar notificações como lidas.
 
 ---
 

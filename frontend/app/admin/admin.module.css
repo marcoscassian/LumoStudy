@@ -37,3 +37,7 @@
 .checkbox { display: flex; align-items: center; gap: 9px; font-weight: 700; }
 .checkbox input { width: 18px; height: 18px; accent-color: #6d28d9; }
 @media (max-width: 800px) { .topbar, .toolbar { align-items: stretch; flex-direction: column; } .search, .grid { grid-template-columns: 1fr; } .toolbarFields { flex-direction: column; } .item { grid-template-columns: 1fr; } .actions { flex-wrap: wrap; } }
+.notificationGrid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 18px; margin-top: 18px; }
+.userCount { color: #7c3aed; font-size: 13px; font-weight: 800; background: #f5f3ff; border-radius: 10px; padding: 10px 12px; }
+.button:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 800px) { .notificationGrid { grid-template-columns: 1fr; } .nav { width: 100%; overflow-x: auto; } }

@@ -11,7 +11,16 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from database.db import get_session
-from models.models import DiaEstudo, ProgressoTema, Prova, Questao, QuestaoEditorial, RespostaUsuario, TentativaSimulado
+from models.models import (
+    DiaEstudo,
+    ProgressoTema,
+    Prova,
+    Questao,
+    QuestaoEditorial,
+    RespostaUsuario,
+    SimuladoQuestao,
+    TentativaSimulado,
+)
 from routes.login_routes import UsuarioLogado
 from services.progresso_service import recalcular_streak, recompensar_questao
 
@@ -27,7 +36,7 @@ AREAS = [
 ]
 
 VALORES_DE_AREA = {area["value"] for area in AREAS}
-NIVEIS_VALIDOS = {"facil", "medio", "dificil"}
+NIVEIS_VALIDOS = {"facil", "medio", "dificil", "misto"}
 QUANTIDADES_VALIDAS = {5, 10, 15, 20, 25}
 
 
@@ -94,8 +103,36 @@ def _questoes_da_area(area: str) -> list[dict]:
 
 
 def _filtrar_por_nivel(itens: list[dict], nivel: str) -> list[dict]:
+    if nivel == "misto":
+        return itens
     filtrados = [item for item in itens if item["nivel"] == nivel]
     return filtrados or itens
+
+
+def _selecionar_nivel_misto(itens: list[dict], quantidade: int) -> list[dict]:
+    """Monta uma sessão realmente mista, tentando incluir os três níveis."""
+    por_nivel = {nivel: [item for item in itens if item["nivel"] == nivel] for nivel in ("facil", "medio", "dificil")}
+    for grupo in por_nivel.values():
+        random.shuffle(grupo)
+
+    escolhidos: list[dict] = []
+    while len(escolhidos) < quantidade:
+        adicionou = False
+        for nivel in ("facil", "medio", "dificil"):
+            if por_nivel[nivel] and len(escolhidos) < quantidade:
+                escolhidos.append(por_nivel[nivel].pop())
+                adicionou = True
+        if not adicionou:
+            break
+
+    if len(escolhidos) < quantidade:
+        chaves = {(item["prova"], item["index"]) for item in escolhidos}
+        restantes = [item for item in itens if (item["prova"], item["index"]) not in chaves]
+        random.shuffle(restantes)
+        escolhidos.extend(restantes[: quantidade - len(escolhidos)])
+
+    random.shuffle(escolhidos)
+    return escolhidos[:quantidade]
 
 
 # =======================================================================
@@ -221,6 +258,44 @@ def _nome_arquivo_local(referencia: str) -> str:
     return Path(urlparse(referencia).path).name or referencia
 
 
+def _limpar_marcadores_de_imagem(texto: str | None) -> str | None:
+    """Remove do texto os links de imagem que já são enviados separadamente.
+
+    O acervo do ENEM guarda imagens no campo ``context`` em Markdown
+    (``![](https://enem.dev/...)``) e, ao mesmo tempo, lista os mesmos arquivos em
+    ``files``. Como o front renderiza ``files`` como <img>, deixar o Markdown no
+    enunciado faz a URL aparecer como texto e dá a impressão de imagem duplicada.
+    Também tratamos a forma ``[image](...)`` e uma variante escapada para que
+    registros importados anteriormente não vazem links para a interface.
+    """
+    if texto is None:
+        return None
+
+    limpo = str(texto)
+    # Markdown de imagem normal: ![alt](url)
+    limpo = re.sub(r"!\[[^\]]*\]\(\s*[^)\n]+\s*\)", "", limpo, flags=re.IGNORECASE)
+    # Variante escapada/duplicada observada em alguns conteúdos copiados.
+    limpo = re.sub(
+        r"!\[[^\]]*\]\\?\(\s*\[[^\]]+\]\([^)]*\)\s*\)",
+        "",
+        limpo,
+        flags=re.IGNORECASE,
+    )
+    # Links auxiliares de imagem que não fazem parte do enunciado.
+    limpo = re.sub(
+        r"\[(?:image|imagem)\]\(\s*(?:https?://|/)[^)\n]+\)",
+        "",
+        limpo,
+        flags=re.IGNORECASE,
+    )
+    # Caso algum importador tenha gravado <img ...> diretamente.
+    limpo = re.sub(r"<img\b[^>]*>", "", limpo, flags=re.IGNORECASE)
+    # Evita grandes buracos depois da remoção sem destruir as quebras de parágrafo.
+    limpo = re.sub(r"[ \t]+\n", "\n", limpo)
+    limpo = re.sub(r"\n{3,}", "\n\n", limpo)
+    return limpo.strip()
+
+
 def _montar_questao_original(prova: str, index: str, dados: dict | None = None) -> dict:
     """Monta a questão para envio ao front-end, sem revelar o gabarito."""
     dados = dados or _ler_json_questao(prova, index)
@@ -233,7 +308,7 @@ def _montar_questao_original(prova: str, index: str, dados: dict | None = None) 
     alternativas = [
         {
             "letra": alternativa["letter"],
-            "texto": alternativa["text"],
+            "texto": _limpar_marcadores_de_imagem(alternativa.get("text")) or "",
             "imagem": (
                 f"/static/provas/{prova}/questions/{index}/{_nome_arquivo_local(alternativa['file'])}"
                 if alternativa.get("file")
@@ -247,8 +322,8 @@ def _montar_questao_original(prova: str, index: str, dados: dict | None = None) 
         "prova": prova,
         "index": index,
         "titulo": dados.get("title"),
-        "enunciado": dados.get("context"),
-        "comando": dados.get("alternativesIntroduction"),
+        "enunciado": _limpar_marcadores_de_imagem(dados.get("context")),
+        "comando": _limpar_marcadores_de_imagem(dados.get("alternativesIntroduction")),
         "imagens": imagens,
         "alternativas": alternativas,
         "gabarito": dados.get("correctAlternative"),
@@ -298,7 +373,7 @@ def listar_areas():
 def gerar_questoes(
     area: str = Query(..., description="linguagens, ciencias-humanas, matematica ou ciencias-natureza"),
     quantidade: int = Query(10),
-    nivel: str = Query("medio", description="facil, medio ou dificil"),
+    nivel: str = Query("medio", description="facil, medio, dificil ou misto"),
     session: Session = Depends(get_session),
 ):
     if area not in VALORES_DE_AREA:
@@ -308,29 +383,31 @@ def gerar_questoes(
         raise HTTPException(status_code=400, detail="Quantidade inválida. Use 5, 10, 15, 20 ou 25")
 
     if nivel not in NIVEIS_VALIDOS:
-        raise HTTPException(status_code=400, detail="Nível inválido. Use facil, medio ou dificil")
+        raise HTTPException(status_code=400, detail="Nível inválido. Use facil, medio, dificil ou misto")
 
     itens_area = _questoes_da_area(area)
-    itens_nivel = _filtrar_por_nivel(itens_area, nivel)
 
     if not itens_area:
         raise HTTPException(status_code=404, detail="Nenhuma questão encontrada para essa área")
 
-    # Se o nível pedido não tiver questões suficientes (o banco atual só tem uma
-    # prova, então cada nível fica com um terço das questões da área), completa
-    # com questões de outros níveis da mesma área para sempre entregar a
-    # quantidade pedida, quando a área tiver questões suficientes no total.
-    if len(itens_nivel) < quantidade:
-        faltando = quantidade - len(itens_nivel)
-        chaves_ja_usadas = {(item["prova"], item["index"]) for item in itens_nivel}
-        complemento = [
-            item for item in itens_area
-            if (item["prova"], item["index"]) not in chaves_ja_usadas
-        ]
-        random.shuffle(complemento)
-        itens_nivel = itens_nivel + complemento[:faltando]
+    if nivel == "misto":
+        escolhidos = _selecionar_nivel_misto(itens_area, quantidade)
+    else:
+        itens_nivel = _filtrar_por_nivel(itens_area, nivel)
 
-    escolhidos = random.sample(itens_nivel, k=min(quantidade, len(itens_nivel)))
+        # Se o nível pedido não tiver questões suficientes, completa com outros
+        # níveis da mesma área para entregar a quantidade solicitada.
+        if len(itens_nivel) < quantidade:
+            faltando = quantidade - len(itens_nivel)
+            chaves_ja_usadas = {(item["prova"], item["index"]) for item in itens_nivel}
+            complemento = [
+                item for item in itens_area
+                if (item["prova"], item["index"]) not in chaves_ja_usadas
+            ]
+            random.shuffle(complemento)
+            itens_nivel = itens_nivel + complemento[:faltando]
+
+        escolhidos = random.sample(itens_nivel, k=min(quantidade, len(itens_nivel)))
     questoes = [
         _montar_questao_publica(item["prova"], item["index"], item["nivel"], session)
         for item in escolhidos
@@ -409,6 +486,8 @@ def corrigir_questoes(
     acertos = 0
     xp_ganhos = 0
     coins_ganhas = 0
+    tentativa = None
+    chaves_recebidas: set[tuple[str, str]] = set()
 
     if payload.tentativa_simulado_id is not None:
         tentativa = session.get(TentativaSimulado, payload.tentativa_simulado_id)
@@ -418,6 +497,11 @@ def corrigir_questoes(
             raise HTTPException(status_code=409, detail="Este simulado já foi finalizado")
 
     for resposta in payload.respostas:
+        chave_resposta = (resposta.prova, resposta.index)
+        if chave_resposta in chaves_recebidas:
+            raise HTTPException(status_code=400, detail="A mesma questão foi enviada mais de uma vez")
+        chaves_recebidas.add(chave_resposta)
+
         dados = _ler_json_questao(resposta.prova, resposta.index)
         gabarito = dados.get("correctAlternative")
         correta = str(resposta.letra).strip().upper() == str(gabarito).strip().upper()
@@ -427,6 +511,26 @@ def corrigir_questoes(
                 status_code=409,
                 detail="Catálogo de questões não indexado. Execute python database/createdb.py.",
             )
+
+        if tentativa is not None:
+            pertence = session.exec(
+                select(SimuladoQuestao).where(
+                    SimuladoQuestao.simulado_id == tentativa.simulado_id,
+                    SimuladoQuestao.questao_id == questao.id,
+                )
+            ).first()
+            if not pertence:
+                raise HTTPException(status_code=400, detail="Questão não pertence a este simulado")
+
+            resposta_existente = session.exec(
+                select(RespostaUsuario).where(
+                    RespostaUsuario.usuario_id == usuario.id,
+                    RespostaUsuario.tentativa_simulado_id == tentativa.id,
+                    RespostaUsuario.questao_id == questao.id,
+                )
+            ).first()
+            if resposta_existente:
+                raise HTTPException(status_code=409, detail="Esta questão já foi registrada neste simulado")
 
         if correta:
             acertos += 1

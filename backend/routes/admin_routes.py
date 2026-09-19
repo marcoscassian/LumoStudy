@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import Session, select
 
 from database.db import get_session
-from models.models import Flashcard, Prova, Questao, QuestaoEditorial
+from models.models import Flashcard, Notificacao, Prova, Questao, QuestaoEditorial, Usuarios
 from routes.login_routes import AdminLogado
 from routes.questoes_routes import (
     _ler_json_questao,
@@ -85,6 +85,22 @@ class QuestaoEditorialPayload(BaseModel):
     @field_validator("resolucao", "disciplina", "conteudo_principal")
     @classmethod
     def vazio_vira_nulo(cls, valor: str | None):
+        return valor or None
+
+
+
+
+class NotificacaoAdminPayload(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    usuario_id: int = Field(gt=0)
+    titulo: str = Field(default="Mensagem da equipe LumoStudy", min_length=1, max_length=120)
+    mensagem: str = Field(min_length=1, max_length=5000)
+    rota: str | None = Field(default=None, max_length=255)
+
+    @field_validator("rota")
+    @classmethod
+    def rota_vazia_vira_nulo(cls, valor: str | None):
         return valor or None
 
 
@@ -258,3 +274,63 @@ def alterar_status_flashcard(
     session.commit()
     session.refresh(flashcard)
     return _flashcard_publico(session, flashcard)
+
+@router.get("/usuarios")
+def listar_usuarios_admin(
+    admin: AdminLogado,
+    session: SessionDep,
+    busca: str | None = Query(default=None, max_length=150),
+):
+    consulta = select(Usuarios)
+    if busca and busca.strip():
+        termo = f"%{busca.strip()}%"
+        consulta = consulta.where(
+            (Usuarios.nome.ilike(termo)) | (Usuarios.email.ilike(termo))
+        )
+    usuarios = session.exec(consulta.order_by(Usuarios.nome, Usuarios.email).limit(200)).all()
+    return [
+        {
+            "id": usuario.id,
+            "nome": usuario.nome,
+            "email": str(usuario.email),
+            "curso": usuario.curso,
+            "casa": usuario.casa,
+            "is_admin": usuario.is_admin,
+        }
+        for usuario in usuarios
+    ]
+
+
+@router.post("/notificacoes", status_code=201)
+def enviar_notificacao_admin(
+    payload: NotificacaoAdminPayload,
+    admin: AdminLogado,
+    session: SessionDep,
+):
+    destinatario = session.get(Usuarios, payload.usuario_id)
+    if not destinatario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    notificacao = Notificacao(
+        usuario_id=destinatario.id,
+        titulo=payload.titulo,
+        mensagem=payload.mensagem,
+        tipo="admin",
+        rota=payload.rota,
+        lida=False,
+    )
+    session.add(notificacao)
+    session.commit()
+    session.refresh(notificacao)
+    return {
+        "mensagem": f"Notificação enviada para {destinatario.nome}.",
+        "notificacao": {
+            "id": notificacao.id,
+            "usuario_id": destinatario.id,
+            "titulo": notificacao.titulo,
+            "texto": notificacao.mensagem,
+            "rota": notificacao.rota,
+            "criada_em": notificacao.criada_em,
+        },
+    }
+

@@ -21,16 +21,8 @@ export function aplicarThemePorRota(pathname = "", savedTheme = "light") {
 
   document.documentElement.dataset.publicTheme = String(isPublic);
   document.documentElement.dataset.theme = shouldUseDark ? "dark" : "light";
-
   return shouldUseDark;
 }
-
-export const CASAS_POR_AVATAR = {
-  "/loja/perfil1.png": "corvinal",
-  "/loja/perfil2.png": "lufa-lufa",
-  "/loja/perfil3.png": "sonserina",
-  "/loja/perfil4.png": "grifinoria",
-};
 
 export const NOMES_CASAS = {
   corvinal: "Corvinal",
@@ -39,28 +31,32 @@ export const NOMES_CASAS = {
   grifinoria: "Grifinória",
 };
 
-export function casaDaFoto(avatarUrl) {
-  return CASAS_POR_AVATAR[String(avatarUrl || "")] || null;
-}
-
-export function resolverCorDoTema(avatarUrl, temaRoxoPadrao = false) {
-  if (temaRoxoPadrao) return "padrao";
-  return casaDaFoto(avatarUrl) || "padrao";
+export function resolverCorDoTema(casa) {
+  const slug = String(casa || "").toLowerCase();
+  return Object.prototype.hasOwnProperty.call(NOMES_CASAS, slug) ? slug : "grifinoria";
 }
 
 /**
- * @param {boolean} escuro
- * @param {string | undefined} [casa]
- * @param {boolean} [temaRoxoPadrao]
- * @param {string | undefined} [avatarUrl]
+ * A identidade visual vem da casa vinculada ao curso. Avatar e mascote são
+ * cosméticos e nunca alteram a casa do usuário.
+ *
+ * Os parâmetros antigos são mantidos para compatibilidade com chamadas já
+ * existentes. `temaRoxoPadrao` permite usar o roxo clássico sem alterar a casa.
  */
-export function aplicarTema(escuro, casa = undefined, temaRoxoPadrao = false, avatarUrl = undefined) {
+/**
+ * @param {boolean} escuro
+ * @param {string | undefined | null} [casa]
+ * @param {boolean} [temaRoxoPadrao]
+ * @param {string | undefined | null} [avatarUrl]
+ */
+export function aplicarTema(escuro, casa = "grifinoria", temaRoxoPadrao = false, avatarUrl = undefined) {
   if (typeof document === "undefined") return;
 
   const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
   const isPublic = isPublicThemeRoute(pathname);
   const dark = Boolean(escuro) && !isPublic;
-  const corTema = resolverCorDoTema(avatarUrl, temaRoxoPadrao);
+  const casaResolvida = resolverCorDoTema(casa);
+  const corTema = temaRoxoPadrao ? "padrao" : casaResolvida;
 
   document.documentElement.dataset.publicTheme = String(isPublic);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -69,14 +65,14 @@ export function aplicarTema(escuro, casa = undefined, temaRoxoPadrao = false, av
   if (typeof localStorage !== "undefined") {
     localStorage.setItem("lumostudy_theme", dark ? "dark" : "light");
     localStorage.setItem("lumostudy_accent", corTema);
-    localStorage.setItem("lumostudy_tema_roxo_padrao", temaRoxoPadrao ? "1" : "0");
-    if (casa) localStorage.setItem("lumostudy_casa", String(casa));
+    localStorage.setItem("lumostudy_casa", casaResolvida);
+    localStorage.setItem("lumostudy_tema_roxo_padrao", String(Boolean(temaRoxoPadrao)));
     if (avatarUrl) localStorage.setItem("lumostudy_avatar", String(avatarUrl));
   }
 
   window.dispatchEvent(
     new CustomEvent("lumostudy:theme-changed", {
-      detail: { dark, accent: corTema, casa, temaRoxoPadrao, avatarUrl },
+      detail: { dark, accent: corTema, casa: casaResolvida, temaRoxoPadrao: Boolean(temaRoxoPadrao), avatarUrl },
     })
   );
 }
@@ -86,7 +82,7 @@ export default function ThemeProvider() {
 
   useLayoutEffect(() => {
     const salvo = localStorage.getItem("lumostudy_theme") || "light";
-    const accentSalvo = localStorage.getItem("lumostudy_accent") || "padrao";
+    const accentSalvo = localStorage.getItem("lumostudy_accent") || "grifinoria";
     aplicarThemePorRota(pathname, salvo);
     document.documentElement.dataset.accent = accentSalvo;
   }, [pathname]);
@@ -94,7 +90,7 @@ export default function ThemeProvider() {
   useEffect(() => {
     const handleThemeEvent = () => {
       const salvo = localStorage.getItem("lumostudy_theme") || "light";
-      const accentSalvo = localStorage.getItem("lumostudy_accent") || "padrao";
+      const accentSalvo = localStorage.getItem("lumostudy_accent") || "grifinoria";
       aplicarThemePorRota(window.location.pathname, salvo);
       document.documentElement.dataset.accent = accentSalvo;
     };

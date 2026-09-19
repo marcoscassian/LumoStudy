@@ -2,20 +2,24 @@ from contextlib import asynccontextmanager
 import os
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
 from config_env import carregar_env
 
 from database.createdb import inicializar_banco
+from database.db import engine
 from routes import (
     admin_routes,
     flashcards_routes,
     login_routes,
     loja_routes,
+    notificacoes_routes,
     ranking_routes,
     conquistas_routes,
+    cronograma_routes,
     questoes_routes,
     simulados_routes,
     trilha_routes,
@@ -74,8 +78,10 @@ app.include_router(flashcards_routes.router)
 app.include_router(trilha_routes.router)
 app.include_router(simulados_routes.router)
 app.include_router(loja_routes.router)
+app.include_router(notificacoes_routes.router)
 app.include_router(ranking_routes.router)
 app.include_router(conquistas_routes.router)
+app.include_router(cronograma_routes.router)
 
 # Os JSONs continuam sendo a fonte dos enunciados e das imagens.
 PROVAS_DIR = Path(__file__).resolve().parent / "database" / "provas"
@@ -86,6 +92,16 @@ if PROVAS_DIR.exists():
 @app.get("/")
 def home():
     return {"mensagem": "API do LumoStudy funcionando com MySQL"}
+
+
+@app.get("/health")
+def health():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "ok"}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Banco de dados indisponível")
 
 if __name__ == "__main__":
     import uvicorn

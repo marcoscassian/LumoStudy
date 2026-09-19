@@ -3,7 +3,7 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Eye, LogIn } from "lucide-react";
+import { Mail, Lock, Eye, LogIn, UserPlus } from "lucide-react";
 import "../auth.css";
 import { aplicarTema } from "../components/theme-provider";
 import { API_BASE, formatApiError } from "../lib/api";
@@ -54,7 +54,7 @@ function LoginPageContent() {
         localStorage.setItem("token", data.access_token);
         aplicarTema(
           Boolean(data.modo_escuro),
-          data.casa || null,
+          data.casa || undefined,
           Boolean(data.tema_roxo_padrao),
           data.avatar_url || "/avatar.png"
         );
@@ -136,11 +136,19 @@ function LoginPageContent() {
             Entrar na conta
           </button>
         </form>
-      </section>
 
-      <p className="bottom-text">
-        Não tem uma conta? <Link href="/cadastro">Criar conta grátis</Link>
-      </p>
+        <div className="auth-register-divider"><span>ou</span></div>
+        <div className="auth-register-cta">
+          <div>
+            <strong>Ainda não tem uma conta?</strong>
+            <span>Crie seu perfil e comece sua trilha de estudos.</span>
+          </div>
+          <Link href="/cadastro" className="auth-register-button">
+            <UserPlus size={17} />
+            Criar minha conta
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

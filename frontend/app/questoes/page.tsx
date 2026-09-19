@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, PlayCircle, Sparkles, Zap, Flame } from "lucide-react";
+import { ArrowLeft, PlayCircle, Sparkles, Zap, Flame, Shuffle } from "lucide-react";
 
 import "../trilha/trilha.css";
 import "./questoes.css";
@@ -44,6 +44,7 @@ const AREAS = [
 const QUANTIDADES = [5, 10, 15, 20, 25];
 
 const NIVEIS = [
+  { value: "misto", label: "Misto", icon: Shuffle, color: "nivel-misto" },
   { value: "facil", label: "Fácil", icon: Sparkles, color: "nivel-facil" },
   { value: "medio", label: "Médio", icon: Zap, color: "nivel-medio" },
   { value: "dificil", label: "Difícil", icon: Flame, color: "nivel-dificil" },
@@ -67,10 +68,13 @@ function QuestoesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
-  const [quantidade, setQuantidade] = useState(10);
-  const [nivel, setNivel] = useState("medio");
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const areaInicial = encontrarAreaPorTexto(searchParams.get("area"));
+  const quantidadeInicial = Number(searchParams.get("quantidade"));
+  const nivelInicial = searchParams.get("nivel");
+
+  const [selectedArea, setSelectedArea] = useState<Area | null>(areaInicial);
+  const [quantidade, setQuantidade] = useState(QUANTIDADES.includes(quantidadeInicial) ? quantidadeInicial : 10);
+  const [nivel, setNivel] = useState(NIVEIS.some((item) => item.value === nivelInicial) ? (nivelInicial || "medio") : "medio");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -78,16 +82,8 @@ function QuestoesPageContent() {
       router.replace("/login?next=/questoes");
       return;
     }
-    setCheckingAuth(false);
   }, [router]);
 
-  useEffect(() => {
-    const areaParam = searchParams.get("area");
-    const encontrada = encontrarAreaPorTexto(areaParam);
-    if (encontrada) {
-      setSelectedArea(encontrada);
-    }
-  }, [searchParams]);
 
   const step = selectedArea ? "config" : "area";
 
@@ -100,10 +96,6 @@ function QuestoesPageContent() {
     });
     router.push(`/questoes/sessao?${params.toString()}`);
   };
-
-  if (checkingAuth) {
-    return null;
-  }
 
   return (
     <main className="dashboard">

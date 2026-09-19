@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={poppins.className}>
+      <body className={poppins.className} suppressHydrationWarning>
         <ThemeProvider />
         {children}
       </body>

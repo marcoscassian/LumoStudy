@@ -51,26 +51,87 @@ Para garantir uma interface veloz, otimizada e reativa (quase como um passe de m
 
 ---
 
-## 🔐 Recuperação de senha
+## 🚀 Como rodar o projeto
 
-A recuperação de senha usa o Gmail `lumostudy934@gmail.com` e token de uso único salvo apenas como hash no MySQL.
+### 1. Backend
 
-1. Abra `backend/.env`.
-2. Coloque a senha de app do Google em:
+```bash
+cd backend
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+# source .venv/bin/activate
 
-```env
-EMAIL_PASSWORD=SUA_SENHA_DE_APP
+pip install -r requirements.txt
 ```
 
-3. Inicie o backend normalmente. A migration `0007` cria automaticamente a tabela `recuperacoes_senha`.
-4. Na tela de login, use **Esqueci minha senha**.
+Copie `backend/.env.example` para `backend/.env` e ajuste o MySQL, JWT e SMTP. Depois:
 
-O link expira em 30 minutos e só pode ser usado uma vez.
+```bash
+python -m uvicorn main:app --reload --port 8000
+```
 
-> Nunca coloque a senha de app no GitHub. O arquivo `.env` é ignorado pelo Git.
+Na inicialização, o backend cria/verifica o banco local quando permitido, aplica todas as migrations e sincroniza provas, questões, simulados, metas e itens da loja.
 
-## 🌐 Contas compartilhadas entre computadores
+### 2. Frontend
 
-Usar `MYSQL_HOST=localhost` cria um banco diferente em cada computador. Para todas as máquinas enxergarem as mesmas contas, configure um **MySQL remoto/central** usando `DATABASE_URL` no `backend/.env`.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-Veja `BANCO_COMPARTILHADO.md` para o passo a passo.
+Abra `http://localhost:3000`. Para backend hospedado separadamente, copie `frontend/.env.example` para `frontend/.env.local` e defina `NEXT_PUBLIC_API_URL`.
+
+## 🔐 Recuperação de senha
+
+A recuperação de senha usa um token de uso único, armazenado apenas como hash no MySQL. O provedor de e-mail é configurável por SMTP.
+
+No `backend/.env`, configure pelo menos:
+
+```env
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=seu_email@gmail.com
+EMAIL_PASSWORD=SUA_SENHA_DE_APP_OU_SENHA_SMTP
+EMAIL_USE_TLS=true
+EMAIL_USE_SSL=false
+FRONTEND_URL=http://localhost:3000
+```
+
+O link expira conforme `RESET_TOKEN_MINUTES` (30 minutos por padrão), só pode ser usado uma vez e os links anteriores são invalidados quando um novo é solicitado. Ao redefinir a senha, sessões antigas também deixam de ser aceitas.
+
+> Nunca coloque senha SMTP, `JWT_SECRET` ou credenciais do banco no GitHub. Arquivos `.env` são ignorados pelo Git.
+
+## 📅 Cronograma personalizado
+
+A página **Cronograma** monta automaticamente os próximos 7 dias de estudo. O usuário escolhe:
+
+- quantas horas consegue estudar por dia (de 1 a 10 horas, aceitando meia hora);
+- se prefere estudar de manhã, à tarde e/ou à noite.
+
+O plano combina **questões em nível misto**, **flashcards** e **simulados**, usando o histórico de respostas para aumentar a frequência das áreas com menor aproveitamento. Todas as quatro áreas do ENEM continuam aparecendo no ciclo. O botão **Recalcular plano** atualiza as prioridades conforme o desempenho mais recente.
+
+As preferências e atividades são persistidas no MySQL pela migration `0010`.
+
+## 🌐 Banco compartilhado / online
+
+Usar `MYSQL_HOST=localhost` cria um banco diferente em cada computador. Para todos usarem as mesmas contas e progresso, hospede um MySQL central e configure `DATABASE_URL` no backend.
+
+Veja **`BANCO_ONLINE.md`** para o passo a passo e **`backend/MIGRATIONS.md`** para detalhes da inicialização do schema.
+
+## 🏰 Cursos, casas e personalização
+
+No cadastro, o aluno escolhe seu curso do IFRN Campus Caicó. O curso define a casa e o tema visual da conta:
+
+- Informática → Corvinal;
+- Eletro → Grifinória;
+- Vestuário → Sonserina;
+- Têxtil → Lufa-Lufa.
+
+A Loja exibe apenas os quatro avatares da casa do usuário. Existem 16 slots de avatar no total, correspondentes a Ludimila, Ícaro, Alex e Marcos em cada uma das quatro casas.
+
+O sistema de mascotes também está preparado: a coruja é padrão e gratuita, enquanto gato, sapo, rato e serpente são compráveis. O mascote aparece na barra lateral e entrega as notificações por meio da carta.
+
+Veja **`PERSONALIZACAO.md`** para os nomes exatos dos arquivos e o formato das spritesheets.

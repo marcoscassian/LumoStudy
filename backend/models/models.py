@@ -21,10 +21,28 @@ class Usuarios(SQLModel, table=True):
     streak: int = Field(default=0, nullable=False)
     xp: int = Field(default=0, nullable=False)
     is_admin: bool = Field(default=False, nullable=False)
-    casa: str = Field(default="corvinal", max_length=30, nullable=False)
+    curso: str = Field(default="informatica", max_length=30, nullable=False, index=True)
+    casa: str = Field(default="grifinoria", max_length=30, nullable=False, index=True)
     avatar_url: str = Field(default="/avatar.png", max_length=255, nullable=False)
+    mascote_slug: str = Field(default="coruja", max_length=50, nullable=False)
+    mascote_url: str = Field(default="/sprites/mascotes/coruja.png", max_length=255, nullable=False)
     modo_escuro: bool = Field(default=False, nullable=False)
     tema_roxo_padrao: bool = Field(default=False, nullable=False)
+    auth_version: int = Field(default=0, nullable=False)
+
+
+class Notificacao(SQLModel, table=True):
+    __tablename__ = "notificacoes"
+    __table_args__ = MYSQL_TABLE
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    titulo: str = Field(max_length=120, nullable=False)
+    mensagem: str = Field(sa_column=Column(Text, nullable=False))
+    tipo: str = Field(default="geral", max_length=30, nullable=False, index=True)
+    rota: str | None = Field(default=None, max_length=255, nullable=True)
+    lida: bool = Field(default=False, nullable=False, index=True)
+    criada_em: datetime = Field(default_factory=datetime.now, nullable=False, index=True)
 
 
 class RecuperacaoSenha(SQLModel, table=True):
@@ -242,6 +260,19 @@ class MetaUsuario(SQLModel, table=True):
     valor_meta: int = Field(nullable=False)
 
 
+class ConquistaUsuario(SQLModel, table=True):
+    __tablename__ = "conquistas_usuario"
+    __table_args__ = (
+        UniqueConstraint("usuario_id", "slug", name="uq_conquista_usuario_slug"),
+        MYSQL_TABLE,
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    slug: str = Field(max_length=80, nullable=False, index=True)
+    desbloqueada_em: datetime = Field(default_factory=datetime.now, nullable=False)
+
+
 class ItemLoja(SQLModel, table=True):
     __tablename__ = "itens_loja"
     __table_args__ = MYSQL_TABLE
@@ -269,3 +300,42 @@ class UsuarioItem(SQLModel, table=True):
     item_id: int = Field(foreign_key="itens_loja.id", ondelete="CASCADE", nullable=False, index=True)
     comprado_em: datetime = Field(default_factory=datetime.now, nullable=False)
     equipado: bool = Field(default=False, nullable=False, index=True)
+
+
+class CronogramaPreferencia(SQLModel, table=True):
+    __tablename__ = "cronograma_preferencias"
+    __table_args__ = (
+        UniqueConstraint("usuario_id", name="uq_cronograma_preferencia_usuario"),
+        MYSQL_TABLE,
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    minutos_por_dia: int = Field(default=120, nullable=False)
+    manha: bool = Field(default=False, nullable=False)
+    tarde: bool = Field(default=True, nullable=False)
+    noite: bool = Field(default=False, nullable=False)
+    atualizado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+
+
+class CronogramaAtividade(SQLModel, table=True):
+    __tablename__ = "cronograma_atividades"
+    __table_args__ = (
+        UniqueConstraint("usuario_id", "data", "ordem", name="uq_cronograma_usuario_data_ordem"),
+        MYSQL_TABLE,
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    data: date = Field(nullable=False, index=True)
+    periodo: str = Field(max_length=20, nullable=False, index=True)
+    tipo: str = Field(max_length=30, nullable=False, index=True)
+    area_id: int | None = Field(default=None, foreign_key="areas.id", ondelete="SET NULL", index=True)
+    titulo: str = Field(max_length=180, nullable=False)
+    descricao: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+    duracao_minutos: int = Field(nullable=False)
+    quantidade: int | None = Field(default=None, nullable=True)
+    rota: str = Field(max_length=255, nullable=False)
+    ordem: int = Field(default=0, nullable=False)
+    concluida: bool = Field(default=False, nullable=False, index=True)
+    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)

@@ -224,3 +224,123 @@ button:disabled {
   opacity: .65;
   cursor: not-allowed;
 }
+
+.register--course {
+  max-width: 560px;
+}
+
+.course-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.course-option {
+  min-height: 68px;
+  height: auto;
+  padding: 12px 14px;
+  background: #fff;
+  color: #403b52;
+  border: 1px solid #e7e2ef;
+  box-shadow: none;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.course-option:hover {
+  background: #faf9fd;
+}
+
+.course-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.course-option small {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b8499;
+}
+
+.course-option.selected { border-width: 2px; }
+.course-option.house-corvinal.selected { border-color: #2563a6; background: #eef5ff; color: #1d4f86; }
+.course-option.house-grifinoria.selected { border-color: #a52338; background: #fff0f2; color: #7f1829; }
+.course-option.house-sonserina.selected { border-color: #237a4d; background: #eaf8f0; color: #185d3a; }
+.course-option.house-lufa-lufa.selected { border-color: #d39a00; background: #fff8df; color: #7e5a00; }
+
+@media (max-width: 520px) {
+  .course-selector { grid-template-columns: 1fr; }
+}
+
+
+.auth-register-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 24px 0 18px;
+  color: #9a94a8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth-register-divider::before,
+.auth-register-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--lumo-border);
+  flex: 1;
+}
+
+.auth-register-divider span {
+  padding: 0 12px;
+}
+
+.auth-register-cta {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--lumo-border);
+  border-radius: 14px;
+  background: var(--lumo-surface-soft);
+}
+
+.auth-register-cta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.auth-register-cta strong {
+  color: var(--lumo-text);
+  font-size: 14px;
+}
+
+.auth-register-cta span {
+  color: var(--lumo-text-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.auth-register-button {
+  min-height: 46px;
+  border-radius: 11px;
+  border: 1px solid rgba(var(--lumo-accent-rgb), .28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(var(--lumo-accent-rgb), .08);
+  color: var(--lumo-accent) !important;
+  font-size: 13px;
+  font-weight: 800;
+  transition: .18s ease;
+}
+
+.auth-register-button:hover {
+  transform: translateY(-1px);
+  background: rgba(var(--lumo-accent-rgb), .13);
+}

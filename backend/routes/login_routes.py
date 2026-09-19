@@ -24,6 +24,7 @@ from services.email_service import (
     email_configurado,
     enviar_email_recuperacao,
 )
+from services.identidade_service import casa_do_curso
 from services.progresso_service import recalcular_streak
 
 carregar_env()
@@ -38,6 +39,7 @@ oauth_schema = OAuth2PasswordBearer(tokenUrl="/login/")
 
 SECRET = os.getenv("JWT_SECRET", "lumostudy_secret_dev_troque_em_producao")
 ALGORITHM = "HS256"
+ACCESS_TOKEN_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", str(7 * 24 * 60)))
 REVOGADOS: set[str] = set()
 
 
@@ -64,9 +66,19 @@ def get_usuario_repository(session: SessionDep) -> UsuarioRepository:
 
 def create_access_token(data: dict, expires: timedelta | None = None):
     to_encode = data.copy()
-    expire = datetime.now() + (expires or timedelta(days=7))
+    expire = datetime.now() + (expires or timedelta(minutes=ACCESS_TOKEN_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET, algorithm=ALGORITHM)
+
+
+def criar_token_usuario(usuario: Usuarios) -> str:
+    return create_access_token(
+        {
+            "sub": str(usuario.id),
+            "email": str(usuario.email),
+            "ver": int(usuario.auth_version),
+        }
+    )
 
 
 def get_usuario(
@@ -84,19 +96,50 @@ def get_usuario(
             raise credentials_exception
 
         dados = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
-        email = dados.get("sub")
-
-        if not email:
+        subject = dados.get("sub")
+        if not subject:
             raise credentials_exception
 
-        usuario = session.exec(
-            select(Usuarios).where(Usuarios.email == email)
-        ).first()
+        subject_str = str(subject)
+        if subject_str.isdigit():
+            usuario = session.get(Usuarios, int(subject_str))
+        else:
+            # Compatibilidade com tokens antigos, que usavam o e-mail no sub.
+            usuario = session.exec(
+                select(Usuarios).where(Usuarios.email == subject_str.lower())
+            ).first()
 
         if not usuario:
             raise credentials_exception
 
+        casa_correta = casa_do_curso(usuario.curso)
+        alterado = False
+        if usuario.casa != casa_correta:
+            usuario.casa = casa_correta
+            alterado = True
+        if not usuario.mascote_slug:
+            usuario.mascote_slug = "coruja"
+            alterado = True
+        if not usuario.mascote_url:
+            usuario.mascote_url = "/sprites/mascotes/coruja.png"
+            alterado = True
+        if alterado:
+            session.add(usuario)
+            session.commit()
+            session.refresh(usuario)
+
+        versao_token = dados.get("ver")
+        if versao_token is None:
+            # Tokens legados continuam válidos apenas enquanto a senha nunca
+            # tiver sido alterada desde a migration 0008.
+            if int(usuario.auth_version) != 0:
+                raise credentials_exception
+        elif int(versao_token) != int(usuario.auth_version):
+            raise credentials_exception
+
         return usuario
+    except HTTPException:
+        raise
     except Exception:
         raise credentials_exception
 
@@ -121,7 +164,7 @@ def login(
     if not usuario or not validar_senha(form_data.password, usuario.senha_hash):
         raise HTTPException(status_code=401, detail="Usuário/senha incorreta")
 
-    access_token = create_access_token(data={"sub": usuario.email})
+    access_token = criar_token_usuario(usuario)
 
     return {
         "access_token": access_token,
@@ -131,8 +174,11 @@ def login(
         "streak": usuario.streak,
         "xp": usuario.xp,
         "is_admin": usuario.is_admin,
+        "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
+        "mascote_slug": usuario.mascote_slug,
+        "mascote_url": usuario.mascote_url,
         "modo_escuro": usuario.modo_escuro,
         "tema_roxo_padrao": usuario.tema_roxo_padrao,
     }
@@ -140,7 +186,7 @@ def login(
 
 @router.post("/esqueci-senha")
 def esqueci_senha(dados: EsqueciSenhaPayload, session: SessionDep):
-    """Gera um token de uso único e envia o link pelo Gmail do LumoStudy."""
+    """Gera um token de uso único e envia o link pelo SMTP configurado."""
     mensagem = (
         "Se existir uma conta com esse e-mail, enviaremos um link para redefinir a senha."
     )
@@ -149,8 +195,7 @@ def esqueci_senha(dados: EsqueciSenhaPayload, session: SessionDep):
         raise HTTPException(
             status_code=503,
             detail=(
-                "O envio de e-mail ainda não está configurado. "
-                "Coloque EMAIL_PASSWORD com a senha de app do Google em backend/.env."
+                "O envio de e-mail ainda não está configurado no servidor."
             ),
         )
 
@@ -213,7 +258,7 @@ def esqueci_senha(dados: EsqueciSenhaPayload, session: SessionDep):
             status_code=503,
             detail=(
                 "Não foi possível enviar o e-mail de recuperação. "
-                "Confira a senha de app do Gmail no backend/.env."
+                "Confira a configuração SMTP do servidor."
             ),
         )
 
@@ -251,6 +296,7 @@ def redefinir_senha(dados: RedefinirSenhaPayload, session: SessionDep):
         )
 
     usuario.senha_hash = senha_context.hash(nova_senha)
+    usuario.auth_version += 1
     recuperacao.usado_em = agora
     session.add(usuario)
     session.add(recuperacao)
@@ -286,8 +332,11 @@ def get_me(
         "streak": usuario.streak,
         "xp": usuario.xp,
         "is_admin": usuario.is_admin,
+        "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
+        "mascote_slug": usuario.mascote_slug,
+        "mascote_url": usuario.mascote_url,
         "modo_escuro": usuario.modo_escuro,
         "tema_roxo_padrao": usuario.tema_roxo_padrao,
     }

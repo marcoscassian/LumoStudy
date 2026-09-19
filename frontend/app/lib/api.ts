@@ -1,3 +1,13 @@
+function isPrivateNetworkHost(hostname: string): boolean {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    /^10\./.test(hostname) ||
+    /^192\.168\./.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+  );
+}
+
 export function resolveApiBase(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
@@ -5,11 +15,17 @@ export function resolveApiBase(): string {
 
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:8000";
+
+    // Desenvolvimento local/LAN: o backend FastAPI roda na porta 8000.
+    if (isPrivateNetworkHost(hostname)) {
+      const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+      return `${protocol}//${hostname}:8000`;
     }
 
-    return `http://${hostname}:8000`;
+    // Em produção, NEXT_PUBLIC_API_URL deve ser configurada quando o backend
+    // estiver em outro domínio. O mesmo origin é um fallback seguro para quem
+    // publicar frontend e API atrás do mesmo proxy.
+    return window.location.origin;
   }
 
   return "http://localhost:8000";

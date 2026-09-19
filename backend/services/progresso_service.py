@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from sqlmodel import Session, select
 
-from models.models import DiaEstudo, MetaUsuario, Usuarios
+from models.models import DiaEstudo, MetaUsuario, Notificacao, Usuarios
 
 # Regras simples de gamificação. Como os valores ficam persistidos em usuarios,
 # o cabeçalho e o perfil sempre mostram o mesmo saldo salvo no MySQL.
@@ -58,6 +58,88 @@ def garantir_metas_padrao(session: Session, usuario_id: int) -> None:
 
     if alterou:
         session.flush()
+
+
+def garantir_notificacao_meta_diaria(session: Session, usuario: Usuarios, data_ref: date | None = None) -> Notificacao | None:
+    """Cria, no máximo uma vez por dia, um aviso sobre a meta diária anterior não cumprida.
+
+    O aviso é avaliado para ontem por padrão. Assim o usuário não recebe cobrança
+    antes de o dia atual terminar e também não é inundado por vários dias antigos.
+    """
+    alvo = data_ref or (date.today() - timedelta(days=1))
+    if alvo >= date.today():
+        return None
+    # Não cobre um dia anterior à existência da conta nem o próprio dia do cadastro.
+    if usuario.criado_em and alvo <= usuario.criado_em.date():
+        return None
+
+    tipo_notificacao = f"meta_diaria_{alvo.isoformat()}"
+    existente = session.exec(
+        select(Notificacao).where(
+            Notificacao.usuario_id == usuario.id,
+            Notificacao.tipo == tipo_notificacao,
+        )
+    ).first()
+    if existente:
+        return existente
+
+    garantir_metas_padrao(session, usuario.id)
+    metas = session.exec(
+        select(MetaUsuario).where(
+            MetaUsuario.usuario_id == usuario.id,
+            MetaUsuario.periodo == "diario",
+        )
+    ).all()
+    metas_por_tipo = {meta.tipo: int(meta.valor_meta) for meta in metas}
+
+    dia = session.exec(
+        select(DiaEstudo).where(
+            DiaEstudo.usuario_id == usuario.id,
+            DiaEstudo.data == alvo,
+        )
+    ).first()
+
+    atual = {
+        "tempo_estudo": int((dia.tempo_segundos if dia else 0) // 60),
+        "flashcards": int(dia.flashcards_revisados if dia else 0),
+        "questoes": int(dia.questoes_respondidas if dia else 0),
+    }
+
+    faltas: list[str] = []
+    rotulos = {
+        "tempo_estudo": ("min de estudo", "min de estudo"),
+        "flashcards": ("flashcard", "flashcards"),
+        "questoes": ("questão", "questões"),
+    }
+    for tipo in ("tempo_estudo", "flashcards", "questoes"):
+        meta = int(metas_por_tipo.get(tipo, 0))
+        if meta <= 0:
+            continue
+        restante = max(0, meta - atual[tipo])
+        if restante <= 0:
+            continue
+        singular, plural = rotulos[tipo]
+        faltas.append(f"{restante} {singular if restante == 1 else plural}")
+
+    if not faltas:
+        return None
+
+    if len(faltas) == 1:
+        resumo = faltas[0]
+    else:
+        resumo = ", ".join(faltas[:-1]) + f" e {faltas[-1]}"
+
+    notificacao = Notificacao(
+        usuario_id=usuario.id,
+        titulo="Meta diária não concluída",
+        mensagem=f"Sua meta de ontem ficou incompleta. Faltaram {resumo}. Hoje é uma nova oportunidade de avançar na sua trilha.",
+        tipo=tipo_notificacao,
+        rota="/trilha",
+        lida=False,
+    )
+    session.add(notificacao)
+    session.flush()
+    return notificacao
 
 
 def obter_ou_criar_dia_estudo(session: Session, usuario_id: int, data_ref: date | None = None) -> DiaEstudo:

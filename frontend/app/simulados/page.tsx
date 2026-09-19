@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarDays, Clock3, FileQuestion, Play, Sparkles } from "lucide-react";
 
 import "../trilha/trilha.css";
@@ -10,13 +10,24 @@ import Header from "../components/header";
 import Sidebar from "../components/sidebar";
 import { API_BASE } from "../lib/api";
 
-export default function SimuladosPage() {
+type SimuladoResumo = {
+  id?: number;
+  dia_prova?: number;
+  quantidade_questoes?: number;
+  nome?: string;
+  tempo_limite_minutos?: number;
+};
+
+function SimuladosPageContent() {
   const router = useRouter();
-  const [dia, setDia] = useState(1);
-  const [quantidade, setQuantidade] = useState(25);
+  const searchParams = useSearchParams();
+  const diaParam = Number(searchParams.get("dia"));
+  const quantidadeParam = Number(searchParams.get("quantidade"));
+  const [dia, setDia] = useState(diaParam === 1 || diaParam === 2 ? diaParam : 1);
+  const [quantidade, setQuantidade] = useState(quantidadeParam === 25 || quantidadeParam === 90 ? quantidadeParam : 25);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
-  const [disponiveis, setDisponiveis] = useState<any[]>([]);
+  const [disponiveis, setDisponiveis] = useState<SimuladoResumo[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -24,6 +35,7 @@ export default function SimuladosPage() {
       router.replace("/login?next=/simulados");
       return;
     }
+
 
     fetch(`${API_BASE}/simulados`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -139,5 +151,13 @@ export default function SimuladosPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SimuladosPage() {
+  return (
+    <Suspense fallback={null}>
+      <SimuladosPageContent />
+    </Suspense>
   );
 }

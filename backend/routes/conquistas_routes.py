@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from database.db import get_session
-from models.models import RespostaUsuario, RevisaoFlashcard, TentativaSimulado
+from models.models import ConquistaUsuario, RespostaUsuario, RevisaoFlashcard, TentativaSimulado
 from routes.login_routes import UsuarioLogado
 
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -47,19 +47,41 @@ def listar_conquistas(usuario: UsuarioLogado, session: SessionDep):
         ("nivel-2", "Bruxo Experiente", "Alcance o nível 2", usuario.xp >= 1000, min(usuario.xp, 1000), 1000, "xp"),
     ]
 
-    saida = [
-        {
-            "slug": slug,
-            "nome": nome,
-            "descricao": descricao,
-            "desbloqueada": desbloqueada,
-            "atual": atual,
-            "meta": meta,
-            "unidade": unidade,
-            "percentual": min(100, round((atual / meta) * 100)) if meta else 0,
-        }
-        for slug, nome, descricao, desbloqueada, atual, meta, unidade in conquistas
-    ]
+    persistidas = {
+        item.slug
+        for item in session.exec(
+            select(ConquistaUsuario).where(ConquistaUsuario.usuario_id == usuario.id)
+        ).all()
+    }
+
+    novas = []
+    for slug, _nome, _descricao, atingiu_agora, _atual, _meta, _unidade in conquistas:
+        if atingiu_agora and slug not in persistidas:
+            session.add(ConquistaUsuario(usuario_id=usuario.id, slug=slug))
+            persistidas.add(slug)
+            novas.append(slug)
+
+    if novas:
+        session.commit()
+
+    saida = []
+    for slug, nome, descricao, _atingiu_agora, atual, meta, unidade in conquistas:
+        desbloqueada = slug in persistidas
+        # Uma conquista persistida continua visualmente concluída mesmo se a métrica
+        # atual diminuir depois (ex.: moedas gastas ou sequência quebrada).
+        atual_exibido = meta if desbloqueada else atual
+        saida.append(
+            {
+                "slug": slug,
+                "nome": nome,
+                "descricao": descricao,
+                "desbloqueada": desbloqueada,
+                "atual": atual_exibido,
+                "meta": meta,
+                "unidade": unidade,
+                "percentual": min(100, round((atual_exibido / meta) * 100)) if meta else 0,
+            }
+        )
 
     return {
         "desbloqueadas": sum(1 for item in saida if item["desbloqueada"]),

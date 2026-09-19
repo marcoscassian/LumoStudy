@@ -125,7 +125,7 @@ export default function UsuarioPage() {
     const currentXp = Number(user.xp || 0);
     const level = Math.floor(currentXp / 1000) + 1;
     const nextLevelXp = level * 1000;
-    const casaSlug = String(user.casa || "corvinal").toLowerCase();
+    const casaSlug = String(user.casa || "grifinoria").toLowerCase();
 
     const profileUser = {
       name: user.nome || "Bruxo",
