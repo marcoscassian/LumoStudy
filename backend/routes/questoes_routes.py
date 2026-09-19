@@ -369,6 +369,46 @@ def listar_areas():
     return AREAS
 
 
+@router.get("/provas")
+def listar_provas_publicas():
+    """Lista os anos que possuem questões no acervo local."""
+    provas = []
+    for codigo in _listar_provas():
+        if not re.fullmatch(r"ENEM\d{4}", codigo):
+            continue
+        quantidade = len(_pastas_de_questoes(codigo))
+        if quantidade:
+            provas.append({"ano": int(codigo.removeprefix("ENEM")), "codigo": codigo, "quantidade_questoes": quantidade})
+    return sorted(provas, key=lambda prova: prova["ano"], reverse=True)
+
+
+@router.get("/provas/{ano}")
+def detalhar_prova_publica(ano: int):
+    """Retorna o índice completo de questões de uma prova, em ordem numérica."""
+    codigo = f"ENEM{ano}"
+    if codigo not in _listar_provas():
+        raise HTTPException(status_code=404, detail="Prova não encontrada")
+
+    questoes = []
+    for index in _pastas_de_questoes(codigo):
+        dados = _ler_json_questao(codigo, index)
+        questoes.append({
+            "index": index,
+            "disciplina": dados.get("discipline"),
+            "idioma": dados.get("language"),
+        })
+    return {"ano": ano, "codigo": codigo, "questoes": questoes}
+
+
+@router.get("/provas/{ano}/questoes/{index}")
+def visualizar_questao_da_prova(ano: int, index: str):
+    """Permite visualizar uma questão específica e seu gabarito no acervo."""
+    codigo = f"ENEM{ano}"
+    if codigo not in _listar_provas() or index not in _pastas_de_questoes(codigo):
+        raise HTTPException(status_code=404, detail="Questão não encontrada nesta prova")
+    return _montar_questao_original(codigo, index)
+
+
 @router.get("/gerar")
 def gerar_questoes(
     area: str = Query(..., description="linguagens, ciencias-humanas, matematica ou ciencias-natureza"),

@@ -10,6 +10,7 @@ import {
   CalendarRange,
   CheckCheck,
   Mail,
+  Files,
   Settings,
   ShoppingCart,
   Target,
@@ -141,6 +142,7 @@ export default function Sidebar() {
           <Link href="/trilha" className={`menu ${isActive("/trilha") ? "active" : ""}`}><BookOpen size={20}/><span>Trilha de Estudos</span></Link>
           <Link href="/cronograma" className={`menu ${isActive("/cronograma") ? "active" : ""}`}><CalendarRange size={20}/><span>Cronograma</span></Link>
           <Link href="/questoes" className={`menu ${isActive("/questoes") ? "active" : ""}`}><Target size={20}/><span>Questões</span></Link>
+          <Link href="/provas" className={`menu ${isActive("/provas") ? "active" : ""}`}><Files size={20}/><span>Provas Antigas</span></Link>
           <Link href="/flashcards" className={`menu ${isActive("/flashcards") ? "active" : ""}`}><BarChart3 size={20}/><span>Flashcards</span></Link>
           <Link href="/simulados" className={`menu ${isActive("/simulados") ? "active" : ""}`}><Zap size={20}/><span>Simulados</span></Link>
           <Link href="/ranking" className={`menu ${isActive("/ranking") ? "active" : ""}`}><Trophy size={20}/><span>Ranking</span></Link>
