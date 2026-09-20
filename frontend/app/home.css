@@ -1,4 +1,11 @@
 .home-page {
+  --lumo-accent: #6e42f5;
+  --lumo-accent-strong: #5b34dd;
+  --lumo-accent-light: #9a73ff;
+  --lumo-accent-rgb: 110, 66, 245;
+  --lumo-surface-purple: #f4efff;
+  --lumo-purple: var(--lumo-accent);
+  --lumo-purple-strong: var(--lumo-accent-strong);
   background: #fff;
   font-family: Arial, sans-serif;
 }

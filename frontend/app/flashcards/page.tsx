@@ -20,10 +20,10 @@ type FlashcardForm = {
 
 const MATERIAS = ["Linguagens", "Ciências Humanas", "Matemática", "Ciências da Natureza"];
 const REVISOES = [
-  { value: "errei", label: "Errei" },
-  { value: "dificil", label: "Difícil" },
-  { value: "bom", label: "Bom" },
-  { value: "facil", label: "Fácil" },
+  { value: "errei", label: "Não lembrei" },
+  { value: "parcial", label: "Lembrei parcialmente" },
+  { value: "bom", label: "Lembrei" },
+  { value: "sem_ajuda", label: "Lembrei sem ajuda" },
 ];
 
 const currentTimestamp = () => Date.now();

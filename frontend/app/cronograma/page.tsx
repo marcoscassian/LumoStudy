@@ -279,8 +279,8 @@ export default function CronogramaPage() {
               <div>
                 <h1 className="sidebar-page-title">Cronograma de estudos</h1>
                 <p className="sidebar-page-subtitle">
-                  Informe seu tempo disponível. O LumoStudy distribui questões de todas as áreas e dificuldades,
-                  revisões por flashcards e simulados ao longo da semana.
+                  Informe seu tempo disponível. O LumoStudy distribui blocos de questões das quatro áreas,
+                  revisões por flashcards e simulados ao longo da semana. Você pode ajustar cada bloco antes de começar.
                 </p>
               </div>
               <button type="button" className="secondary-action" onClick={recalcular} disabled={recalculando}>

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
 
-import "../../trilha/trilha.css";
+import "../trilha.css";
 import "../questoes.css";
 
 import Header from "../../components/header";
@@ -18,7 +18,7 @@ type Alternativa = {
 
 type Questao = {
   prova: string;
-  index: number;
+  index: string;
   assunto?: string;
   enunciado?: string;
   imagens: string[];
@@ -45,7 +45,6 @@ function SessaoDeQuestoesPageContent() {
 
   const area = searchParams.get("area");
   const quantidade = searchParams.get("quantidade") || "10";
-  const nivel = searchParams.get("nivel") || "medio";
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -60,12 +59,12 @@ function SessaoDeQuestoesPageContent() {
   const [corrigindo, setCorrigindo] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
-  const inicioQuestaoRef = useRef(Date.now());
+  const inicioQuestaoRef = useRef(0);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      router.replace("/login?next=/questoes");
+      router.replace("/login?next=/trilha");
       return;
     }
     setCheckingAuth(false);
@@ -75,7 +74,7 @@ function SessaoDeQuestoesPageContent() {
     if (checkingAuth) return;
 
     if (!area) {
-      router.replace("/questoes");
+      router.replace("/trilha");
       return;
     }
 
@@ -85,7 +84,7 @@ function SessaoDeQuestoesPageContent() {
 
       try {
         const areaValida = area ?? "";
-        const params = new URLSearchParams({ area: areaValida, quantidade, nivel });
+        const params = new URLSearchParams({ area: areaValida, quantidade });
         const response = await fetch(`${API_BASE}/questoes/gerar?${params.toString()}`);
 
         if (!response.ok) {
@@ -106,7 +105,7 @@ function SessaoDeQuestoesPageContent() {
 
     carregarQuestoes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkingAuth, area, quantidade, nivel]);
+  }, [checkingAuth, area, quantidade]);
 
   useEffect(() => {
     inicioQuestaoRef.current = Date.now();
@@ -205,7 +204,7 @@ function SessaoDeQuestoesPageContent() {
 
   function handleSair() {
     const confirmar = window.confirm("Tem certeza que deseja sair? Seu progresso nesta sessão será perdido.");
-    if (confirmar) router.push("/questoes");
+    if (confirmar) router.push("/trilha");
   }
 
   if (checkingAuth) return null;
@@ -224,8 +223,8 @@ function SessaoDeQuestoesPageContent() {
           {!loading && erro && !finalizado && (
             <div className="quiz-error">
               <p>{erro}</p>
-              <button type="button" onClick={() => router.push("/questoes")}>
-                Voltar para a seleção
+              <button type="button" onClick={() => router.push("/trilha")}>
+                Voltar para a trilha
               </button>
             </div>
           )}
@@ -364,12 +363,9 @@ function SessaoDeQuestoesPageContent() {
                 {respondidas < totalQuestoes
                   ? `Você respondeu ${respondidas} de ${totalQuestoes} questões. `
                   : ""}
-                {totalQuestoes > 0 ? Math.round((acertos / totalQuestoes) * 100) : 0}% de aproveitamento nesse nível.
+                {totalQuestoes > 0 ? Math.round((acertos / totalQuestoes) * 100) : 0}% de aproveitamento neste bloco.
               </p>
               <div className="quiz-summary-actions">
-                <button type="button" className="secundario" onClick={() => router.push("/questoes")}>
-                  Praticar novamente
-                </button>
                 <button type="button" className="primario" onClick={() => router.push("/trilha")}>
                   Voltar para a trilha
                 </button>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Info } from "lucide-react";
 import "./trilha.css";
 
@@ -11,12 +11,20 @@ import SubjectCard from "./components/subjectcard";
 import ProgressCard from "./components/progresscard";
 import StreakCard from "./components/streakcard";
 import RewardCard from "./components/rewardcard";
+import StudyChoiceModal from "./components/StudyChoiceModal";
 import { API_BASE } from "../lib/api";
 
-const EMPTY_TRAIL = {
+type TrailArea = { slug: string; progresso: number };
+type TrailProgress = {
+  progresso_geral: number;
+  taxa_acertos: number;
+  areas: TrailArea[];
+  sequencia: { dias: number; semana: { estudou: boolean }[] };
+};
+
+const EMPTY_TRAIL: TrailProgress = {
   progresso_geral: 0,
-  temas_concluidos: 0,
-  total_temas: 0,
+  taxa_acertos: 0,
   areas: [],
   sequencia: {
     dias: 0,
@@ -24,10 +32,17 @@ const EMPTY_TRAIL = {
   },
 };
 
-export default function TrilhaPage() {
+const AREAS = new Set(["linguagens", "ciencias-humanas", "matematica", "ciencias-natureza"]);
+
+function TrilhaPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const areaParam = searchParams.get("area") || "";
+  const areaSelecionada = AREAS.has(areaParam) ? areaParam : null;
+  const quantidadeParam = Number(searchParams.get("quantidade"));
+  const quantidadeInicial = [5, 10, 15, 20].includes(quantidadeParam) ? quantidadeParam : 10;
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const [trail, setTrail] = useState<any>(EMPTY_TRAIL);
+  const [trail, setTrail] = useState<TrailProgress>(EMPTY_TRAIL);
   const [loadingTrail, setLoadingTrail] = useState(true);
   const [trailError, setTrailError] = useState("");
 
@@ -39,7 +54,6 @@ export default function TrilhaPage() {
     }
 
     try {
-      setTrailError("");
       const response = await fetch(`${API_BASE}/trilha/progresso`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
@@ -57,31 +71,39 @@ export default function TrilhaPage() {
       }
 
       setTrail(await response.json());
-    } catch (error: any) {
+      setTrailError("");
+    } catch (error: unknown) {
       console.error("Erro ao carregar a trilha:", error);
-      setTrailError(error?.message || "Não foi possível carregar a trilha.");
+      setTrailError(error instanceof Error ? error.message : "Não foi possível carregar a trilha.");
     } finally {
       setLoadingTrail(false);
     }
   }, [router]);
 
   useEffect(() => {
-    loadTrail();
+    const inicial = window.setTimeout(() => { void loadTrail(); }, 0);
     window.addEventListener("lumostudy:stats-changed", loadTrail);
-    return () => window.removeEventListener("lumostudy:stats-changed", loadTrail);
+    return () => {
+      window.clearTimeout(inicial);
+      window.removeEventListener("lumostudy:stats-changed", loadTrail);
+    };
   }, [loadTrail]);
 
   const areasBySlug = useMemo(() => {
-    const result: Record<string, any> = {};
-    (trail?.areas || []).forEach((area: any) => {
+    const result: Record<string, TrailArea> = {};
+    (trail?.areas || []).forEach((area) => {
       result[area.slug] = area;
     });
     return result;
   }, [trail]);
 
-  const handleSubjectContinue = ({ title }: { title: string }) => {
-    router.push(`/questoes?area=${encodeURIComponent(title)}`);
+  const handleSubjectContinue = (area: string) => {
+    router.push(`/trilha?area=${encodeURIComponent(area)}`, { scroll: false });
   };
+
+  const closeStudyChoice = useCallback(() => {
+    router.replace("/trilha", { scroll: false });
+  }, [router]);
 
   const handleInfoButtonClick = () => {
     setIsInfoOpen((prev) => !prev);
@@ -117,12 +139,13 @@ export default function TrilhaPage() {
                 <p>A trilha reúne os conteúdos essenciais para o seu estudo, organizando módulos, progresso e metas em uma jornada guiada.</p>
               </div>
             )}
-            <p>Estude por módulos, complete níveis e avance na sua jornada.</p>
+            <p>Escolha uma área para praticar questões ou fazer um simulado.</p>
             {trailError && <p className="trail-error">{trailError}</p>}
           </div>
 
           <div className="timeline">
             <SubjectCard
+              area="linguagens"
               color="purple"
               image="/linguagenscard.png"
               title="Linguagens, Códigos e suas Tecnologias"
@@ -133,6 +156,7 @@ export default function TrilhaPage() {
             />
 
             <SubjectCard
+              area="ciencias-humanas"
               color="green"
               image="/cienciashumanas.png"
               title="Ciências Humanas"
@@ -143,6 +167,7 @@ export default function TrilhaPage() {
             />
 
             <SubjectCard
+              area="matematica"
               color="blue"
               image="/matematica.png"
               title="Matemática"
@@ -153,6 +178,7 @@ export default function TrilhaPage() {
             />
 
             <SubjectCard
+              area="ciencias-natureza"
               color="yellow"
               image="/natureza.png"
               title="Ciências da Natureza"
@@ -167,8 +193,7 @@ export default function TrilhaPage() {
         <aside className="right-column">
           <ProgressCard
             progress={trail?.progresso_geral || 0}
-            completed={trail?.temas_concluidos || 0}
-            total={trail?.total_temas || 0}
+            taxaAcertos={trail?.taxa_acertos || 0}
             loading={loadingTrail}
           />
 
@@ -181,6 +206,22 @@ export default function TrilhaPage() {
           <RewardCard />
         </aside>
       </div>
+      {areaSelecionada && (
+        <StudyChoiceModal
+          key={areaSelecionada}
+          area={areaSelecionada}
+          quantidadeInicial={quantidadeInicial}
+          onClose={closeStudyChoice}
+        />
+      )}
     </main>
+  );
+}
+
+export default function TrilhaPage() {
+  return (
+    <Suspense fallback={null}>
+      <TrilhaPageContent />
+    </Suspense>
   );
 }

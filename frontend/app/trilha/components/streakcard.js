@@ -1,5 +1,6 @@
 "use client";
 
+/** @param {{ streak?: number, week?: Array<{ estudou: boolean, data?: string }>, loading?: boolean }} props */
 export default function StreakCard({ streak = 0, week = [], loading = false }) {
   const dias = Number(streak) || 0;
   const semana = Array.from({ length: 7 }, (_, index) => week[index] || { estudou: false });

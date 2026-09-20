@@ -114,7 +114,7 @@ export default function UsuarioPage() {
 
   function openQuestions(areaSlug: string) {
     if (!areaSlug) return;
-    router.push(`/questoes?area=${encodeURIComponent(areaSlug)}`);
+    router.push(`/trilha?area=${encodeURIComponent(areaSlug)}`);
   }
 
   const viewModel = useMemo(() => {

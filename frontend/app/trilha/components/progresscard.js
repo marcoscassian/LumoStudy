@@ -1,7 +1,8 @@
 "use client";
 
-export default function ProgressCard({ progress = 0, completed = 0, total = 0, loading = false }) {
+export default function ProgressCard({ progress = 0, taxaAcertos = 0, loading = false }) {
   const percentual = Math.min(100, Math.max(0, Number(progress) || 0));
+  const taxa = Math.min(100, Math.max(0, Number(taxaAcertos) || 0));
 
   return (
     <div className="side-card">
@@ -18,7 +19,7 @@ export default function ProgressCard({ progress = 0, completed = 0, total = 0, l
       </div>
 
       <p>
-        {loading ? "Carregando progresso..." : `${completed}/${total} temas concluídos`}
+        {loading ? "Carregando taxa de acerto..." : <>Taxa de acerto: <strong>{taxa}%</strong></>}
       </p>
     </div>
   );

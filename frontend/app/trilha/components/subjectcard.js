@@ -1,10 +1,11 @@
 
 "use client";
 
-import { CheckCircle2, Lock, PlayCircle, ChevronDown } from "lucide-react";
+import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
 
 export default function SubjectCard({
   image,
+  area,
   title,
   description,
   progress = 0,
@@ -28,10 +29,12 @@ export default function SubjectCard({
 
         <div className="subject-action">
           <button
+            type="button"
             className="subject-cta"
-            onClick={() => onTrain && onTrain({ title })}
+            onClick={() => onTrain && onTrain(area)}
+            aria-label={`Estudar ${title}`}
           >
-            Treinar
+            Estudar
           </button>
         </div>
 
