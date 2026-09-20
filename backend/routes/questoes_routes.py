@@ -36,8 +36,7 @@ AREAS = [
 ]
 
 VALORES_DE_AREA = {area["value"] for area in AREAS}
-NIVEIS_VALIDOS = {"facil", "medio", "dificil", "misto"}
-QUANTIDADES_VALIDAS = {5, 10, 15, 20, 25}
+QUANTIDADES_VALIDAS = {5, 10, 15, 20}
 
 
 def _listar_provas() -> list[str]:
@@ -64,75 +63,19 @@ def _pastas_de_questoes(prova: str) -> list[str]:
 
 
 def _questoes_da_area(area: str) -> list[dict]:
-    """Retorna [{prova, index, nivel}] para a área pedida, juntando todas as provas.
+    """Retorna questões da área pedida, juntando todas as provas.
     Aqui 'index' é o nome real da pasta da questão (ex.: '12' ou '91-ingles'),
     não necessariamente um número puro, já que provas com opção de língua
-    estrangeira guardam duas pastas para o mesmo número de questão.
-
-    Sobre o 'nivel': o ENEM não publica uma tag oficial de dificuldade por
-    questão. Como aproximação, calculamos a posição de cada questão dentro do
-    bloco da área NA PRÓPRIA PROVA em que ela está (ex.: a questão é a 5ª das
-    40 de Linguagens daquela prova) e dividimos esse bloco em três terços:
-    o primeiro terço vira "fácil", o do meio "médio" e o último "difícil".
-    Isso é feito por prova (não a lista combinada de todos os anos), para não
-    misturar a ordem de anos diferentes. Não é uma classificação pedagógica
-    oficial, é só uma forma de dar variedade entre os três níveis oferecidos
-    na tela."""
+    estrangeira guardam duas pastas para o mesmo número de questão."""
     itens = []
     for prova in _listar_provas():
         pastas_da_area = [
             pasta for pasta in _pastas_de_questoes(prova)
             if _ler_json_questao(prova, pasta).get("discipline") == area
         ]
-
-        total = len(pastas_da_area)
-        corte1 = max(1, total // 3)
-        corte2 = max(corte1 + 1, (total * 2) // 3)
-
-        for posicao, pasta in enumerate(pastas_da_area):
-            if posicao < corte1:
-                nivel = "facil"
-            elif posicao < corte2:
-                nivel = "medio"
-            else:
-                nivel = "dificil"
-
-            itens.append({"prova": prova, "index": pasta, "nivel": nivel})
+        itens.extend({"prova": prova, "index": pasta} for pasta in pastas_da_area)
 
     return itens
-
-
-def _filtrar_por_nivel(itens: list[dict], nivel: str) -> list[dict]:
-    if nivel == "misto":
-        return itens
-    filtrados = [item for item in itens if item["nivel"] == nivel]
-    return filtrados or itens
-
-
-def _selecionar_nivel_misto(itens: list[dict], quantidade: int) -> list[dict]:
-    """Monta uma sessão realmente mista, tentando incluir os três níveis."""
-    por_nivel = {nivel: [item for item in itens if item["nivel"] == nivel] for nivel in ("facil", "medio", "dificil")}
-    for grupo in por_nivel.values():
-        random.shuffle(grupo)
-
-    escolhidos: list[dict] = []
-    while len(escolhidos) < quantidade:
-        adicionou = False
-        for nivel in ("facil", "medio", "dificil"):
-            if por_nivel[nivel] and len(escolhidos) < quantidade:
-                escolhidos.append(por_nivel[nivel].pop())
-                adicionou = True
-        if not adicionou:
-            break
-
-    if len(escolhidos) < quantidade:
-        chaves = {(item["prova"], item["index"]) for item in escolhidos}
-        restantes = [item for item in itens if (item["prova"], item["index"]) not in chaves]
-        random.shuffle(restantes)
-        escolhidos.extend(restantes[: quantidade - len(escolhidos)])
-
-    random.shuffle(escolhidos)
-    return escolhidos[:quantidade]
 
 
 # =======================================================================
@@ -348,14 +291,13 @@ def _buscar_editorial(session: Session, prova: str, index: str) -> QuestaoEditor
     ).first()
 
 
-def _montar_questao_publica(prova: str, index: str, nivel: str, session: Session) -> dict:
+def _montar_questao_publica(prova: str, index: str, session: Session) -> dict:
     dados = _ler_json_questao(prova, index)
     questao = _montar_questao_original(prova, index, dados)
     questao.pop("gabarito", None)
     editorial = _buscar_editorial(session, prova, index)
     assunto_automatico = _classificar_assunto(dados.get("discipline"), dados)
     questao.update({
-        "nivel": nivel,
         "assunto": editorial.conteudo_principal if editorial else assunto_automatico,
         "disciplina": editorial.disciplina if editorial else None,
         "conteudoPrincipal": editorial.conteudo_principal if editorial else assunto_automatico,
@@ -413,49 +355,27 @@ def visualizar_questao_da_prova(ano: int, index: str):
 def gerar_questoes(
     area: str = Query(..., description="linguagens, ciencias-humanas, matematica ou ciencias-natureza"),
     quantidade: int = Query(10),
-    nivel: str = Query("medio", description="facil, medio, dificil ou misto"),
     session: Session = Depends(get_session),
 ):
     if area not in VALORES_DE_AREA:
         raise HTTPException(status_code=400, detail="Área inválida")
 
     if quantidade not in QUANTIDADES_VALIDAS:
-        raise HTTPException(status_code=400, detail="Quantidade inválida. Use 5, 10, 15, 20 ou 25")
-
-    if nivel not in NIVEIS_VALIDOS:
-        raise HTTPException(status_code=400, detail="Nível inválido. Use facil, medio, dificil ou misto")
+        raise HTTPException(status_code=400, detail="Quantidade inválida. Use 5, 10, 15 ou 20")
 
     itens_area = _questoes_da_area(area)
 
     if not itens_area:
         raise HTTPException(status_code=404, detail="Nenhuma questão encontrada para essa área")
 
-    if nivel == "misto":
-        escolhidos = _selecionar_nivel_misto(itens_area, quantidade)
-    else:
-        itens_nivel = _filtrar_por_nivel(itens_area, nivel)
-
-        # Se o nível pedido não tiver questões suficientes, completa com outros
-        # níveis da mesma área para entregar a quantidade solicitada.
-        if len(itens_nivel) < quantidade:
-            faltando = quantidade - len(itens_nivel)
-            chaves_ja_usadas = {(item["prova"], item["index"]) for item in itens_nivel}
-            complemento = [
-                item for item in itens_area
-                if (item["prova"], item["index"]) not in chaves_ja_usadas
-            ]
-            random.shuffle(complemento)
-            itens_nivel = itens_nivel + complemento[:faltando]
-
-        escolhidos = random.sample(itens_nivel, k=min(quantidade, len(itens_nivel)))
+    escolhidos = random.sample(itens_area, k=min(quantidade, len(itens_area)))
     questoes = [
-        _montar_questao_publica(item["prova"], item["index"], item["nivel"], session)
+        _montar_questao_publica(item["prova"], item["index"], session)
         for item in escolhidos
     ]
 
     return {
         "area": area,
-        "nivel": nivel,
         "quantidade": len(questoes),
         "questoes": questoes,
     }

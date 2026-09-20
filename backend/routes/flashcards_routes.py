@@ -135,12 +135,14 @@ def registrar_revisao(
     resultado = payload.resultado.strip().lower()
     intervalos = {
         "errei": 1,
+        "parcial": 2,
         "dificil": 2,
         "bom": 5,
+        "sem_ajuda": 10,
         "facil": 10,
     }
     if resultado not in intervalos:
-        raise HTTPException(status_code=400, detail="Resultado inválido. Use errei, dificil, bom ou facil")
+        raise HTTPException(status_code=400, detail="Resultado de revisão inválido")
 
     intervalo = intervalos[resultado]
     agora = datetime.now()

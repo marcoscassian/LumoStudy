@@ -27,7 +27,7 @@ ROTULOS_PERIODO = {
     "tarde": "Tarde",
     "noite": "Noite",
 }
-QUANTIDADES_QUESTOES = (5, 10, 15, 20, 25)
+QUANTIDADES_QUESTOES = (5, 10, 15, 20)
 
 
 class ConfiguracaoCronogramaPayload(BaseModel):
@@ -143,7 +143,7 @@ def _estatisticas_areas(session: Session, usuario_id: int, areas: list[Area]) ->
 
 
 def _quantidade_questoes(duracao_minutos: int) -> int:
-    estimada = max(5, min(25, duracao_minutos // 3))
+    estimada = max(5, min(20, duracao_minutos // 3))
     elegiveis = [qtd for qtd in QUANTIDADES_QUESTOES if qtd <= estimada]
     return max(elegiveis) if elegiveis else 5
 
@@ -154,13 +154,10 @@ def _bloco_questoes(area: dict, minutos: int) -> dict:
         "tipo": "questoes",
         "area_id": area["id"],
         "titulo": f"Questões de {area['nome']}",
-        "descricao": (
-            f"Resolva {quantidade} questões em nível misto, combinando fáceis, médias e difíceis. "
-            "O cronograma alterna as quatro áreas e aumenta a frequência das que precisam de mais atenção."
-        ),
+        "descricao": f"Resolva um bloco de {quantidade} questões. Você pode ajustar a quantidade antes de começar.",
         "duracao_minutos": minutos,
         "quantidade": quantidade,
-        "rota": f"/questoes?area={area['slug']}&quantidade={quantidade}&nivel=misto",
+        "rota": f"/trilha?area={area['slug']}&quantidade={quantidade}",
     }
 
 
@@ -171,7 +168,7 @@ def _bloco_flashcards(area: dict, minutos: int) -> dict:
         "titulo": "Revisão com flashcards",
         "descricao": (
             f"Revise os flashcards disponíveis por {minutos} minutos, dando preferência a conteúdos de "
-            f"{area['nome']} e aos cartões que você considera mais difíceis."
+            f"{area['nome']} e aos cartões que precisam de mais revisão."
         ),
         "duracao_minutos": minutos,
         "quantidade": None,
@@ -323,6 +320,38 @@ def _serializar_preferencia(preferencia: CronogramaPreferencia) -> dict:
     }
 
 
+def _serializar_atividade(item: CronogramaAtividade, area_por_id: dict[int, Area]) -> dict:
+    area = area_por_id.get(item.area_id)
+    quantidade = item.quantidade
+    descricao = item.descricao
+    rota = item.rota
+
+    if item.tipo == "questoes":
+        quantidade = quantidade if quantidade in QUANTIDADES_QUESTOES else _quantidade_questoes(item.duracao_minutos)
+        descricao = f"Resolva um bloco de {quantidade} questões. Você pode ajustar a quantidade antes de começar."
+        rota = f"/trilha?area={area.slug}&quantidade={quantidade}" if area else "/trilha"
+    elif item.tipo == "flashcards":
+        nome_area = area.nome if area else "sua área de estudo"
+        descricao = (
+            f"Revise os flashcards disponíveis por {item.duracao_minutos} minutos, dando preferência a conteúdos de "
+            f"{nome_area} e aos cartões que precisam de mais revisão."
+        )
+
+    return {
+        "id": item.id,
+        "periodo": item.periodo,
+        "periodo_label": ROTULOS_PERIODO.get(item.periodo, item.periodo.title()),
+        "tipo": item.tipo,
+        "area": area.nome if area else None,
+        "titulo": item.titulo,
+        "descricao": descricao,
+        "duracao_minutos": item.duracao_minutos,
+        "quantidade": quantidade,
+        "rota": rota,
+        "concluida": item.concluida,
+    }
+
+
 def _resposta_cronograma(session: Session, usuario_id: int, preferencia: CronogramaPreferencia) -> dict:
     hoje = date.today()
     fim = hoje + timedelta(days=6)
@@ -350,22 +379,7 @@ def _resposta_cronograma(session: Session, usuario_id: int, preferencia: Cronogr
                 "total_minutos": sum(item.duracao_minutos for item in itens),
                 "concluidas": sum(1 for item in itens if item.concluida),
                 "total_atividades": len(itens),
-                "atividades": [
-                    {
-                        "id": item.id,
-                        "periodo": item.periodo,
-                        "periodo_label": ROTULOS_PERIODO.get(item.periodo, item.periodo.title()),
-                        "tipo": item.tipo,
-                        "area": area_por_id[item.area_id].nome if item.area_id in area_por_id else None,
-                        "titulo": item.titulo,
-                        "descricao": item.descricao,
-                        "duracao_minutos": item.duracao_minutos,
-                        "quantidade": item.quantidade,
-                        "rota": item.rota,
-                        "concluida": item.concluida,
-                    }
-                    for item in itens
-                ],
+                "atividades": [_serializar_atividade(item, area_por_id) for item in itens],
             }
         )
 

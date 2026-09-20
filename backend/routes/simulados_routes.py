@@ -95,7 +95,7 @@ def iniciar_simulado_configuravel(payload: IniciarSimuladoRequest, usuario: Usua
         prova = session.get(Prova, questao.prova_id)
         if not prova:
             continue
-        questoes.append(_montar_questao_publica(prova.codigo, questao.numero, questao.nivel, session))
+        questoes.append(_montar_questao_publica(prova.codigo, questao.numero, session))
 
     return {
         "tentativa_id": tentativa.id,

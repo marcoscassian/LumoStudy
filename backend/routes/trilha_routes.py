@@ -2,10 +2,11 @@ from datetime import date, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from database.db import get_session
-from models.models import Area, DiaEstudo, ProgressoTema, Tema
+from models.models import Area, DiaEstudo, ProgressoTema, RespostaUsuario, Tema
 from routes.login_routes import UsuarioLogado
 from services.progresso_service import recalcular_streak
 
@@ -62,6 +63,16 @@ def obter_progresso(usuario: UsuarioLogado, session: SessionDep):
     todos_temas = [tema for area in resposta for tema in area["temas"]]
     geral = round(sum(t["progresso"] for t in todos_temas) / len(todos_temas)) if todos_temas else 0
     concluidos = sum(1 for t in todos_temas if t["status"] == "concluido")
+    questoes_respondidas = session.exec(
+        select(func.count(RespostaUsuario.id)).where(RespostaUsuario.usuario_id == usuario.id)
+    ).one()
+    questoes_corretas = session.exec(
+        select(func.count(RespostaUsuario.id)).where(
+            RespostaUsuario.usuario_id == usuario.id,
+            RespostaUsuario.correta == True,  # noqa: E712
+        )
+    ).one()
+    taxa_acertos = round(questoes_corretas / questoes_respondidas * 100) if questoes_respondidas else 0
 
     # Recalcula a sequência usando o histórico real antes de devolver a tela.
     recalcular_streak(session, usuario)
@@ -97,6 +108,7 @@ def obter_progresso(usuario: UsuarioLogado, session: SessionDep):
         "progresso_geral": geral,
         "temas_concluidos": concluidos,
         "total_temas": len(todos_temas),
+        "taxa_acertos": taxa_acertos,
         "areas": resposta,
         "sequencia": {
             "dias": int(usuario.streak or 0),
