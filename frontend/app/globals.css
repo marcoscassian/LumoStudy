@@ -415,7 +415,7 @@ html[data-theme="dark"] .input-box input {
   color: var(--lumo-text) !important;
 }
 
-/* Sprites de mascotes: quantidade de quadros variável, sempre em linha horizontal. */
+/* Sprites de mascotes: cada quadro é um PNG separado em public/sprites. */
 .mascot-sprite {
   --mascot-size: 64px;
   display: inline-block;
@@ -427,25 +427,13 @@ html[data-theme="dark"] .input-box input {
 
 .mascot-sprite-sheet {
   display: block;
-  width: var(--mascot-sheet-width);
-  height: var(--mascot-size);
+  width: 100%;
+  height: 100%;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  max-width: none;
-  object-fit: fill;
-}
-
-.mascot-sprite-sheet.animated {
-  animation: lumo-mascot-idle var(--mascot-duration) steps(var(--mascot-steps), end) infinite;
-}
-
-@keyframes lumo-mascot-idle {
-  from { transform: translateX(0); }
-  to { transform: translateX(var(--mascot-shift)); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mascot-sprite-sheet.animated { animation: none; }
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
 }
 
 .mascot-card { position: relative; overflow: visible !important; }

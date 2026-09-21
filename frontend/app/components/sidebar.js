@@ -122,12 +122,13 @@ export default function Sidebar() {
         <div className="profile-card profile-card--compact mascot-card">
           <button type="button" className="mascot-notification-trigger" onClick={() => setAberto(true)} aria-label="Abrir cartas e notificações" aria-expanded={aberto}>
             <MascotSprite
-              src={mascote.slug === "coruja" && naoLidas > 0 ? "/sprites/mascotes/corujan.png" : mascote.url}
+              src={mascote.url}
               fallbackSrc={mascote.url}
+              slug={mascote.slug}
               nome={mascote.nome}
               size={82}
-              frames={mascote.slug === "coruja" && naoLidas > 0 ? 5 : 6}
-              duration={mascote.slug === "coruja" && naoLidas > 0 ? 1.9 : 2.7}
+              notification={naoLidas > 0}
+              duration={naoLidas > 0 ? 1.9 : 2.7}
             />
             {naoLidas > 0 && <span className="mascot-notification-badge">{naoLidas > 9 ? "9+" : naoLidas}</span>}
           </button>
@@ -188,7 +189,7 @@ export default function Sidebar() {
             <div className="notification-letter-body">
               {notificacoes.length === 0 ? (
                 <div className="notification-empty-letter">
-                  <MascotSprite src={mascote.url} nome={mascote.nome} size={78} frames={6} />
+                  <MascotSprite src={mascote.url} slug={mascote.slug} nome={mascote.nome} size={78} />
                   <strong>Nenhuma carta por enquanto</strong>
                   <p>Quando surgir uma conquista, compra ou lembrete de estudo, seu mascote entregará a mensagem aqui.</p>
                 </div>
