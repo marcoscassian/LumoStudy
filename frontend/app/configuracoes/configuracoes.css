@@ -520,3 +520,173 @@ html[data-theme="dark"] .config-card {
 .accent-theme-swatch--house.house-lufa-lufa span:nth-child(1) { background:#886200; }
 .accent-theme-swatch--house.house-lufa-lufa span:nth-child(2) { background:#d39a00; }
 .accent-theme-swatch--house.house-lufa-lufa span:nth-child(3) { background:#efc34c; }
+
+/* Configurações simplificadas: conta + temas + metas. */
+.appearance-card .page-card-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-style-choice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.theme-style-option {
+  position: relative;
+  min-width: 0;
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 11px 8px 10px;
+  border: 2px solid var(--lumo-border, #ebe7f2);
+  border-radius: 15px;
+  background: var(--lumo-surface, #fff);
+  color: var(--lumo-text, #171717);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.theme-style-option:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(var(--lumo-accent-rgb), .48);
+}
+
+.theme-style-option.selected {
+  border-color: var(--lumo-accent);
+  background: var(--lumo-surface-purple, #f4efff);
+  box-shadow: 0 0 0 3px rgba(var(--lumo-accent-rgb), .08);
+}
+
+.theme-style-visual {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  overflow: hidden;
+  border: 1px solid var(--lumo-border, #ebe7f2);
+  background: var(--lumo-surface-soft, #f7f5fc);
+}
+
+.theme-style-visual--classic {
+  background: linear-gradient(135deg, #2d1769, #6e42f5);
+}
+
+.theme-style-visual--classic > span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.75);
+}
+.theme-style-visual--classic > span:nth-child(1) { background: #4a2398; }
+.theme-style-visual--classic > span:nth-child(2) { background: #6e42f5; }
+.theme-style-visual--classic > span:nth-child(3) { background: #9a73ff; }
+
+.theme-style-visual--avatar {
+  border-radius: 50%;
+  background: var(--lumo-surface-purple, #f4efff);
+}
+
+.theme-style-visual--avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.theme-style-visual--custom {
+  color: var(--lumo-text-soft, #6f6b78);
+  background:
+    linear-gradient(135deg, rgba(var(--lumo-accent-rgb), .08), transparent 65%),
+    var(--lumo-surface-soft, #f7f5fc);
+}
+
+.theme-style-copy {
+  min-width: 0;
+}
+
+.theme-style-copy strong,
+.theme-style-copy small {
+  display: block;
+}
+
+.theme-style-copy strong {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.theme-style-copy small {
+  margin-top: 4px;
+  color: var(--lumo-text-soft, #6f6b78);
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+.theme-style-option--disabled {
+  opacity: .6;
+  cursor: default;
+}
+
+.theme-coming-soon {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 3px 5px;
+  border-radius: 999px;
+  background: var(--lumo-surface-purple, #f4efff);
+  color: var(--lumo-accent);
+  font-size: 7px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+/* A coluna lateral ficou menor depois da remoção de avatar/mascote,
+   evitando o grande vazio que aparecia abaixo do card de conta. */
+.settings-side-stack {
+  align-content: start;
+}
+
+@media (max-width: 1180px) and (min-width: 1101px) {
+  .theme-style-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-style-option {
+    min-height: 0;
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .theme-style-copy {
+    flex: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .theme-style-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-style-option {
+    min-height: 0;
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .theme-style-copy {
+    flex: 1;
+  }
+}

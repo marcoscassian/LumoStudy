@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Check, CircleHelp, Clock3, GraduationCap, Layers, Lock, Mail, Moon, Palette, PawPrint, Save, Settings2, ShoppingBag, Sun, Target, User } from "lucide-react";
+import { CircleHelp, Clock3, Layers, Lock, Mail, Moon, Palette, Save, Settings2, Sun, Target, User } from "lucide-react";
 
 import "../trilha/trilha.css";
 import "../sidebar-pages.css";
@@ -11,8 +11,6 @@ import Sidebar from "../components/sidebar";
 import Header from "../components/header";
 import { aplicarTema } from "../components/theme-provider";
 import { API_BASE, formatApiError } from "../lib/api";
-import MascotSprite from "../components/mascot-sprite";
-import { NOMES_CASAS, NOMES_CURSOS } from "../lib/identidade";
 
 type Periodo = "diario" | "semanal" | "mensal";
 type MetaTipo = "tempo_estudo" | "flashcards" | "questoes";
@@ -23,11 +21,8 @@ type PerfilResponse = {
   email?: string;
   modo_escuro?: boolean;
   tema_roxo_padrao?: boolean;
-  curso?: string;
   casa?: string;
   avatar_url?: string;
-  mascote_slug?: string;
-  mascote_url?: string;
   access_token?: string;
   detail?: unknown;
 };
@@ -35,27 +30,6 @@ type PerfilResponse = {
 type MetaApiItem = {
   tipo?: MetaTipo;
   total?: number;
-};
-
-type ItemLoja = {
-  id: number;
-  nome: string;
-  arquivo: string;
-  tipo: string;
-  casa?: string | null;
-  comprado: boolean;
-  equipado: boolean;
-};
-
-type LojaResponse = {
-  itens?: ItemLoja[];
-  avatar_url?: string;
-  mascote_slug?: string;
-  mascote_url?: string;
-  curso?: string;
-  casa?: string;
-  tema_roxo_padrao?: boolean;
-  detail?: unknown;
 };
 
 const METAS_PADRAO: MetasForm = {
@@ -115,15 +89,8 @@ export default function ConfiguracoesPage() {
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [modoEscuro, setModoEscuro] = useState(false);
   const [temaRoxoPadrao, setTemaRoxoPadrao] = useState(false);
-  const [curso, setCurso] = useState("informatica");
   const [casa, setCasa] = useState("grifinoria");
   const [avatarUrl, setAvatarUrl] = useState("/avatar.png");
-  const [avataresLoja, setAvataresLoja] = useState<ItemLoja[]>([]);
-  const [mascoteSlug, setMascoteSlug] = useState("coruja");
-  const [mascoteUrl, setMascoteUrl] = useState("/sprites/mascotes/coruja.png");
-  const [mascotesLoja, setMascotesLoja] = useState<ItemLoja[]>([]);
-  const [alterandoAvatar, setAlterandoAvatar] = useState<number | "padrao" | null>(null);
-  const [alterandoMascote, setAlterandoMascote] = useState<number | "padrao" | null>(null);
   const [metas, setMetas] = useState<MetasForm>(METAS_PADRAO);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
@@ -138,13 +105,12 @@ export default function ConfiguracoesPage() {
     async function carregar() {
       try {
         const headers = { Authorization: `Bearer ${token}` };
-        const [perfilResponse, metasResponse, lojaResponse] = await Promise.all([
+        const [perfilResponse, metasResponse] = await Promise.all([
           fetch(`${API_BASE}/usuarios/me/perfil`, { headers, cache: "no-store" }),
           fetch(`${API_BASE}/usuarios/me/metas`, { headers, cache: "no-store" }),
-          fetch(`${API_BASE}/loja`, { headers, cache: "no-store" }),
         ]);
 
-        if (perfilResponse.status === 401 || metasResponse.status === 401 || lojaResponse.status === 401) {
+        if (perfilResponse.status === 401 || metasResponse.status === 401) {
           localStorage.removeItem("token");
           router.replace("/login?next=/configuracoes");
           return;
@@ -152,7 +118,6 @@ export default function ConfiguracoesPage() {
 
         const perfil = (await perfilResponse.json().catch(() => ({}))) as PerfilResponse;
         const metasData = await metasResponse.json().catch(() => ({}));
-        const lojaData = (await lojaResponse.json().catch(() => ({}))) as LojaResponse;
 
         if (!perfilResponse.ok) {
           throw new Error(formatApiError(perfil.detail, "Não foi possível carregar seu perfil."));
@@ -161,30 +126,17 @@ export default function ConfiguracoesPage() {
           const detail = metasData && typeof metasData === "object" ? (metasData as { detail?: unknown }).detail : undefined;
           throw new Error(formatApiError(detail, "Não foi possível carregar suas metas."));
         }
-        if (!lojaResponse.ok) {
-          throw new Error(formatApiError(lojaData.detail, "Não foi possível carregar suas fotos de perfil."));
-        }
-
         const dark = Boolean(perfil.modo_escuro);
         const roxo = Boolean(perfil.tema_roxo_padrao);
-        const cursoRecebido = perfil.curso || "informatica";
         const casaRecebida = perfil.casa || "grifinoria";
         const avatarRecebido = perfil.avatar_url || "/avatar.png";
-        const mascoteSlugRecebido = perfil.mascote_slug || "coruja";
-        const mascoteUrlRecebido = perfil.mascote_url || "/sprites/mascotes/coruja.png";
 
         setNome(perfil.nome || "");
         setEmail(perfil.email || "");
         setModoEscuro(dark);
         setTemaRoxoPadrao(roxo);
-        setCurso(cursoRecebido);
         setCasa(casaRecebida);
         setAvatarUrl(avatarRecebido);
-        setMascoteSlug(mascoteSlugRecebido);
-        setMascoteUrl(mascoteUrlRecebido);
-        const itens = Array.isArray(lojaData.itens) ? lojaData.itens : [];
-        setAvataresLoja(itens.filter((item) => item.tipo === "avatar"));
-        setMascotesLoja(itens.filter((item) => item.tipo === "mascote"));
         setMetas(normalizarMetas(metasData));
         aplicarTema(dark, casaRecebida, roxo, avatarRecebido);
       } catch (error) {
@@ -206,88 +158,6 @@ export default function ConfiguracoesPage() {
   function escolherCorDoTema(usarRoxoPadrao: boolean) {
     setTemaRoxoPadrao(usarRoxoPadrao);
     aplicarTema(modoEscuro, casa, usarRoxoPadrao, avatarUrl);
-  }
-
-  async function selecionarAvatar(item?: ItemLoja) {
-    if (item && !item.comprado) {
-      router.push("/loja");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.replace("/login?next=/configuracoes");
-      return;
-    }
-
-    const idAcao: number | "padrao" = item?.id ?? "padrao";
-    setAlterandoAvatar(idAcao);
-    setMensagem("");
-    setTipoMensagem("");
-
-    try {
-      const endpoint = item ? `${API_BASE}/loja/${item.id}/equipar` : `${API_BASE}/loja/equipar-padrao`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = (await response.json().catch(() => ({}))) as LojaResponse & { mensagem?: string };
-      if (!response.ok) {
-        throw new Error(formatApiError(data.detail, "Não foi possível trocar a foto de perfil."));
-      }
-
-      const novoAvatar = data.avatar_url || item?.arquivo || "/avatar.png";
-      const novaCasa = data.casa || item?.casa || casa;
-      const novoRoxo = Boolean(data.tema_roxo_padrao);
-
-      setAvatarUrl(novoAvatar);
-      setCasa(novaCasa);
-      setTemaRoxoPadrao(novoRoxo);
-      if (Array.isArray(data.itens)) {
-        setAvataresLoja(data.itens.filter((lojaItem) => lojaItem.tipo === "avatar"));
-        setMascotesLoja(data.itens.filter((lojaItem) => lojaItem.tipo === "mascote"));
-      }
-      aplicarTema(modoEscuro, novaCasa, novoRoxo, novoAvatar);
-      setTipoMensagem("sucesso");
-      setMensagem(data.mensagem || "Foto de perfil atualizada!");
-      window.dispatchEvent(new Event("lumostudy:stats-changed"));
-    } catch (error) {
-      setTipoMensagem("erro");
-      setMensagem(error instanceof Error ? error.message : "Não foi possível trocar a foto de perfil.");
-    } finally {
-      setAlterandoAvatar(null);
-    }
-  }
-
-  async function selecionarMascote(item?: ItemLoja) {
-    if (item && !item.comprado) { router.push("/loja"); return; }
-    const token = localStorage.getItem("token");
-    if (!token) { router.replace("/login?next=/configuracoes"); return; }
-
-    const idAcao: number | "padrao" = item?.id ?? "padrao";
-    setAlterandoMascote(idAcao);
-    setMensagem("");
-    setTipoMensagem("");
-    try {
-      const endpoint = item ? `${API_BASE}/loja/${item.id}/equipar` : `${API_BASE}/loja/equipar-mascote-padrao`;
-      const response = await fetch(endpoint, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-      const data = (await response.json().catch(() => ({}))) as LojaResponse & { mensagem?: string };
-      if (!response.ok) throw new Error(formatApiError(data.detail, "Não foi possível trocar o mascote."));
-
-      setMascoteSlug(data.mascote_slug || (item ? item.nome.toLowerCase() : "coruja"));
-      setMascoteUrl(data.mascote_url || item?.arquivo || "/sprites/mascotes/coruja.png");
-      if (Array.isArray(data.itens)) {
-        setAvataresLoja(data.itens.filter((lojaItem) => lojaItem.tipo === "avatar"));
-        setMascotesLoja(data.itens.filter((lojaItem) => lojaItem.tipo === "mascote"));
-      }
-      setTipoMensagem("sucesso");
-      setMensagem(data.mensagem || "Mascote atualizado!");
-      window.dispatchEvent(new Event("lumostudy:mascot-changed"));
-      window.dispatchEvent(new Event("lumostudy:stats-changed"));
-    } catch (error) {
-      setTipoMensagem("erro");
-      setMensagem(error instanceof Error ? error.message : "Não foi possível trocar o mascote.");
-    } finally { setAlterandoMascote(null); }
   }
 
   async function handleSalvar(e: FormEvent<HTMLFormElement>) {
@@ -343,7 +213,6 @@ export default function ConfiguracoesPage() {
 
       setNome(data.nome || nomeLimpo);
       setEmail(data.email || emailLimpo);
-      setCurso(data.curso || curso);
       setCasa(casaAtualizada);
       setAvatarUrl(avatarAtualizado);
       setModoEscuro(darkAtualizado);
@@ -422,7 +291,7 @@ export default function ConfiguracoesPage() {
           <div className="sidebar-page-shell">
             <span className="sidebar-page-kicker"><Settings2 size={14}/> Preferências</span>
             <h1 className="sidebar-page-title">Configurações</h1>
-            <p className="sidebar-page-subtitle">Atualize sua conta, avatar, mascote, aparência e metas de estudo.</p>
+            <p className="sidebar-page-subtitle">Atualize sua conta, aparência e metas de estudo.</p>
 
             {mensagem && <div className={`inline-message ${tipoMensagem === "sucesso" ? "success" : "error"}`}>{mensagem}</div>}
 
@@ -462,103 +331,12 @@ export default function ConfiguracoesPage() {
                   </div>
 
                   <div className="settings-side-stack">
-                    <div className="page-card course-identity-card">
-                      <div className="page-card-header">
-                        <div><h3><GraduationCap size={17}/> Identidade do curso</h3><p>Definida no cadastro e usada como tema principal.</p></div>
-                      </div>
-                      <div className={`course-identity-badge house-${casa}`}>
-                        <strong>{NOMES_CURSOS[curso] || curso}</strong>
-                        <span>{NOMES_CASAS[casa] || casa}</span>
-                      </div>
-                    </div>
-
-                    <div className="page-card profile-avatar-card">
-                      <div className="page-card-header">
-                        <div>
-                          <h3><Camera size={17}/> Foto de perfil</h3>
-                          <p>Seu curso define sua casa e a cor do LumoStudy. Aqui você escolhe uma das quatro versões disponíveis para sua casa.</p>
-                        </div>
-                      </div>
-
-                      <div className="current-avatar-preview">
-                        <img src={avatarUrl} alt="Foto de perfil atual" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
-                        <div>
-                          <strong>Foto atual</strong>
-                          <small>O avatar não muda sua casa nem a cor do aplicativo.</small>
-                        </div>
-                      </div>
-
-                      <div className="avatar-selector-grid">
-                        <button
-                          type="button"
-                          className={`avatar-selector-option ${avatarUrl === "/avatar.png" ? "selected" : ""}`}
-                          onClick={() => void selecionarAvatar()}
-                          disabled={alterandoAvatar !== null}
-                          title="Usar foto padrão"
-                        >
-                          <span className="avatar-selector-image"><img src="/avatar.png" alt="Padrão" /></span>
-                          <span className="avatar-selector-name">Padrão</span>
-                          {avatarUrl === "/avatar.png" && <Check size={15} className="avatar-selector-check"/>}
-                        </button>
-
-                        {avataresLoja.map((item) => {
-                          const selecionado = avatarUrl === item.arquivo;
-                          return (
-                            <button
-                              type="button"
-                              key={item.id}
-                              className={`avatar-selector-option ${selecionado ? "selected" : ""} ${!item.comprado ? "locked" : ""}`}
-                              onClick={() => void selecionarAvatar(item)}
-                              disabled={alterandoAvatar !== null}
-                              title={item.comprado ? `Usar ${item.nome}` : `${item.nome} — desbloqueie na Loja`}
-                            >
-                              <span className="avatar-selector-image"><img src={item.arquivo} alt={item.nome} onError={(e) => { e.currentTarget.src = "/avatar.png"; }} /></span>
-                              <span className="avatar-selector-name">{item.nome}</span>
-                              {selecionado ? (
-                                <Check size={15} className="avatar-selector-check"/>
-                              ) : !item.comprado ? (
-                                <Lock size={14} className="avatar-selector-lock"/>
-                              ) : null}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <button type="button" className="avatar-shop-link" onClick={() => router.push("/loja")}>
-                        <ShoppingBag size={15}/> Ver Loja
-                      </button>
-                    </div>
-
-                    <div className="page-card profile-avatar-card mascot-settings-card">
-                      <div className="page-card-header">
-                        <div><h3><PawPrint size={17}/> Mascote de notificações</h3><p>A coruja é padrão. Mascotes extras são comprados na Loja.</p></div>
-                      </div>
-                      <div className="current-avatar-preview">
-                        <MascotSprite src={mascoteUrl} nome={mascoteSlug} size={58} />
-                        <div><strong>Mascote atual</strong><small>Ele aparece na lateral segurando suas cartas e avisos.</small></div>
-                      </div>
-                      <div className="avatar-selector-grid">
-                        <button type="button" className={`avatar-selector-option ${mascoteSlug === "coruja" ? "selected" : ""}`} onClick={() => void selecionarMascote()} disabled={alterandoMascote !== null}>
-                          <span className="avatar-selector-image mascot-option-image"><MascotSprite src="/sprites/mascotes/coruja.png" nome="Coruja" size={44}/></span>
-                          <span className="avatar-selector-name">Coruja</span>
-                          {mascoteSlug === "coruja" && <Check size={15} className="avatar-selector-check"/>}
-                        </button>
-                        {mascotesLoja.map((item) => {
-                          const selecionado = mascoteUrl === item.arquivo;
-                          return (
-                            <button type="button" key={item.id} className={`avatar-selector-option ${selecionado ? "selected" : ""} ${!item.comprado ? "locked" : ""}`} onClick={() => void selecionarMascote(item)} disabled={alterandoMascote !== null}>
-                              <span className="avatar-selector-image mascot-option-image"><MascotSprite src={item.arquivo} nome={item.nome} size={44}/></span>
-                              <span className="avatar-selector-name">{item.nome}</span>
-                              {selecionado ? <Check size={15} className="avatar-selector-check"/> : !item.comprado ? <Lock size={14} className="avatar-selector-lock"/> : null}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
                     <div className="page-card appearance-card">
                       <div className="page-card-header">
-                        <div><h3>Aparência</h3><p>Escolha a luminosidade e se o aplicativo usa o roxo clássico ou a cor da sua casa.</p></div>
+                        <div>
+                          <h3><Palette size={17}/> Temas</h3>
+                          <p>Escolha a luminosidade e o estilo de cores do LumoStudy.</p>
+                        </div>
                       </div>
 
                       <div className="appearance-option-label"><Sun size={15}/> Luminosidade</div>
@@ -573,17 +351,48 @@ export default function ConfiguracoesPage() {
                         </button>
                       </div>
 
-                      <div className="appearance-option-label appearance-option-label--spaced"><Palette size={15}/> Cor principal</div>
-                      <div className="theme-choice accent-theme-choice">
-                        <button type="button" className={`theme-preview accent-theme-preview ${temaRoxoPadrao ? "selected" : ""}`} onClick={() => escolherCorDoTema(true)}>
-                          <div className="accent-theme-swatch accent-theme-swatch--purple"><span/><span/><span/></div>
-                          <strong>Roxo padrão</strong>
-                          <small>Visual clássico do LumoStudy</small>
+                      <div className="appearance-option-label appearance-option-label--spaced"><Palette size={15}/> Estilo do tema</div>
+                      <div className="theme-style-choice">
+                        <button
+                          type="button"
+                          className={`theme-style-option ${temaRoxoPadrao ? "selected" : ""}`}
+                          onClick={() => escolherCorDoTema(true)}
+                        >
+                          <span className="theme-style-visual theme-style-visual--classic">
+                            <span/><span/><span/>
+                          </span>
+                          <span className="theme-style-copy">
+                            <strong>Clássico</strong>
+                            <small>Usa o roxo original do LumoStudy.</small>
+                          </span>
                         </button>
-                        <button type="button" className={`theme-preview accent-theme-preview ${!temaRoxoPadrao ? "selected" : ""}`} onClick={() => escolherCorDoTema(false)}>
-                          <div className={`accent-theme-swatch accent-theme-swatch--house house-${casa}`}><span/><span/><span/></div>
-                          <strong>Cor da sua casa</strong>
-                          <small>{NOMES_CASAS[casa] || casa}</small>
+
+                        <button
+                          type="button"
+                          className={`theme-style-option ${!temaRoxoPadrao ? "selected" : ""}`}
+                          onClick={() => escolherCorDoTema(false)}
+                        >
+                          <span className="theme-style-visual theme-style-visual--avatar">
+                            <img src={avatarUrl} alt="Foto de perfil" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
+                          </span>
+                          <span className="theme-style-copy">
+                            <strong>Foto de perfil</strong>
+                            <small>Usa as cores ligadas à sua foto de perfil atual.</small>
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="theme-style-option theme-style-option--disabled"
+                          disabled
+                          title="Em breve"
+                        >
+                          <span className="theme-style-visual theme-style-visual--custom"><Palette size={24}/></span>
+                          <span className="theme-style-copy">
+                            <strong>Personalizado</strong>
+                            <small>Em breve você poderá montar suas próprias cores.</small>
+                          </span>
+                          <span className="theme-coming-soon">Em breve</span>
                         </button>
                       </div>
                     </div>
