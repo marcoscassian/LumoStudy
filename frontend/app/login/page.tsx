@@ -3,7 +3,7 @@
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, Eye, LogIn, UserPlus } from "lucide-react";
+import { Mail, Lock, Eye, LogIn } from "lucide-react";
 import "../auth.css";
 import { aplicarTema } from "../components/theme-provider";
 import { API_BASE, formatApiError } from "../lib/api";
@@ -137,16 +137,8 @@ function LoginPageContent() {
           </button>
         </form>
 
-        <div className="auth-register-divider"><span>ou</span></div>
-        <div className="auth-register-cta">
-          <div>
-            <strong>Ainda não tem uma conta?</strong>
-            <span>Crie seu perfil e comece sua trilha de estudos.</span>
-          </div>
-          <Link href="/cadastro" className="auth-register-button">
-            <UserPlus size={17} />
-            Criar minha conta
-          </Link>
+        <div className="auth-back-link">
+          <Link href="/cadastro">Criar minha conta</Link>
         </div>
       </section>
     </main>

@@ -3,17 +3,15 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, GraduationCap, Lock, Mail, UserPlus, UserRound } from "lucide-react";
+import { Eye, Lock, Mail, UserPlus, UserRound } from "lucide-react";
 import "../auth.css";
 import { API_BASE, formatApiError } from "../lib/api";
-import { CURSOS, type CursoSlug } from "../lib/identidade";
 
 export default function CadastroPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [curso, setCurso] = useState<CursoSlug | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
@@ -21,12 +19,6 @@ export default function CadastroPage() {
   async function handleRegister(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setMensagem("");
-
-    if (!curso) {
-      setTipoMensagem("erro");
-      setMensagem("Selecione seu curso no IFRN Campus Caicó.");
-      return;
-    }
 
     try {
       const response = await fetch(`${API_BASE}/usuarios/`, {
@@ -36,7 +28,6 @@ export default function CadastroPage() {
           nome: username.trim(),
           email: email.trim().toLowerCase(),
           senha_hash: password,
-          curso,
         }),
       });
 
@@ -45,7 +36,7 @@ export default function CadastroPage() {
 
       if (response.ok) {
         setTipoMensagem("sucesso");
-        setMensagem("Conta criada! Sua casa e seu tema já estão definidos pelo curso.");
+        setMensagem("Conta criada com sucesso!");
         setTimeout(() => router.push("/login"), 900);
       } else {
         setTipoMensagem("erro");
@@ -65,10 +56,10 @@ export default function CadastroPage() {
         <h1>LumoStudy</h1>
       </div>
 
-      <section className="auth-card register register--course">
+      <section className="auth-card register">
         <span className="badge">Nova conta</span>
         <h2>Crie sua conta</h2>
-        <p>Seu curso define sua casa, as cores do aplicativo e os avatares disponíveis.</p>
+        <p>Crie seu perfil e comece sua trilha de estudos.</p>
 
         {mensagem && <div className={`mensagem ${tipoMensagem}`}>{mensagem}</div>}
 
@@ -85,22 +76,6 @@ export default function CadastroPage() {
             <input type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
 
-          <label>Curso no IFRN Campus Caicó</label>
-          <div className="course-selector" role="radiogroup" aria-label="Curso">
-            {CURSOS.map((opcao) => (
-              <button
-                type="button"
-                key={opcao.slug}
-                className={`course-option house-${opcao.casa} ${curso === opcao.slug ? "selected" : ""}`}
-                onClick={() => setCurso(opcao.slug)}
-                aria-pressed={curso === opcao.slug}
-              >
-                <GraduationCap size={18} />
-                <span><strong>{opcao.nome}</strong><small>{opcao.casaNome}</small></span>
-              </button>
-            ))}
-          </div>
-
           <label>Senha</label>
           <div className="input-box">
             <Lock size={16} />
@@ -109,10 +84,12 @@ export default function CadastroPage() {
           </div>
 
           <button type="submit"><UserPlus size={17} />Criar conta</button>
+
+          <div className="auth-back-link auth-back-link--compact">
+            <Link href="/login">Já possui conta? Entrar</Link>
+          </div>
         </form>
       </section>
-
-      <p className="bottom-text">Já possui conta? <Link href="/login">Entrar</Link></p>
     </main>
   );
 }
