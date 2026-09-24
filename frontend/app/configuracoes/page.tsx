@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CircleHelp, Clock3, Layers, Lock, Mail, Moon, Palette, Save, Settings2, Sun, Target, User } from "lucide-react";
 
@@ -15,6 +15,7 @@ import { API_BASE, formatApiError } from "../lib/api";
 type Periodo = "diario" | "semanal" | "mensal";
 type MetaTipo = "tempo_estudo" | "flashcards" | "questoes";
 type MetasForm = Record<Periodo, Record<MetaTipo, number>>;
+type ConfigTab = "conta" | "personalizacao" | "metas";
 
 type PerfilResponse = {
   nome?: string;
@@ -48,6 +49,12 @@ const TIPOS: Array<{ key: MetaTipo; label: string; unidade: string; icon: typeof
   { key: "tempo_estudo", label: "Tempo de estudo", unidade: "min", icon: Clock3 },
   { key: "flashcards", label: "Flashcards", unidade: "cards", icon: Layers },
   { key: "questoes", label: "Questões", unidade: "questões", icon: CircleHelp },
+];
+
+const CONFIG_TABS: Array<{ key: ConfigTab; label: string; icon: typeof User }> = [
+  { key: "conta", label: "Conta", icon: User },
+  { key: "personalizacao", label: "Personalização", icon: Palette },
+  { key: "metas", label: "Metas", icon: Target },
 ];
 
 function normalizarMetas(dados: unknown): MetasForm {
@@ -94,6 +101,7 @@ export default function ConfiguracoesPage() {
   const [metas, setMetas] = useState<MetasForm>(METAS_PADRAO);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
+  const [abaAtiva, setAbaAtiva] = useState<ConfigTab>("conta");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -282,6 +290,28 @@ export default function ConfiguracoesPage() {
     }
   }
 
+  function selecionarAba(aba: ConfigTab) {
+    setAbaAtiva(aba);
+    setMensagem("");
+    setTipoMensagem("");
+  }
+
+  function navegarAbas(event: KeyboardEvent<HTMLButtonElement>, abaAtual: ConfigTab) {
+    const indiceAtual = CONFIG_TABS.findIndex(({ key }) => key === abaAtual);
+    let proximoIndice = indiceAtual;
+
+    if (event.key === "ArrowRight") proximoIndice = (indiceAtual + 1) % CONFIG_TABS.length;
+    else if (event.key === "ArrowLeft") proximoIndice = (indiceAtual - 1 + CONFIG_TABS.length) % CONFIG_TABS.length;
+    else if (event.key === "Home") proximoIndice = 0;
+    else if (event.key === "End") proximoIndice = CONFIG_TABS.length - 1;
+    else return;
+
+    event.preventDefault();
+    const proximaAba = CONFIG_TABS[proximoIndice].key;
+    selecionarAba(proximaAba);
+    requestAnimationFrame(() => document.getElementById(`settings-tab-${proximaAba}`)?.focus());
+  }
+
   return (
     <main className="dashboard">
       <Header />
@@ -291,7 +321,7 @@ export default function ConfiguracoesPage() {
           <div className="sidebar-page-shell">
             <span className="sidebar-page-kicker"><Settings2 size={14}/> Preferências</span>
             <h1 className="sidebar-page-title">Configurações</h1>
-            <p className="sidebar-page-subtitle">Atualize sua conta, aparência e metas de estudo.</p>
+            <p className="sidebar-page-subtitle">Gerencie sua conta, personalização e metas de estudo em espaços separados.</p>
 
             {mensagem && <div className={`inline-message ${tipoMensagem === "sucesso" ? "success" : "error"}`}>{mensagem}</div>}
 
@@ -299,42 +329,85 @@ export default function ConfiguracoesPage() {
               <div className="page-card" style={{padding:28, marginTop:22}}>Carregando suas configurações...</div>
             ) : (
               <>
-                <form onSubmit={handleSalvar} className="settings-grid" style={{marginTop:22}}>
-                  <div className="config-card" style={{maxWidth:"none"}}>
-                    <h2 className="config-card-title">Conta</h2>
-                    <div className="config-form">
-                      <div className="config-field-group">
-                        <label>Nome</label>
-                        <div className="config-input"><User size={16}/><input value={nome} onChange={(e) => setNome(e.target.value)} required /></div>
-                      </div>
-                      <div className="config-field-group">
-                        <label>E-mail</label>
-                        <div className="config-input"><Mail size={16}/><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-                      </div>
+                <div className="settings-tabs" role="tablist" aria-label="Seções das configurações">
+                  {CONFIG_TABS.map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      id={`settings-tab-${key}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={abaAtiva === key}
+                      aria-controls={`settings-panel-${key}`}
+                      tabIndex={abaAtiva === key ? 0 : -1}
+                      className={`settings-tab ${abaAtiva === key ? "active" : ""}`}
+                      onClick={() => selecionarAba(key)}
+                      onKeyDown={(event) => navegarAbas(event, key)}
+                    >
+                      <Icon size={17}/>{label}
+                    </button>
+                  ))}
+                </div>
 
-                      <div className="config-divider"><span>Alterar senha (opcional)</span></div>
-                      <div className="config-field-group">
-                        <label>Senha atual</label>
-                        <div className="config-input"><Lock size={16}/><input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder="••••••••" /></div>
+                {abaAtiva === "conta" && (
+                  <form
+                    id="settings-panel-conta"
+                    role="tabpanel"
+                    aria-labelledby="settings-tab-conta"
+                    onSubmit={handleSalvar}
+                    className="settings-tab-panel"
+                  >
+                    <div className="config-card settings-section-card">
+                      <div className="settings-section-heading">
+                        <h2 className="config-card-title">Dados da conta</h2>
+                        <p>Atualize seus dados de acesso e sua senha.</p>
                       </div>
-                      <div className="config-field-row">
+                      <div className="config-form">
                         <div className="config-field-group">
-                          <label>Nova senha</label>
-                          <div className="config-input"><Lock size={16}/><input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} placeholder="Mínimo 6 caracteres" /></div>
+                          <label>Nome</label>
+                          <div className="config-input"><User size={16}/><input value={nome} onChange={(e) => setNome(e.target.value)} required /></div>
                         </div>
                         <div className="config-field-group">
-                          <label>Confirmar nova senha</label>
-                          <div className="config-input"><Lock size={16}/><input type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} placeholder="Repita a nova senha" /></div>
+                          <label>E-mail</label>
+                          <div className="config-input"><Mail size={16}/><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
                         </div>
+
+                        <div className="config-divider"><span>Alterar senha (opcional)</span></div>
+                        <div className="config-field-group">
+                          <label>Senha atual</label>
+                          <div className="config-input"><Lock size={16}/><input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} placeholder="••••••••" /></div>
+                        </div>
+                        <div className="config-field-row">
+                          <div className="config-field-group">
+                            <label>Nova senha</label>
+                            <div className="config-input"><Lock size={16}/><input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} placeholder="Mínimo 6 caracteres" /></div>
+                          </div>
+                          <div className="config-field-group">
+                            <label>Confirmar nova senha</label>
+                            <div className="config-input"><Lock size={16}/><input type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} placeholder="Repita a nova senha" /></div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="settings-panel-actions">
+                        <button type="submit" className="primary-action" disabled={salvando}>
+                          <Save size={18}/>{salvando ? "Salvando..." : "Salvar conta"}
+                        </button>
                       </div>
                     </div>
-                  </div>
+                  </form>
+                )}
 
-                  <div className="settings-side-stack">
-                    <div className="page-card appearance-card">
+                {abaAtiva === "personalizacao" && (
+                  <form
+                    id="settings-panel-personalizacao"
+                    role="tabpanel"
+                    aria-labelledby="settings-tab-personalizacao"
+                    onSubmit={handleSalvar}
+                    className="settings-tab-panel"
+                  >
+                    <div className="page-card appearance-card settings-section-card">
                       <div className="page-card-header">
                         <div>
-                          <h3><Palette size={17}/> Temas</h3>
+                          <h3><Palette size={17}/> Personalização</h3>
                           <p>Escolha a luminosidade e o estilo de cores do LumoStudy.</p>
                         </div>
                       </div>
@@ -395,15 +468,24 @@ export default function ConfiguracoesPage() {
                           <span className="theme-coming-soon">Em breve</span>
                         </button>
                       </div>
+
+                      <div className="settings-panel-actions">
+                        <button type="submit" className="primary-action" disabled={salvando}>
+                          <Save size={18}/>{salvando ? "Salvando..." : "Salvar personalização"}
+                        </button>
+                      </div>
                     </div>
+                  </form>
+                )}
 
-                    <button type="submit" className="primary-action" style={{width:"100%"}} disabled={salvando}>
-                      <Save size={18}/>{salvando ? "Salvando..." : "Salvar configurações"}
-                    </button>
-                  </div>
-                </form>
-
-                <form className="page-card metas-settings-card" onSubmit={handleSalvarMetas}>
+                {abaAtiva === "metas" && (
+                  <form
+                    id="settings-panel-metas"
+                    role="tabpanel"
+                    aria-labelledby="settings-tab-metas"
+                    className="page-card metas-settings-card settings-tab-panel"
+                    onSubmit={handleSalvarMetas}
+                  >
                   <div className="metas-settings-header">
                     <div>
                       <span className="sidebar-page-kicker"><Target size={14}/> Metas</span>
@@ -437,7 +519,8 @@ export default function ConfiguracoesPage() {
                       </section>
                     ))}
                   </div>
-                </form>
+                  </form>
+                )}
               </>
             )}
           </div>

@@ -149,7 +149,7 @@ function TrilhaPageContent() {
               color="purple"
               image="/linguagenscard.png"
               title="Linguagens, Códigos e suas Tecnologias"
-              description="Interpretação de textos..."
+              description="Interpretação de textos, semântica, literatura, artes e linguas (inglês e Espanhol)"
               progress={areasBySlug["linguagens"]?.progresso || 0}
               completed={`${areasBySlug["linguagens"]?.progresso || 0}%`}
               onTrain={handleSubjectContinue}
@@ -160,7 +160,7 @@ function TrilhaPageContent() {
               color="green"
               image="/cienciashumanas.png"
               title="Ciências Humanas"
-              description="História, Geografia..."
+              description="História, Geografia, Sociologia e Filosofia para entender o mundo."
               progress={areasBySlug["ciencias-humanas"]?.progresso || 0}
               completed={`${areasBySlug["ciencias-humanas"]?.progresso || 0}%`}
               onTrain={handleSubjectContinue}
@@ -171,7 +171,7 @@ function TrilhaPageContent() {
               color="blue"
               image="/matematica.png"
               title="Matemática"
-              description="Geometria, álgebra..."
+              description="Matemática básica, estatística, geometria, razão, proporção e financeira, etc..."
               progress={areasBySlug["matematica"]?.progresso || 0}
               completed={`${areasBySlug["matematica"]?.progresso || 0}%`}
               onTrain={handleSubjectContinue}
@@ -182,7 +182,7 @@ function TrilhaPageContent() {
               color="yellow"
               image="/natureza.png"
               title="Ciências da Natureza"
-              description="Biologia, Física..."
+              description="Biologia, Química, e Física para compreender  as leis da natureza."
               progress={areasBySlug["ciencias-natureza"]?.progresso || 0}
               completed={`${areasBySlug["ciencias-natureza"]?.progresso || 0}%`}
               onTrain={handleSubjectContinue}

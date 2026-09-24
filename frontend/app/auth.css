@@ -351,3 +351,246 @@ button:disabled {
   transform: translateY(-1px);
   background: rgba(var(--lumo-accent-rgb), .13);
 }
+
+/* Login e cadastro: cena imersiva com o formulario em vidro. */
+.auth-page:is(.auth-page--register, .auth-page--login),
+html[data-public-theme="true"] .auth-page:is(.auth-page--register, .auth-page--login) {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  padding: clamp(24px, 4vw, 52px) clamp(16px, 5vw, 72px);
+  overflow: hidden auto;
+  color: #ffffff !important;
+  background-color: #10072d !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: cover !important;
+}
+
+.auth-page.auth-page--register,
+html[data-public-theme="true"] .auth-page.auth-page--register {
+  background-image: url("/auth/cadastro-background.png") !important;
+}
+
+.auth-page.auth-page--login,
+html[data-public-theme="true"] .auth-page.auth-page--login {
+  background-image: url("/auth/login-background.png") !important;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, rgba(24, 8, 64, .12) 0%, rgba(7, 3, 27, .22) 72%),
+    linear-gradient(180deg, rgba(5, 2, 22, .05), rgba(5, 2, 22, .28));
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) > .brand,
+.auth-page:is(.auth-page--register, .auth-page--login) > .auth-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 460px);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) > .brand {
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
+  align-self: center;
+  width: auto;
+  margin-bottom: 14px;
+  padding: 8px 18px 8px 10px;
+  color: #fff7eb;
+  background: rgba(19, 7, 50, .38);
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 999px;
+  box-shadow: 0 12px 35px rgba(4, 1, 20, .25);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  transition: color .18s ease, border-color .18s ease, background-color .18s ease;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) > .brand:hover {
+  border-color: rgba(255, 255, 255, .34);
+  background: rgba(19, 7, 50, .52);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .brand h1 {
+  font-size: 20px;
+  letter-spacing: -.02em;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, .42);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .logo {
+  width: 46px;
+  margin: 0;
+  filter: brightness(1.45) saturate(.75) drop-shadow(0 4px 12px rgba(8, 2, 30, .45));
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) > .auth-card {
+  max-width: 460px;
+  padding: clamp(30px, 3.2vw, 42px);
+  overflow: hidden;
+  color: #fff !important;
+  background:
+    linear-gradient(145deg, rgba(47, 24, 91, .68), rgba(18, 8, 48, .52)) !important;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: 28px;
+  box-shadow:
+    0 32px 80px rgba(5, 1, 24, .5),
+    inset 0 1px 0 rgba(255, 255, 255, .18);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) > .auth-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(154, 115, 255, .85), transparent);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .auth-card h2 {
+  margin-top: 18px;
+  color: #ffffff;
+  font-size: clamp(25px, 3vw, 29px);
+  letter-spacing: -.035em;
+  text-shadow: 0 3px 18px rgba(4, 1, 20, .35);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .auth-card p {
+  margin-bottom: 26px;
+  color: rgba(245, 239, 255, .76);
+  line-height: 1.55;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .badge {
+  color: #d9ccff;
+  background: rgba(var(--lumo-accent-rgb), .18);
+  border: 1px solid rgba(154, 115, 255, .34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) label {
+  color: rgba(255, 255, 255, .92);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .input-box {
+  color: var(--lumo-accent-light);
+  background: rgba(8, 3, 32, .38);
+  border-color: rgba(255, 255, 255, .18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+  transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .input-box:focus-within {
+  background: rgba(12, 5, 40, .56);
+  border-color: rgba(154, 115, 255, .76);
+  box-shadow: 0 0 0 3px rgba(var(--lumo-accent-rgb), .18), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .input-box input {
+  min-width: 0;
+  color: #ffffff;
+  caret-color: var(--lumo-accent-light);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .input-box input::placeholder {
+  color: rgba(229, 220, 244, .54);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .input-box input:-webkit-autofill,
+.auth-page:is(.auth-page--register, .auth-page--login) .input-box input:-webkit-autofill:hover,
+.auth-page:is(.auth-page--register, .auth-page--login) .input-box input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  transition: background-color 9999s ease-out 0s;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) a {
+  color: var(--lumo-accent-light);
+  text-shadow: 0 1px 12px rgba(5, 1, 22, .35);
+  transition: color .18s ease;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) a:hover {
+  color: #d9ccff;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) form > button[type="submit"] {
+  color: #ffffff;
+  background: linear-gradient(135deg, #9a73ff 0%, #6e42f5 52%, #5b34dd 100%);
+  box-shadow: 0 14px 30px rgba(var(--lumo-accent-rgb), .34), inset 0 1px 0 rgba(255, 255, 255, .32);
+  transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) form > button[type="submit"]:hover {
+  background: linear-gradient(135deg, #aa8aff 0%, #7a51f7 52%, #6540df 100%);
+  box-shadow: 0 17px 36px rgba(var(--lumo-accent-rgb), .44), inset 0 1px 0 rgba(255, 255, 255, .4);
+  transform: translateY(-2px);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) form > button[type="submit"]:active {
+  transform: translateY(0);
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .auth-back-link {
+  margin-top: 20px;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .auth-link-row {
+  margin-top: -6px;
+}
+
+.auth-page:is(.auth-page--register, .auth-page--login) .mensagem {
+  border-color: rgba(255, 255, 255, .24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .auth-page:is(.auth-page--register, .auth-page--login) > .auth-card {
+    background: rgba(22, 9, 53, .93) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-page:is(.auth-page--register, .auth-page--login),
+  html[data-public-theme="true"] .auth-page:is(.auth-page--register, .auth-page--login) {
+    justify-content: flex-start;
+    padding: 20px 12px;
+    background-position: 62% center !important;
+  }
+
+  .auth-page:is(.auth-page--register, .auth-page--login)::before {
+    background: rgba(7, 3, 28, .32);
+  }
+
+  .auth-page:is(.auth-page--register, .auth-page--login) > .brand {
+    flex: 0 0 auto;
+  }
+
+  .auth-page:is(.auth-page--register, .auth-page--login) > .auth-card {
+    padding: 28px 22px;
+    border-radius: 24px;
+  }
+
+  .auth-page:is(.auth-page--register, .auth-page--login) .auth-card p {
+    margin-bottom: 22px;
+  }
+
+  .auth-page:is(.auth-page--register, .auth-page--login) .input-box {
+    margin-bottom: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-page:is(.auth-page--register, .auth-page--login) *,
+  .auth-page:is(.auth-page--register, .auth-page--login) *::before,
+  .auth-page:is(.auth-page--register, .auth-page--login) *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

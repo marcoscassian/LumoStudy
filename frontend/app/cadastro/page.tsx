@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Eye, Lock, Mail, UserPlus, UserRound } from "lucide-react";
 import "../auth.css";
@@ -50,11 +51,11 @@ export default function CadastroPage() {
   }
 
   return (
-    <main className="auth-page">
-      <div className="brand">
-        <img src="/chapeu.png" alt="Logo" className="logo" />
+    <main className="auth-page auth-page--register">
+      <Link href="/" className="brand">
+        <Image src="/chapeu.png" alt="Logo do LumoStudy" className="logo" width={92} height={92} />
         <h1>LumoStudy</h1>
-      </div>
+      </Link>
 
       <section className="auth-card register">
         <span className="badge">Nova conta</span>
