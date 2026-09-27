@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Eye, Lock, Save } from "lucide-react";
 import "../auth.css";
 import { API_BASE, formatApiError } from "../lib/api";
 
 export default function RedefinirSenhaPage() {
-  const [token, setToken] = useState("");
+  const [token] = useState(() =>
+    typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("token") || "",
+  );
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [mostrar, setMostrar] = useState(false);
@@ -15,11 +17,6 @@ export default function RedefinirSenhaPage() {
   const [tipo, setTipo] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [concluido, setConcluido] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setToken(params.get("token") || "");
-  }, []);
 
   async function redefinir(e: React.FormEvent) {
     e.preventDefault();

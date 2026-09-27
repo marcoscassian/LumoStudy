@@ -13,6 +13,7 @@ import {
   HelpCircle,
   XCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import "../trilha/trilha.css";
 import "./usuario.css";
@@ -33,6 +34,18 @@ const AREA_VISUAL: Record<string, { image: string; color: string }> = {
   "ciencias-natureza": { image: "/natureza.png", color: "yellow" },
 };
 
+type Dashboard = {
+  usuario?: { nome?: string; avatar_url?: string; casa?: string; xp?: number; coins?: number; streak?: number };
+  visao_geral?: { questoes_respondidas?: number; flashcards_revisados?: number; taxa_acertos?: number; simulados_resolvidos?: number; temas_concluidos?: number };
+  dominio_areas?: { nome: string; slug: string; percentual: number }[];
+  dominio_geral?: number;
+  atividades_recentes?: { id: string; tipo: string; title: string; subject: string; ocorrido_em: string }[];
+  metas?: Record<string, { tipo: string; label: string; current: number; total: number }[]>;
+};
+type MasteryItem = { title: string; slug: string; image: string | null; percent: number; color: string; general?: boolean };
+type ActivityItem = { id: string; icon: LucideIcon; color: string; title: string; subject: string; time: string };
+type GoalItem = { label: string; current: number; total: number; icon: LucideIcon; color: string };
+
 const CASA_NOME: Record<string, string> = {
   corvinal: "Corvinal",
   grifinoria: "Grifinória",
@@ -41,13 +54,13 @@ const CASA_NOME: Record<string, string> = {
   "lufa-lufa": "Lufa-Lufa",
 };
 
-const GOAL_VISUAL: Record<string, { icon: any; color: string }> = {
+const GOAL_VISUAL: Record<string, { icon: LucideIcon; color: string }> = {
   tempo_estudo: { icon: BookOpen, color: "purple" },
   flashcards: { icon: Layers, color: "red" },
   questoes: { icon: HelpCircle, color: "green" },
 };
 
-const ACTIVITY_VISUAL: Record<string, { icon: any; color: string }> = {
+const ACTIVITY_VISUAL: Record<string, { icon: LucideIcon; color: string }> = {
   questao_correta: { icon: CheckCircle2, color: "blue" },
   questao_errada: { icon: XCircle, color: "yellow" },
   flashcard: { icon: Layers, color: "green" },
@@ -70,7 +83,7 @@ function formatarQuando(valor: string) {
 
 export default function UsuarioPage() {
   const router = useRouter();
-  const [dashboard, setDashboard] = useState<any>(null);
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -101,9 +114,9 @@ export default function UsuarioPage() {
         }
 
         setDashboard(await response.json());
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
-        setError(err?.message || "Não foi possível carregar o perfil.");
+        setError(err instanceof Error ? err.message : "Falha ao carregar o perfil.");
       } finally {
         setLoading(false);
       }
@@ -147,7 +160,7 @@ export default function UsuarioPage() {
       { icon: Award, value: Number(overview.temas_concluidos || 0).toLocaleString("pt-BR"), label: "Temas concluídos", color: "pink" },
     ];
 
-    const mastery: any[] = (dashboard.dominio_areas || []).map((area: any) => ({
+    const mastery: MasteryItem[] = (dashboard.dominio_areas || []).map((area) => ({
       title: area.nome,
       slug: area.slug,
       image: AREA_VISUAL[area.slug]?.image || null,
@@ -163,7 +176,7 @@ export default function UsuarioPage() {
       general: true,
     });
 
-    const activities = (dashboard.atividades_recentes || []).map((activity: any) => {
+    const activities: ActivityItem[] = (dashboard.atividades_recentes || []).map((activity) => {
       const visual = ACTIVITY_VISUAL[activity.tipo] || ACTIVITY_VISUAL.questao_correta;
       return {
         id: activity.id,
@@ -175,9 +188,9 @@ export default function UsuarioPage() {
       };
     });
 
-    const goals: Record<string, any[]> = {};
-    Object.entries(dashboard.metas || {}).forEach(([period, items]: [string, any]) => {
-      goals[period] = (items || []).map((goal: any) => {
+    const goals: Record<string, GoalItem[]> = {};
+    Object.entries(dashboard.metas || {}).forEach(([period, items]) => {
+      goals[period] = items.map((goal) => {
         const visual = GOAL_VISUAL[goal.tipo] || GOAL_VISUAL.questoes;
         return {
           label: goal.label,
@@ -227,14 +240,14 @@ export default function UsuarioPage() {
           <div>
             <div className="section-title"><Star size={18} />Seu progresso geral</div>
             <div className="stats-grid">
-              {viewModel.overviewCards.map((stat: any) => <StatCard key={stat.label} {...stat} />)}
+              {viewModel.overviewCards.map((stat) => <StatCard key={stat.label} {...stat} />)}
             </div>
           </div>
 
           <div>
             <div className="section-title">Domínio por área</div>
             <div className="mastery-grid">
-              {viewModel.mastery.map((area: any) => (
+              {viewModel.mastery.map((area) => (
                 <MasteryCard
                   key={area.title}
                   {...area}

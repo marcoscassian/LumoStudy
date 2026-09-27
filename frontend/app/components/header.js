@@ -48,6 +48,49 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
+    let ativo = true;
+    const atualizarCursor = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        document.documentElement.style.setProperty("--lumo-custom-cursor", "auto");
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE}/loja`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json();
+        const cursor = data.itens?.find((item) => item.tipo === "cursor" && item.equipado);
+        if (!cursor) {
+          document.documentElement.style.setProperty("--lumo-custom-cursor", "auto");
+          return;
+        }
+        const imagem = new Image();
+        imagem.onload = () => {
+          if (!ativo) return;
+          const canvas = document.createElement("canvas");
+          canvas.width = 64;
+          canvas.height = 64;
+          const contexto = canvas.getContext("2d");
+          if (!contexto) return;
+          contexto.clearRect(0, 0, 64, 64);
+          contexto.drawImage(imagem, 0, 0, 64, 64);
+          document.documentElement.style.setProperty("--lumo-custom-cursor", `url("${canvas.toDataURL("image/png")}") 8 8, auto`);
+        };
+        imagem.src = cursor.arquivo;
+      } catch (error) {
+        console.error("Erro ao carregar o ponteiro equipado:", error);
+      }
+    };
+
+    void atualizarCursor();
+    window.addEventListener("lumostudy:cursor-changed", atualizarCursor);
+    return () => {
+      ativo = false;
+      window.removeEventListener("lumostudy:cursor-changed", atualizarCursor);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsMenuOpen(false);
@@ -79,6 +122,7 @@ export default function Header() {
       console.error("Erro ao fazer logout no backend:", error);
     } finally {
       localStorage.removeItem("token");
+      document.documentElement.style.setProperty("--lumo-custom-cursor", "auto");
       setIsMenuOpen(false);
       router.push("/login");
     }

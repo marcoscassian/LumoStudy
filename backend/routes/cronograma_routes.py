@@ -1,5 +1,6 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
+import json
 from datetime import date, datetime, timedelta
 from typing import Annotated
 
@@ -31,8 +32,33 @@ QUANTIDADES_QUESTOES = (5, 10, 15, 20)
 
 
 class ConfiguracaoCronogramaPayload(BaseModel):
-    horas_por_dia: float = Field(ge=1, le=10)
-    periodos: list[str] = Field(min_length=1, max_length=3)
+    inicio_hora: str = "13:00"
+    fim_hora: str = "17:00"
+    pausa_inicio: str | None = None
+    pausa_fim: str | None = None
+    dias_semana: list[int] = Field(default_factory=lambda: list(range(7)), min_length=1, max_length=7)
+    prioridades: dict[str, int] = Field(default_factory=dict)
+    rotina_semana: dict[int, dict] = Field(default_factory=dict)
+    horas_por_dia: float | None = Field(default=None, ge=1, le=10)
+    periodos: list[str] = Field(default_factory=lambda: ["tarde"], min_length=1, max_length=3)
+
+    @field_validator("inicio_hora", "fim_hora", "pausa_inicio", "pausa_fim")
+    @classmethod
+    def validar_hora(cls, valor: str | None) -> str | None:
+        if valor is None:
+            return None
+        try:
+            datetime.strptime(valor, "%H:%M")
+        except ValueError as exc:
+            raise ValueError("Informe horários no formato HH:MM") from exc
+        return valor
+
+    @field_validator("dias_semana")
+    @classmethod
+    def validar_dias(cls, valores: list[int]) -> list[int]:
+        if any(dia < 0 or dia > 6 for dia in valores):
+            raise ValueError("Os dias da semana devem estar entre 0 e 6")
+        return sorted(set(valores))
 
     @field_validator("periodos")
     @classmethod
@@ -66,6 +92,12 @@ def _preferencia_usuario(session: Session, usuario_id: int) -> CronogramaPrefere
         manha=False,
         tarde=True,
         noite=False,
+        inicio_hora="13:00",
+        fim_hora="17:00",
+        pausa_inicio=None,
+        pausa_fim=None,
+        dias_semana_json=json.dumps(list(range(7))),
+        prioridades_json="{}",
     )
     session.add(preferencia)
     session.commit()
@@ -82,6 +114,83 @@ def _periodos_preferencia(preferencia: CronogramaPreferencia) -> list[str]:
     if preferencia.noite:
         periodos.append("noite")
     return periodos or ["tarde"]
+
+
+def _minutos(hora: str) -> int:
+    try:
+        h, m = map(int, hora.split(":"))
+        if h < 0 or h > 23 or m < 0 or m > 59:
+            raise ValueError
+        return h * 60 + m
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail="Informe um horário válido no formato HH:MM.") from exc
+
+
+def _duracao_estudo(preferencia: CronogramaPreferencia) -> int:
+    total = _minutos(preferencia.fim_hora) - _minutos(preferencia.inicio_hora)
+    if preferencia.pausa_inicio and preferencia.pausa_fim:
+        total -= _minutos(preferencia.pausa_fim) - _minutos(preferencia.pausa_inicio)
+    return total
+
+
+def _rotina_preferencia(preferencia: CronogramaPreferencia) -> dict[int, dict]:
+    if preferencia.rotina_semana_json:
+        try:
+            rotina = json.loads(preferencia.rotina_semana_json)
+            return {int(dia): dados for dia, dados in rotina.items()}
+        except (TypeError, ValueError):
+            pass
+    pausa = []
+    if preferencia.pausa_inicio and preferencia.pausa_fim:
+        pausa = [{"inicio": preferencia.pausa_inicio, "fim": preferencia.pausa_fim}]
+    base = {"inicio": preferencia.inicio_hora, "fim": preferencia.fim_hora, "pausas": pausa}
+    return {dia: base for dia in json.loads(preferencia.dias_semana_json or "[0,1,2,3,4,5,6]")}
+
+
+def _duracao_rotina(rotina: dict) -> int:
+    duracao = _minutos(rotina["fim"]) - _minutos(rotina["inicio"])
+    return duracao - sum(_minutos(pausa["fim"]) - _minutos(pausa["inicio"]) for pausa in rotina.get("pausas", []))
+
+
+def _segmentar_bloco(inicio: int, duracao: int, pausas: list[dict]) -> list[tuple[int, int]]:
+    cursor = inicio
+    restante = duracao
+    partes = []
+    for pausa in pausas:
+        pausa_inicio = _minutos(pausa["inicio"])
+        pausa_fim = _minutos(pausa["fim"])
+        if pausa_fim <= cursor or pausa_inicio >= cursor + restante:
+            continue
+        if pausa_inicio > cursor:
+            antes = pausa_inicio - cursor
+            partes.append((cursor, antes))
+            restante -= antes
+        cursor = max(cursor, pausa_fim)
+    if restante > 0:
+        partes.append((cursor, restante))
+    return partes
+
+
+def _proximas_datas_de_estudo(preferencia: CronogramaPreferencia, quantidade: int = 7) -> list[date]:
+    dias_escolhidos = set(json.loads(preferencia.dias_semana_json or "[0,1,2,3,4,5,6]"))
+    datas = []
+    data_atual = date.today()
+    while len(datas) < quantidade:
+        if data_atual.weekday() in dias_escolhidos:
+            datas.append(data_atual)
+        data_atual += timedelta(days=1)
+    return datas
+
+
+def _distribuir_por_prioridade(total: int, areas: list[dict], preferencias: dict[str, int]) -> list[tuple[dict, int]]:
+    pesos = [max(0, int(preferencias.get(area["slug"], 0))) for area in areas]
+    if len(pesos) != 4 or sum(pesos) != 100:
+        pesos = [25] * len(areas)
+    valores = [total * peso / 100 for peso in pesos]
+    minutos = [int(valor) for valor in valores]
+    for indice in sorted(range(len(areas)), key=lambda i: valores[i] - minutos[i], reverse=True)[:total - sum(minutos)]:
+        minutos[indice] += 1
+    return [(area, minutos[i]) for i, area in enumerate(areas) if minutos[i] > 0]
 
 
 def _estatisticas_areas(session: Session, usuario_id: int, areas: list[Area]) -> list[dict]:
@@ -112,7 +221,7 @@ def _estatisticas_areas(session: Session, usuario_id: int, areas: list[Area]) ->
         aproveitamento = round((corretas / total) * 100) if total else None
 
         # Áreas ainda não praticadas recebem prioridade alta para o cronograma
-        # não ignorar conteúdos que o usuário nunca treinou.
+        # para não ignorar conteúdos que o usuário nunca treinou.
         if total == 0:
             score_prioridade = 0.72
         else:
@@ -267,7 +376,8 @@ def _montar_blocos_dia(total_minutos: int, indice_dia: int, areas_ordenadas: lis
 
 def _gerar_cronograma(session: Session, usuario_id: int, preferencia: CronogramaPreferencia) -> None:
     hoje = date.today()
-    fim = hoje + timedelta(days=6)
+    datas_estudo = _proximas_datas_de_estudo(preferencia)
+    fim = datas_estudo[-1]
 
     existentes = session.exec(
         select(CronogramaAtividade).where(
@@ -286,36 +396,65 @@ def _gerar_cronograma(session: Session, usuario_id: int, preferencia: Cronograma
         return
 
     areas_ordenadas = _estatisticas_areas(session, usuario_id, areas)
-    periodos = _periodos_preferencia(preferencia)
+    prioridades = json.loads(preferencia.prioridades_json or "{}")
+    rotina_semana = _rotina_preferencia(preferencia)
 
-    for indice_dia in range(7):
-        data_atividade = hoje + timedelta(days=indice_dia)
-        blocos = _montar_blocos_dia(preferencia.minutos_por_dia, indice_dia, areas_ordenadas)
-        for ordem, bloco in enumerate(blocos, start=1):
-            periodo = periodos[(ordem - 1) % len(periodos)]
-            session.add(
-                CronogramaAtividade(
-                    usuario_id=usuario_id,
-                    data=data_atividade,
-                    periodo=periodo,
-                    tipo=bloco["tipo"],
-                    area_id=bloco["area_id"],
-                    titulo=bloco["titulo"],
-                    descricao=bloco["descricao"],
-                    duracao_minutos=bloco["duracao_minutos"],
-                    quantidade=bloco["quantidade"],
-                    rota=bloco["rota"],
-                    ordem=ordem,
+    for data_atividade in datas_estudo:
+        rotina = rotina_semana.get(data_atividade.weekday())
+        if not rotina:
+            continue
+        total_minutos = _duracao_rotina(rotina)
+        blocos_distribuidos = _distribuir_por_prioridade(total_minutos, areas_ordenadas, prioridades)
+        cursor = _minutos(rotina["inicio"])
+        pausas = sorted(rotina.get("pausas", []), key=lambda item: item["inicio"])
+        ordem = 0
+        for area, minutos in blocos_distribuidos:
+            if minutos <= 0:
+                continue
+            bloco = _bloco_questoes(area, minutos)
+            partes = _segmentar_bloco(cursor, minutos, pausas)
+            for inicio_bloco, duracao_bloco in partes:
+                if duracao_bloco <= 0:
+                    continue
+                hora_inicio = f"{inicio_bloco // 60:02d}:{inicio_bloco % 60:02d}"
+                periodo = "manha" if inicio_bloco < 12 * 60 else "tarde" if inicio_bloco < 18 * 60 else "noite"
+                ordem += 1
+                session.add(
+                    CronogramaAtividade(
+                        usuario_id=usuario_id,
+                        data=data_atividade,
+                        periodo=periodo,
+                        inicio_hora=hora_inicio,
+                        tipo=bloco["tipo"],
+                        area_id=bloco["area_id"],
+                        titulo=bloco["titulo"],
+                        descricao=bloco["descricao"],
+                        duracao_minutos=duracao_bloco,
+                        quantidade=_quantidade_questoes(duracao_bloco),
+                        rota=bloco["rota"],
+                        ordem=ordem,
+                    )
                 )
-            )
+            cursor = partes[-1][0] + partes[-1][1] if partes else cursor
     session.commit()
 
 
 def _serializar_preferencia(preferencia: CronogramaPreferencia) -> dict:
+    rotina_semana = _rotina_preferencia(preferencia)
+    dias_escolhidos = json.loads(preferencia.dias_semana_json or "[0,1,2,3,4,5,6]")
+    duracoes = [_duracao_rotina(rotina_semana[dia]) for dia in dias_escolhidos if dia in rotina_semana]
+    media_minutos = round(sum(duracoes) / len(duracoes)) if duracoes else _duracao_estudo(preferencia)
     return {
-        "horas_por_dia": preferencia.minutos_por_dia / 60,
-        "minutos_por_dia": preferencia.minutos_por_dia,
+        "horas_por_dia": media_minutos / 60,
+        "minutos_por_dia": media_minutos,
         "periodos": _periodos_preferencia(preferencia),
+        "inicio_hora": preferencia.inicio_hora,
+        "fim_hora": preferencia.fim_hora,
+        "pausa_inicio": preferencia.pausa_inicio,
+        "pausa_fim": preferencia.pausa_fim,
+        "dias_semana": json.loads(preferencia.dias_semana_json or "[0,1,2,3,4,5,6]"),
+        "prioridades": json.loads(preferencia.prioridades_json or "{}"),
+        "rotina_semana": {str(dia): dados for dia, dados in rotina_semana.items()},
         "atualizado_em": preferencia.atualizado_em,
     }
 
@@ -341,6 +480,7 @@ def _serializar_atividade(item: CronogramaAtividade, area_por_id: dict[int, Area
         "id": item.id,
         "periodo": item.periodo,
         "periodo_label": ROTULOS_PERIODO.get(item.periodo, item.periodo.title()),
+        "inicio_hora": item.inicio_hora,
         "tipo": item.tipo,
         "area": area.nome if area else None,
         "titulo": item.titulo,
@@ -354,7 +494,8 @@ def _serializar_atividade(item: CronogramaAtividade, area_por_id: dict[int, Area
 
 def _resposta_cronograma(session: Session, usuario_id: int, preferencia: CronogramaPreferencia) -> dict:
     hoje = date.today()
-    fim = hoje + timedelta(days=6)
+    datas_estudo = _proximas_datas_de_estudo(preferencia)
+    fim = datas_estudo[-1]
     atividades = session.exec(
         select(CronogramaAtividade)
         .where(
@@ -370,8 +511,7 @@ def _resposta_cronograma(session: Session, usuario_id: int, preferencia: Cronogr
     prioridades = _estatisticas_areas(session, usuario_id, areas)
 
     dias = []
-    for deslocamento in range(7):
-        dia = hoje + timedelta(days=deslocamento)
+    for dia in datas_estudo:
         itens = [item for item in atividades if item.data == dia]
         dias.append(
             {
@@ -404,11 +544,12 @@ def _resposta_cronograma(session: Session, usuario_id: int, preferencia: Cronogr
 def obter_cronograma(usuario: UsuarioLogado, session: SessionDep):
     preferencia = _preferencia_usuario(session, usuario.id)
     hoje = date.today()
+    fim = _proximas_datas_de_estudo(preferencia)[-1]
     existe = session.exec(
         select(CronogramaAtividade.id).where(
             CronogramaAtividade.usuario_id == usuario.id,
             CronogramaAtividade.data >= hoje,
-            CronogramaAtividade.data <= hoje + timedelta(days=6),
+            CronogramaAtividade.data <= fim,
         )
     ).first()
     if not existe:
@@ -423,10 +564,54 @@ def atualizar_configuracao(
     session: SessionDep,
 ):
     preferencia = _preferencia_usuario(session, usuario.id)
-    preferencia.minutos_por_dia = int(round(payload.horas_por_dia * 60))
-    preferencia.manha = "manha" in payload.periodos
-    preferencia.tarde = "tarde" in payload.periodos
-    preferencia.noite = "noite" in payload.periodos
+    rotina_semana = payload.rotina_semana or {
+        dia: {"inicio": payload.inicio_hora, "fim": payload.fim_hora,
+              "pausas": ([{"inicio": payload.pausa_inicio, "fim": payload.pausa_fim}]
+                         if payload.pausa_inicio and payload.pausa_fim else [])}
+        for dia in payload.dias_semana
+    }
+    if not set(payload.dias_semana).issubset(rotina_semana) or any(dia < 0 or dia > 6 for dia in rotina_semana):
+        raise HTTPException(status_code=422, detail="Configure um horário para cada dia selecionado.")
+    for dia, rotina in rotina_semana.items():
+        if dia not in payload.dias_semana:
+            continue
+        inicio = _minutos(rotina.get("inicio", ""))
+        fim = _minutos(rotina.get("fim", ""))
+        if fim <= inicio:
+            raise HTTPException(status_code=422, detail="O horário final precisa ser depois do início.")
+        pausas = rotina.get("pausas", [])
+        if not isinstance(pausas, list) or any(not isinstance(pausa, dict) for pausa in pausas):
+            raise HTTPException(status_code=422, detail="Revise as pausas configuradas para esse dia.")
+        if len(pausas) > 8:
+            raise HTTPException(status_code=422, detail="Cada dia pode ter no máximo oito pausas.")
+        anterior = inicio
+        for pausa in sorted(pausas, key=lambda item: item.get("inicio", "")):
+            pausa_inicio = _minutos(pausa.get("inicio", ""))
+            pausa_fim = _minutos(pausa.get("fim", ""))
+            if pausa_inicio < anterior or pausa_fim <= pausa_inicio or pausa_fim > fim:
+                raise HTTPException(status_code=422, detail="As pausas precisam estar dentro do horário e não podem se sobrepor.")
+            anterior = pausa_fim
+        minutos_estudo = _duracao_rotina(rotina)
+        if minutos_estudo < 60 or minutos_estudo > 600:
+            raise HTTPException(status_code=422, detail="O tempo líquido de estudo por dia deve ficar entre 1 e 10 horas.")
+    areas = session.exec(select(Area).order_by(Area.ordem)).all()
+    slugs = {area.slug for area in areas}
+    if len(slugs) != 4:
+        raise HTTPException(status_code=422, detail="O cronograma precisa ter quatro áreas cadastradas.")
+    prioridades = payload.prioridades
+    if set(prioridades) != slugs or any(valor < 0 or valor > 100 for valor in prioridades.values()) or sum(prioridades.values()) != 100:
+        raise HTTPException(status_code=422, detail="Distribua 100% entre as quatro áreas.")
+    rotinas_ordenadas = [rotina_semana[dia] for dia in sorted(payload.dias_semana)]
+    rotina_principal = rotinas_ordenadas[0]
+    preferencia.minutos_por_dia = round(sum(_duracao_rotina(rotina) for rotina in rotinas_ordenadas) / len(rotinas_ordenadas))
+    preferencia.inicio_hora = rotina_principal["inicio"]
+    preferencia.fim_hora = rotina_principal["fim"]
+    pausas_principais = rotina_principal.get("pausas", [])
+    preferencia.pausa_inicio = pausas_principais[0]["inicio"] if pausas_principais else None
+    preferencia.pausa_fim = pausas_principais[0]["fim"] if pausas_principais else None
+    preferencia.dias_semana_json = json.dumps(payload.dias_semana)
+    preferencia.prioridades_json = json.dumps(prioridades)
+    preferencia.rotina_semana_json = json.dumps(rotina_semana)
     preferencia.atualizado_em = datetime.now()
     session.add(preferencia)
     session.commit()
@@ -459,3 +644,4 @@ def concluir_atividade(
     session.commit()
     session.refresh(atividade)
     return {"id": atividade.id, "concluida": atividade.concluida}
+

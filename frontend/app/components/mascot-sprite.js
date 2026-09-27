@@ -93,15 +93,20 @@ export default function MascotSprite({
   const framesKey = frameSources.join("|");
 
   useEffect(() => {
-    setFrameIndex(0);
-    if (!animated || frameSources.length <= 1) return undefined;
+    const resetTimer = window.setTimeout(() => setFrameIndex(0), 0);
+    if (!animated || frameSources.length <= 1) {
+      return () => window.clearTimeout(resetTimer);
+    }
 
     const intervaloMs = Math.max(140, (Math.max(0.4, Number(duration) || 2.4) * 1000) / frameSources.length);
     const timer = window.setInterval(() => {
       setFrameIndex((atual) => (atual + 1) % frameSources.length);
     }, intervaloMs);
 
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearTimeout(resetTimer);
+      window.clearInterval(timer);
+    };
   }, [animated, duration, frameSources.length, framesKey]);
 
   const config = MASCOT_SPRITES[mascotKey] || MASCOT_SPRITES.coruja;

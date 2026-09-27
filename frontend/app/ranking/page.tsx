@@ -10,9 +10,12 @@ import Header from "../components/header";
 import Sidebar from "../components/sidebar";
 import { API_BASE } from "../lib/api";
 
+type UsuarioRanking = { id: number; posicao: number; nome: string; xp: number; nivel: number; streak: number; coins: number; avatar_url?: string | null; eu: boolean };
+type DadosRanking = { minha_posicao: number | null; ranking: UsuarioRanking[] };
+
 export default function RankingPage() {
   const router = useRouter();
-  const [dados, setDados] = useState<any>(null);
+  const [dados, setDados] = useState<DadosRanking | null>(null);
   const [erro, setErro] = useState("");
 
   useEffect(() => {
@@ -56,7 +59,7 @@ export default function RankingPage() {
 
                 {ordemPodio.length > 0 && (
                   <div className="podium-grid">
-                    {ordemPodio.map((user:any) => (
+                    {ordemPodio.map((user) => (
                       <article key={user.id} className={`page-card podium-card ${user.posicao === 1 ? "first" : ""}`}>
                         <div className="podium-rank">{user.posicao === 1 ? "🥇" : user.posicao === 2 ? "🥈" : "🥉"}</div>
                         <img className="podium-avatar" src={user.avatar_url || "/avatar.png"} alt="" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
@@ -70,7 +73,7 @@ export default function RankingPage() {
 
                 <div className="page-card ranking-card">
                   <div className="ranking-row header-row"><span>Pos.</span><span>Usuário</span><span>XP</span><span>Sequência</span><span>Moedas</span></div>
-                  {ranking.map((user:any) => (
+                  {ranking.map((user) => (
                     <div key={user.id} className={`ranking-row ${user.eu ? "me" : ""}`}>
                       <strong>#{user.posicao}</strong>
                       <div className="rank-user"><img src={user.avatar_url || "/avatar.png"} alt="" onError={(e) => { e.currentTarget.src = "/avatar.png"; }}/><div><strong>{user.nome}</strong>{user.eu && <div className="muted" style={{fontSize:11}}>Você</div>}</div></div>

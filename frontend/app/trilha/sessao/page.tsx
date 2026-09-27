@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Highlighter, X } from "lucide-react";
 
 import "../trilha.css";
 import "../questoes.css";
@@ -32,6 +32,31 @@ type Resultado = {
   resolucao?: string;
 };
 
+type FaixaDestaque = { inicio: number; fim: number };
+type RegistroDestaques = Record<string, FaixaDestaque[]>;
+const SEM_DESTAQUES: Record<string, FaixaDestaque[]> = {};
+
+function obterFaixasTexto(elemento: HTMLElement, faixas: FaixaDestaque[]) {
+  const walker = document.createTreeWalker(elemento, NodeFilter.SHOW_TEXT);
+  const nos: { no: Text; inicio: number; fim: number }[] = [];
+  let tamanho = 0;
+  let atual: Node | null;
+  while ((atual = walker.nextNode())) {
+    const no = atual as Text;
+    nos.push({ no, inicio: tamanho, fim: tamanho + no.length });
+    tamanho += no.length;
+  }
+  return faixas.flatMap(({ inicio, fim }) => {
+    const primeiro = nos.find((item) => inicio >= item.inicio && inicio < item.fim);
+    const ultimo = [...nos].reverse().find((item) => fim > item.inicio && fim <= item.fim);
+    if (!primeiro || !ultimo) return [];
+    const range = document.createRange();
+    range.setStart(primeiro.no, inicio - primeiro.inicio);
+    range.setEnd(ultimo.no, fim - ultimo.inicio);
+    return [range];
+  });
+}
+
 function formatarTempo(totalSegundos: number) {
   const segundos = Math.max(0, totalSegundos);
   const minutos = Math.floor(segundos / 60);
@@ -46,7 +71,6 @@ function SessaoDeQuestoesPageContent() {
   const area = searchParams.get("area");
   const quantidade = searchParams.get("quantidade") || "10";
 
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
   const [questoes, setQuestoes] = useState<Questao[]>([]);
@@ -55,6 +79,8 @@ function SessaoDeQuestoesPageContent() {
   const [selecionadas, setSelecionadas] = useState<Record<number, string>>({});
   const [riscadas, setRiscadas] = useState<Record<number, Set<string>>>({});
   const [resultados, setResultados] = useState<Record<number, Resultado>>({});
+  const [destaques, setDestaques] = useState<RegistroDestaques>({});
+  const [marcaTextoAtivo, setMarcaTextoAtivo] = useState(false);
 
   const [corrigindo, setCorrigindo] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
@@ -62,16 +88,10 @@ function SessaoDeQuestoesPageContent() {
   const inicioQuestaoRef = useRef(0);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       router.replace("/login?next=/trilha");
       return;
     }
-    setCheckingAuth(false);
-  }, [router]);
-
-  useEffect(() => {
-    if (checkingAuth) return;
 
     if (!area) {
       router.replace("/trilha");
@@ -105,7 +125,7 @@ function SessaoDeQuestoesPageContent() {
 
     carregarQuestoes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkingAuth, area, quantidade]);
+  }, [router, area, quantidade]);
 
   useEffect(() => {
     inicioQuestaoRef.current = Date.now();
@@ -126,6 +146,47 @@ function SessaoDeQuestoesPageContent() {
   const resultadoAtual = resultados[indiceAtual];
   const letraSelecionada = selecionadas[indiceAtual];
   const riscadasAtuais = riscadas[indiceAtual] || new Set();
+  const destaquesAtuais = destaques[String(indiceAtual)] || SEM_DESTAQUES;
+
+  useEffect(() => {
+    const css = CSS as typeof CSS & { highlights?: { set: (name: string, highlight: unknown) => void; delete: (name: string) => boolean } };
+    const highlightConstructor = (window as Window & { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
+    const registry = css.highlights;
+    if (!registry || !highlightConstructor) return;
+    const nome = "lumo-quiz-mark";
+    registry.delete(nome);
+    const ranges = Array.from(document.querySelectorAll<HTMLElement>("[data-quiz-highlight]"))
+      .flatMap((elemento) => obterFaixasTexto(elemento, destaquesAtuais[elemento.dataset.quizHighlight || ""] || []));
+    if (ranges.length) registry.set(nome, new highlightConstructor(...ranges));
+    return () => { registry.delete(nome); };
+  }, [destaquesAtuais, indiceAtual, questaoAtual]);
+
+  function alternarMarcaTexto(range: Range) {
+    const origem = range.commonAncestorContainer;
+    const ponto = origem.nodeType === Node.ELEMENT_NODE ? origem as Element : origem.parentElement;
+    const elemento = ponto?.closest<HTMLElement>("[data-quiz-highlight]");
+    const selection = window.getSelection();
+    if (!elemento || !selection || selection.toString().trim().length === 0) return;
+    const chave = elemento.dataset.quizHighlight;
+    if (!chave) return;
+    const antes = document.createRange();
+    antes.selectNodeContents(elemento);
+    antes.setEnd(range.startContainer, range.startOffset);
+    const inicio = antes.toString().length;
+    const fim = inicio + range.toString().length;
+    if (fim <= inicio) return;
+    setDestaques((atuais) => {
+      const porQuestao = { ...(atuais[String(indiceAtual)] || {}) };
+      const existentes = porQuestao[chave] || [];
+      const sobrepostos = existentes.some((faixa) => inicio < faixa.fim && fim > faixa.inicio);
+      porQuestao[chave] = sobrepostos
+        ? existentes.filter((faixa) => !(inicio < faixa.fim && fim > faixa.inicio))
+        : [...existentes, { inicio, fim }];
+      if (!porQuestao[chave].length) delete porQuestao[chave];
+      return { ...atuais, [String(indiceAtual)]: porQuestao };
+    });
+    selection.removeAllRanges();
+  }
 
   const acertos = Object.values(resultados).filter((r) => r.correta).length;
   const respondidas = Object.keys(resultados).length;
@@ -207,8 +268,6 @@ function SessaoDeQuestoesPageContent() {
     if (confirmar) router.push("/trilha");
   }
 
-  if (checkingAuth) return null;
-
   return (
     <main className="dashboard">
       <Header />
@@ -259,12 +318,24 @@ function SessaoDeQuestoesPageContent() {
                   </button>
                 </div>
 
+                <div className="quiz-tools">
+                  <button type="button" className={marcaTextoAtivo ? "active" : ""} aria-pressed={marcaTextoAtivo} onClick={() => setMarcaTextoAtivo((ativo) => !ativo)}>
+                    <Highlighter size={16} /> {marcaTextoAtivo ? "Selecione o texto para marcar" : "Ativar marca-texto"}
+                  </button>
+                  {Object.keys(destaquesAtuais).length > 0 && <button type="button" onClick={() => setDestaques((atual) => ({ ...atual, [String(indiceAtual)]: {} }))}>Limpar marcações</button>}
+                </div>
+
+                <div className="quiz-highlight-content" onMouseUp={(event) => {
+                  if (!marcaTextoAtivo) return;
+                  const selection = window.getSelection();
+                  if (selection?.rangeCount) alternarMarcaTexto(selection.getRangeAt(0));
+                }}>
                 {questaoAtual.assunto && (
                   <span className="quiz-assunto-tag">{questaoAtual.assunto}</span>
                 )}
 
                 {questaoAtual.enunciado && (
-                  <p className="quiz-context">{questaoAtual.enunciado}</p>
+                  <p className="quiz-context" data-quiz-highlight="enunciado">{questaoAtual.enunciado}</p>
                 )}
 
                 {questaoAtual.imagens.length > 0 && (
@@ -276,7 +347,7 @@ function SessaoDeQuestoesPageContent() {
                 )}
 
                 {questaoAtual.comando && (
-                  <p className="quiz-comando">{questaoAtual.comando}</p>
+                  <p className="quiz-comando" data-quiz-highlight="comando">{questaoAtual.comando}</p>
                 )}
 
                 <div className="quiz-alternatives">
@@ -300,7 +371,7 @@ function SessaoDeQuestoesPageContent() {
                       >
                         <span className="quiz-alternative-letter">{alternativa.letra}</span>
                         <span className="quiz-alternative-texto">
-                          {alternativa.texto}
+                          <span data-quiz-highlight={`alternativa-${alternativa.letra}`}>{alternativa.texto}</span>
                           {alternativa.imagem && (
                             <img src={`${API_BASE}${alternativa.imagem}`} alt="" />
                           )}
@@ -323,6 +394,7 @@ function SessaoDeQuestoesPageContent() {
                     );
                   })}
                 </div>
+                </div>
 
                 {resultadoAtual && (
                   <div className={`quiz-feedback ${resultadoAtual.correta ? "acertou" : "errou"}`}>
@@ -339,16 +411,18 @@ function SessaoDeQuestoesPageContent() {
                   </div>
                 )}
 
-                {!resultadoAtual && (
-                  <button
-                    type="button"
-                    className="quiz-responder-btn"
-                    disabled={!letraSelecionada || corrigindo}
-                    onClick={handleResponder}
-                  >
-                    {corrigindo ? "Corrigindo..." : "Responder Questão"}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="quiz-responder-btn"
+                  disabled={resultadoAtual ? corrigindo : !letraSelecionada || corrigindo}
+                  onClick={resultadoAtual ? handleProxima : handleResponder}
+                >
+                  {corrigindo
+                    ? "Corrigindo..."
+                    : resultadoAtual
+                      ? indiceAtual + 1 >= totalQuestoes ? "Finalizar" : "Próxima Questão"
+                      : "Responder Questão"}
+                </button>
               </div>
             </div>
           )}

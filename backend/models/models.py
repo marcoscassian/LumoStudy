@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import EmailStr
+from pydantic import EmailStr, NaiveDatetime
 from sqlalchemy import Column, Text, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
@@ -16,7 +16,7 @@ class Usuarios(SQLModel, table=True):
     nome: str = Field(max_length=150, nullable=False)
     email: EmailStr = Field(max_length=255, nullable=False, unique=True, index=True)
     senha_hash: str = Field(max_length=255, nullable=False)
-    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
     coins: int = Field(default=0, nullable=False)
     streak: int = Field(default=0, nullable=False)
     xp: int = Field(default=0, nullable=False)
@@ -42,7 +42,7 @@ class Notificacao(SQLModel, table=True):
     tipo: str = Field(default="geral", max_length=30, nullable=False, index=True)
     rota: str | None = Field(default=None, max_length=255, nullable=True)
     lida: bool = Field(default=False, nullable=False, index=True)
-    criada_em: datetime = Field(default_factory=datetime.now, nullable=False, index=True)
+    criada_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False, index=True)
 
 
 class RecuperacaoSenha(SQLModel, table=True):
@@ -52,9 +52,9 @@ class RecuperacaoSenha(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
     token_hash: str = Field(max_length=64, nullable=False, unique=True, index=True)
-    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
-    expira_em: datetime = Field(nullable=False, index=True)
-    usado_em: datetime | None = Field(default=None, nullable=True, index=True)
+    criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+    expira_em: NaiveDatetime = Field(nullable=False, index=True)
+    usado_em: NaiveDatetime | None = Field(default=None, nullable=True, index=True)
 
 
 class Area(SQLModel, table=True):
@@ -122,8 +122,8 @@ class QuestaoEditorial(SQLModel, table=True):
     disciplina: str | None = Field(default=None, max_length=100, index=True)
     conteudo_principal: str | None = Field(default=None, max_length=150, index=True)
     atualizado_por: int | None = Field(default=None, foreign_key="usuarios.id", ondelete="SET NULL", index=True)
-    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
-    atualizado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+    atualizado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
 
 
 class Flashcard(SQLModel, table=True):
@@ -138,8 +138,8 @@ class Flashcard(SQLModel, table=True):
     questao_id: int | None = Field(default=None, foreign_key="questoes.id", ondelete="SET NULL", index=True)
     ativo: bool = Field(default=True, nullable=False, index=True)
     criado_por: int | None = Field(default=None, foreign_key="usuarios.id", ondelete="SET NULL", index=True)
-    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
-    atualizado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+    atualizado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
 
 
 class Simulado(SQLModel, table=True):
@@ -151,7 +151,7 @@ class Simulado(SQLModel, table=True):
     descricao: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
     tempo_limite_minutos: int | None = Field(default=None)
     ativo: bool = Field(default=True, nullable=False, index=True)
-    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
     dia_prova: int | None = Field(default=None, nullable=True, index=True)
     quantidade_questoes: int | None = Field(default=None, nullable=True, index=True)
 
@@ -177,8 +177,8 @@ class TentativaSimulado(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
     simulado_id: int = Field(foreign_key="simulados.id", ondelete="CASCADE", nullable=False, index=True)
-    iniciado_em: datetime = Field(default_factory=datetime.now, nullable=False)
-    finalizado_em: datetime | None = Field(default=None)
+    iniciado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+    finalizado_em: NaiveDatetime | None = Field(default=None)
     tempo_gasto_segundos: int = Field(default=0, nullable=False)
     total_questoes: int = Field(default=0, nullable=False)
     acertos: int = Field(default=0, nullable=False)
@@ -195,7 +195,7 @@ class RespostaUsuario(SQLModel, table=True):
     tentativa_simulado_id: int | None = Field(default=None, foreign_key="tentativas_simulado.id", ondelete="SET NULL", index=True)
     alternativa_escolhida: str = Field(max_length=5, nullable=False)
     correta: bool = Field(nullable=False, index=True)
-    respondida_em: datetime = Field(default_factory=datetime.now, nullable=False, index=True)
+    respondida_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False, index=True)
     tempo_segundos: int | None = Field(default=None)
 
 
@@ -207,8 +207,8 @@ class RevisaoFlashcard(SQLModel, table=True):
     usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
     flashcard_id: int = Field(foreign_key="flashcards.id", ondelete="CASCADE", nullable=False, index=True)
     resultado: str = Field(max_length=20, nullable=False, index=True)
-    revisado_em: datetime = Field(default_factory=datetime.now, nullable=False, index=True)
-    proxima_revisao: datetime | None = Field(default=None, index=True)
+    revisado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False, index=True)
+    proxima_revisao: NaiveDatetime | None = Field(default=None, index=True)
     intervalo_dias: int = Field(default=1, nullable=False)
 
 
@@ -242,8 +242,8 @@ class ProgressoTema(SQLModel, table=True):
     questoes_respondidas: int = Field(default=0, nullable=False)
     questoes_corretas: int = Field(default=0, nullable=False)
     flashcards_revisados: int = Field(default=0, nullable=False)
-    atualizado_em: datetime = Field(default_factory=datetime.now, nullable=False)
-    concluido_em: datetime | None = Field(default=None)
+    atualizado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+    concluido_em: NaiveDatetime | None = Field(default=None)
 
 
 class MetaUsuario(SQLModel, table=True):
@@ -270,7 +270,7 @@ class ConquistaUsuario(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
     slug: str = Field(max_length=80, nullable=False, index=True)
-    desbloqueada_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    desbloqueada_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
 
 
 class ItemLoja(SQLModel, table=True):
@@ -298,8 +298,9 @@ class UsuarioItem(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
     item_id: int = Field(foreign_key="itens_loja.id", ondelete="CASCADE", nullable=False, index=True)
-    comprado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    comprado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
     equipado: bool = Field(default=False, nullable=False, index=True)
+    arquivo_personalizado: str | None = Field(default=None, max_length=255)
 
 
 class CronogramaPreferencia(SQLModel, table=True):
@@ -315,7 +316,14 @@ class CronogramaPreferencia(SQLModel, table=True):
     manha: bool = Field(default=False, nullable=False)
     tarde: bool = Field(default=True, nullable=False)
     noite: bool = Field(default=False, nullable=False)
-    atualizado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    inicio_hora: str = Field(default="13:00", max_length=5, nullable=False)
+    fim_hora: str = Field(default="17:00", max_length=5, nullable=False)
+    pausa_inicio: str | None = Field(default=None, max_length=5)
+    pausa_fim: str | None = Field(default=None, max_length=5)
+    dias_semana_json: str = Field(default="[0,1,2,3,4,5,6]", sa_column=Column(Text, nullable=False))
+    prioridades_json: str = Field(default="{}", sa_column=Column(Text, nullable=False))
+    rotina_semana_json: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+    atualizado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
 
 
 class CronogramaAtividade(SQLModel, table=True):
@@ -329,6 +337,7 @@ class CronogramaAtividade(SQLModel, table=True):
     usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
     data: date = Field(nullable=False, index=True)
     periodo: str = Field(max_length=20, nullable=False, index=True)
+    inicio_hora: str | None = Field(default=None, max_length=5)
     tipo: str = Field(max_length=30, nullable=False, index=True)
     area_id: int | None = Field(default=None, foreign_key="areas.id", ondelete="SET NULL", index=True)
     titulo: str = Field(max_length=180, nullable=False)
@@ -338,4 +347,4 @@ class CronogramaAtividade(SQLModel, table=True):
     rota: str = Field(max_length=255, nullable=False)
     ordem: int = Field(default=0, nullable=False)
     concluida: bool = Field(default=False, nullable=False, index=True)
-    criado_em: datetime = Field(default_factory=datetime.now, nullable=False)
+    criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)

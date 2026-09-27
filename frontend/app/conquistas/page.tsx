@@ -10,9 +10,12 @@ import Header from "../components/header";
 import Sidebar from "../components/sidebar";
 import { API_BASE } from "../lib/api";
 
+type Conquista = { slug: string; nome: string; descricao: string; desbloqueada: boolean; atual: number; meta: number; unidade: string; percentual: number };
+type DadosConquistas = { desbloqueadas: number; total: number; conquistas: Conquista[] };
+
 export default function ConquistasPage() {
   const router = useRouter();
-  const [dados, setDados] = useState<any>(null);
+  const [dados, setDados] = useState<DadosConquistas | null>(null);
   const [erro, setErro] = useState("");
 
   useEffect(() => {
@@ -52,7 +55,7 @@ export default function ConquistasPage() {
                 </div>
 
                 <div className="achievements-grid">
-                  {(dados.conquistas || []).map((item:any) => (
+                  {(dados.conquistas || []).map((item) => (
                     <article key={item.slug} className={`page-card achievement-card ${item.desbloqueada ? "unlocked" : "locked"}`}>
                       <div className="achievement-icon">{item.desbloqueada ? <CheckCircle2 size={24}/> : <LockKeyhole size={22}/>}</div>
                       <h3>{item.nome}</h3>

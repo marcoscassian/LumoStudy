@@ -9,6 +9,11 @@ import "../../sidebar-pages.css";
 import Header from "../../components/header";
 import { API_BASE } from "../../lib/api";
 
+type AlternativaSimulado = { letra: string; texto: string; imagem?: string | null };
+type QuestaoSimulado = { prova: string; index: string; assunto?: string; enunciado?: string; imagens?: string[]; comando?: string; alternativas?: AlternativaSimulado[] };
+type DadosSimulado = { dia_prova?: number; tempo_limite_minutos?: number };
+type ResultadoSimulado = { tentativa?: { total_questoes?: number; acertos?: number }; xp_ganhos?: number; coins_ganhas?: number };
+
 function formatarTempo(total: number) {
   const segundos = Math.max(0, total);
   const h = Math.floor(segundos / 3600);
@@ -22,13 +27,13 @@ export default function SessaoSimuladoPage() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
   const [tentativaId, setTentativaId] = useState<number | null>(null);
-  const [simulado, setSimulado] = useState<any>(null);
-  const [questoes, setQuestoes] = useState<any[]>([]);
+  const [simulado, setSimulado] = useState<DadosSimulado | null>(null);
+  const [questoes, setQuestoes] = useState<QuestaoSimulado[]>([]);
   const [indice, setIndice] = useState(0);
   const [respostas, setRespostas] = useState<Record<number, string>>({});
   const [restante, setRestante] = useState(0);
   const [finalizando, setFinalizando] = useState(false);
-  const [resultado, setResultado] = useState<any>(null);
+  const [resultado, setResultado] = useState<ResultadoSimulado | null>(null);
   const iniciadoRef = useRef(false);
 
   useEffect(() => {
@@ -47,7 +52,7 @@ export default function SessaoSimuladoPage() {
       return;
     }
 
-    let config: any;
+    let config: unknown;
     try { config = JSON.parse(raw); } catch { router.replace("/simulados"); return; }
 
     fetch(`${API_BASE}/simulados/iniciar`, {
@@ -108,8 +113,8 @@ export default function SessaoSimuladoPage() {
       setResultado(fimData);
       sessionStorage.removeItem("lumo_sim_config");
       window.dispatchEvent(new Event("lumostudy:stats-changed"));
-    } catch (err: any) {
-      setErro(err?.message || "Não foi possível finalizar o simulado.");
+    } catch (err: unknown) {
+      setErro(err instanceof Error ? err.message : "Falha ao finalizar.");
     } finally {
       setFinalizando(false);
     }
@@ -123,7 +128,8 @@ export default function SessaoSimuladoPage() {
 
   useEffect(() => {
     if (!loading && !resultado && !erro && restante === 0 && simulado && tentativaId) {
-      finalizar(true);
+      const timer = window.setTimeout(() => void finalizar(true), 0);
+      return () => window.clearTimeout(timer);
     }
   }, [restante, loading, resultado, erro, simulado, tentativaId, finalizar]);
 
@@ -188,11 +194,11 @@ export default function SessaoSimuladoPage() {
 
             {questao.assunto && <span className="sidebar-page-kicker">{questao.assunto}</span>}
             {questao.enunciado && <p style={{marginTop:18, lineHeight:1.7, whiteSpace:"pre-wrap"}}>{questao.enunciado}</p>}
-            {questao.imagens?.length > 0 && <div style={{display:"grid", gap:12, marginTop:16}}>{questao.imagens.map((src:string) => <img key={src} src={`${API_BASE}${src}`} alt="" style={{maxWidth:"100%", borderRadius:12}} />)}</div>}
+            {Boolean(questao.imagens?.length) && <div style={{display:"grid", gap:12, marginTop:16}}>{questao.imagens?.map((src) => <img key={src} src={`${API_BASE}${src}`} alt="" style={{maxWidth:"100%", borderRadius:12}} />)}</div>}
             {questao.comando && <p style={{marginTop:18, lineHeight:1.65, fontWeight:700}}>{questao.comando}</p>}
 
             <div className="sim-answer-grid">
-              {questao.alternativas?.map((alt:any) => (
+              {questao.alternativas?.map((alt) => (
                 <div key={alt.letra} className={`sim-answer ${respostas[indice] === alt.letra ? "selected" : ""}`} onClick={() => setRespostas((prev) => ({...prev, [indice]: alt.letra}))}>
                   <span className="sim-answer-letter">{alt.letra}</span>
                   <div style={{lineHeight:1.55}}>
@@ -204,9 +210,15 @@ export default function SessaoSimuladoPage() {
             </div>
 
             <div className="question-map">
-              {questoes.map((_:any, i:number) => (
+              {questoes.map((_, i) => (
                 <button key={i} className={`question-dot ${respostas[i] ? "answered" : ""} ${i === indice ? "current" : ""}`} onClick={() => setIndice(i)}>{i + 1}</button>
               ))}
+            </div>
+
+            <div className="sim-question-nav sim-question-nav-bottom">
+              <button className="secondary-action" disabled={indice === 0} onClick={() => setIndice((i) => Math.max(0, i - 1))}><ChevronLeft size={16}/> Anterior</button>
+              <strong>Questão {indice + 1} de {questoes.length}</strong>
+              <button className="secondary-action" disabled={indice === questoes.length - 1} onClick={() => setIndice((i) => Math.min(questoes.length - 1, i + 1))}>Próxima <ChevronRight size={16}/></button>
             </div>
 
             <div className="sim-footer-nav">

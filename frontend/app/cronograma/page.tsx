@@ -1,22 +1,20 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Brain,
   CalendarDays,
   CheckCircle2,
   Circle,
+  Coffee,
   Clock3,
   FileQuestion,
   Layers3,
-  Moon,
   RotateCcw,
   Save,
   Sparkles,
-  Sun,
-  Sunset,
   Target,
 } from "lucide-react";
 
@@ -28,11 +26,14 @@ import Sidebar from "../components/sidebar";
 import { API_BASE, formatApiError } from "../lib/api";
 
 type Periodo = "manha" | "tarde" | "noite";
+type PausaDia = { inicio: string; fim: string };
+type RotinaDia = { inicio: string; fim: string; pausas: PausaDia[] };
 
 type Atividade = {
   id: number;
   periodo: Periodo;
   periodo_label: string;
+  inicio_hora: string | null;
   tipo: "questoes" | "flashcards" | "simulado";
   area: string | null;
   titulo: string;
@@ -64,6 +65,13 @@ type CronogramaData = {
     horas_por_dia: number;
     minutos_por_dia: number;
     periodos: Periodo[];
+    inicio_hora: string;
+    fim_hora: string;
+    pausa_inicio: string | null;
+    pausa_fim: string | null;
+    dias_semana: number[];
+    prioridades: Record<string, number>;
+    rotina_semana: Record<string, RotinaDia>;
     atualizado_em: string;
   };
   dias: DiaCronograma[];
@@ -71,11 +79,27 @@ type CronogramaData = {
   gerado_em: string;
 };
 
-const PERIODOS: Array<{ value: Periodo; label: string; icon: typeof Sun; detalhe: string }> = [
-  { value: "manha", label: "Manhã", icon: Sun, detalhe: "antes do almoço" },
-  { value: "tarde", label: "Tarde", icon: Sunset, detalhe: "depois do almoço" },
-  { value: "noite", label: "Noite", icon: Moon, detalhe: "fim do dia" },
+const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const PRESETS = [
+  { id: "equilibrado", nome: "Equilíbrio", valores: [25, 25, 25, 25] },
+  { id: "constante", nome: "Mais foco", valores: [30, 30, 20, 20] },
+  { id: "intensivo", nome: "Intensivo", valores: [70, 10, 10, 10] },
 ];
+const ROTINA_PADRAO: RotinaDia = { inicio: "13:00", fim: "17:00", pausas: [] };
+
+function minutosHorario(horario: string) {
+  const [hora, minuto] = horario.split(":").map(Number);
+  return hora * 60 + minuto;
+}
+
+function formatarHora(minutos: number) {
+  return `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${String(minutos % 60).padStart(2, "0")}`;
+}
+
+function duracaoRotina(rotina: RotinaDia) {
+  return minutosHorario(rotina.fim) - minutosHorario(rotina.inicio)
+    - rotina.pausas.reduce((total, pausa) => total + minutosHorario(pausa.fim) - minutosHorario(pausa.inicio), 0);
+}
 
 const ICONE_TIPO = {
   questoes: Target,
@@ -104,8 +128,10 @@ function formatarDia(data: string) {
 export default function CronogramaPage() {
   const router = useRouter();
   const [cronograma, setCronograma] = useState<CronogramaData | null>(null);
-  const [horas, setHoras] = useState(2);
-  const [periodos, setPeriodos] = useState<Periodo[]>(["tarde"]);
+  const [editandoCronograma, setEditandoCronograma] = useState(true);
+  const [diasSemana, setDiasSemana] = useState<number[]>([0, 1, 2, 3, 4]);
+  const [rotinaSemana, setRotinaSemana] = useState<Record<number, RotinaDia>>({});
+  const [prioridades, setPrioridades] = useState<Record<string, number>>({});
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [recalculando, setRecalculando] = useState(false);
@@ -138,8 +164,13 @@ export default function CronogramaPage() {
       .then((data) => {
         if (!data) return;
         setCronograma(data);
-        setHoras(data.configuracao.horas_por_dia);
-        setPeriodos(data.configuracao.periodos);
+        setEditandoCronograma(!Object.keys(data.configuracao.prioridades || {}).length);
+        setDiasSemana(data.configuracao.dias_semana || [0, 1, 2, 3, 4]);
+        const rotinaSalva = data.configuracao.rotina_semana || {};
+        const rotinaPadrao = { inicio: data.configuracao.inicio_hora || "13:00", fim: data.configuracao.fim_hora || "17:00", pausas: data.configuracao.pausa_inicio && data.configuracao.pausa_fim ? [{ inicio: data.configuracao.pausa_inicio, fim: data.configuracao.pausa_fim }] : [] };
+        setRotinaSemana(Object.fromEntries(DIAS.map((_, dia) => [dia, rotinaSalva[dia] || rotinaPadrao])));
+        const shares = data.configuracao.prioridades || {};
+        setPrioridades(Object.keys(shares).length ? shares : Object.fromEntries(data.prioridades.map((area) => [area.slug, 25])));
       })
       .catch((err: Error) => setErro(err.message || "Não foi possível conectar ao servidor."))
       .finally(() => setCarregando(false));
@@ -157,17 +188,65 @@ export default function CronogramaPage() {
     );
   }, [cronograma]);
 
-  function alternarPeriodo(periodo: Periodo) {
-    setMensagem("");
-    setErro("");
-    setPeriodos((atual) => {
-      if (atual.includes(periodo)) {
-        if (atual.length === 1) return atual;
-        return atual.filter((item) => item !== periodo);
-      }
-      return [...atual, periodo];
-    });
+  function alternarDia(dia: number) {
+    setDiasSemana((atuais) => atuais.includes(dia) ? atuais.filter((item) => item !== dia) : [...atuais, dia].sort());
+    setRotinaSemana((atuais) => ({ ...atuais, [dia]: atuais[dia] || { ...ROTINA_PADRAO, pausas: [] } }));
   }
+
+  function atualizarRotina(dia: number, atualizacao: Partial<RotinaDia>) {
+    setRotinaSemana((atuais) => ({ ...atuais, [dia]: { ...(atuais[dia] || ROTINA_PADRAO), ...atualizacao } }));
+  }
+
+  function adicionarPausa(dia: number) {
+    const rotina = rotinaSemana[dia] || ROTINA_PADRAO;
+    const inicio = minutosHorario(rotina.inicio);
+    const fim = minutosHorario(rotina.fim);
+    let novaPausa: PausaDia | null = null;
+    const candidatos = [];
+    for (let candidato = inicio + 15; candidato + 15 <= fim; candidato += 15) candidatos.push(candidato);
+    candidatos.sort((a, b) => Math.abs(a + 7.5 - (inicio + fim) / 2) - Math.abs(b + 7.5 - (inicio + fim) / 2));
+    for (const candidato of candidatos) {
+      const livre = rotina.pausas.every((pausa) => candidato + 15 <= minutosHorario(pausa.inicio) || candidato >= minutosHorario(pausa.fim));
+      if (livre) {
+        novaPausa = { inicio: formatarHora(candidato), fim: formatarHora(candidato + 15) };
+        break;
+      }
+    }
+    if (novaPausa && rotina.pausas.length < 8) atualizarRotina(dia, { pausas: [...rotina.pausas, novaPausa].sort((a, b) => a.inicio.localeCompare(b.inicio)) });
+  }
+
+  function atualizarPausa(dia: number, indice: number, campo: keyof PausaDia, valor: string) {
+    const rotina = rotinaSemana[dia] || ROTINA_PADRAO;
+    atualizarRotina(dia, { pausas: rotina.pausas.map((pausa, i) => i === indice ? { ...pausa, [campo]: valor } : pausa) });
+  }
+
+function rotinaValida(dia: number) {
+    const rotina = rotinaSemana[dia];
+    if (!rotina || !Number.isFinite(minutosHorario(rotina.fim)) || !Number.isFinite(minutosHorario(rotina.inicio)) || minutosHorario(rotina.fim) <= minutosHorario(rotina.inicio)) return false;
+    if (duracaoRotina(rotina) < 60 || duracaoRotina(rotina) > 600) return false;
+    let fimAnterior = minutosHorario(rotina.inicio);
+    for (const pausa of [...rotina.pausas].sort((a, b) => a.inicio.localeCompare(b.inicio))) {
+      if (!Number.isFinite(minutosHorario(pausa.inicio)) || !Number.isFinite(minutosHorario(pausa.fim))) return false;
+      const pausaInicioMin = minutosHorario(pausa.inicio);
+      const pausaFimMin = minutosHorario(pausa.fim);
+      if (pausaInicioMin < fimAnterior || pausaFimMin <= pausaInicioMin || pausaFimMin > minutosHorario(rotina.fim)) return false;
+      fimAnterior = pausaFimMin;
+    }
+    return rotina.pausas.length <= 8;
+  }
+
+  function selecionarPreset(valores: number[]) {
+    const areas = cronograma?.prioridades || [];
+    setPrioridades(Object.fromEntries(areas.map((area, index) => [area.slug, valores[index] ?? 25])));
+  }
+
+  function ajustarPrioridade(slug: string, percentual: number) {
+    setPrioridades((atuais) => ({ ...atuais, [slug]: percentual }));
+  }
+
+  const totalPrioridades = Object.values(prioridades).reduce((soma, valor) => soma + valor, 0);
+
+  const rotinasValidas = diasSemana.length > 0 && diasSemana.every(rotinaValida);
 
   async function salvarConfiguracao() {
     const token = localStorage.getItem("token");
@@ -177,19 +256,37 @@ export default function CronogramaPage() {
     setErro("");
     setMensagem("");
     try {
+      const rotinasSelecionadas = diasSemana.map((dia) => rotinaSemana[dia] || ROTINA_PADRAO);
+      const minutosMedios = rotinasSelecionadas.reduce((total, rotina) => total + duracaoRotina(rotina), 0) / rotinasSelecionadas.length;
+      const periodosCompativeis = [...new Set(rotinasSelecionadas.map((rotina) => {
+        const hora = minutosHorario(rotina.inicio);
+        return hora < 12 * 60 ? "manha" : hora < 18 * 60 ? "tarde" : "noite";
+      }))];
       const response = await fetch(`${API_BASE}/cronograma/configuracao`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ horas_por_dia: horas, periodos }),
+        body: JSON.stringify({
+          inicio_hora: rotinaSemana[diasSemana[0]]?.inicio || "13:00",
+          fim_hora: rotinaSemana[diasSemana[0]]?.fim || "17:00",
+          pausa_inicio: rotinaSemana[diasSemana[0]]?.pausas[0]?.inicio || null,
+          pausa_fim: rotinaSemana[diasSemana[0]]?.pausas[0]?.fim || null,
+          dias_semana: diasSemana,
+          rotina_semana: Object.fromEntries(DIAS.map((_, dia) => [dia, rotinaSemana[dia] || ROTINA_PADRAO])),
+          prioridades,
+          horas_por_dia: minutosMedios / 60,
+          periodos: periodosCompativeis.length ? periodosCompativeis : ["tarde"],
+        }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(formatApiError(data?.detail, "Não foi possível salvar a configuração."));
       }
       setCronograma(data as CronogramaData);
+      setPrioridades(data.configuracao.prioridades || prioridades);
+      setEditandoCronograma(false);
       setMensagem("Preferências salvas e cronograma recalculado para os próximos 7 dias.");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Não foi possível salvar a configuração.");
@@ -278,10 +375,7 @@ export default function CronogramaPage() {
             <div className="cronograma-heading-row">
               <div>
                 <h1 className="sidebar-page-title">Cronograma de estudos</h1>
-                <p className="sidebar-page-subtitle">
-                  Informe seu tempo disponível. O LumoStudy distribui blocos de questões das quatro áreas,
-                  revisões por flashcards e simulados ao longo da semana. Você pode ajustar cada bloco antes de começar.
-                </p>
+                <p className="sidebar-page-subtitle">Escolha seus dias, horários, pausas e percentuais de foco. O cronograma organiza blocos de questões dentro da rotina que você definir.</p>
               </div>
               <button type="button" className="secondary-action" onClick={recalcular} disabled={recalculando}>
                 <RotateCcw size={17} /> {recalculando ? "Recalculando..." : "Recalcular plano"}
@@ -295,13 +389,10 @@ export default function CronogramaPage() {
               <div className="feature-hero cronograma-hero">
                 <Brain size={28} />
                 <h2>Seu plano se adapta ao desempenho</h2>
-                <p>
-                  As áreas com menor aproveitamento recebem mais atenção, mas o ciclo continua cobrindo Linguagens,
-                  Humanas, Matemática e Natureza. Ao evoluir, use “Recalcular plano” para atualizar as prioridades.
-                </p>
+                <p>Você define quanto tempo quer dedicar a cada área. Seus acertos ficam visíveis aqui para ajudar a escolher onde concentrar o foco.</p>
                 <div className="hero-stat-row">
-                  <span className="hero-pill"><Clock3 size={15} /> {formatarDuracao(resumoSemana.minutos)} na semana</span>
-                  <span className="hero-pill"><CalendarDays size={15} /> 7 dias planejados</span>
+                  <span className="hero-pill"><Clock3 size={15} /> {formatarDuracao(resumoSemana.minutos)} nos próximos estudos</span>
+                  <span className="hero-pill"><CalendarDays size={15} /> 7 dias de estudo</span>
                   <span className="hero-pill"><CheckCircle2 size={15} /> {resumoSemana.concluidas}/{resumoSemana.atividades} concluídas</span>
                 </div>
               </div>
@@ -331,116 +422,124 @@ export default function CronogramaPage() {
               </div>
             </div>
 
-            <div className="page-card cronograma-config-card">
+            {editandoCronograma && <div className="page-card cronograma-config-card">
               <div className="page-card-header">
                 <div>
-                  <h3>Quando você consegue estudar?</h3>
-                  <p>O total informado será distribuído entre os períodos selecionados.</p>
+                  <h3>Monte sua rotina da semana</h3>
+                  <p>Escolha seus dias, horários e pausas. O plano respeita sua rotina diária.</p>
                 </div>
               </div>
 
-              <div className="cronograma-config-grid">
-                <label className="hours-field">
-                  <span>Horas por dia</span>
-                  <div className="hours-input-wrap">
-                    <Clock3 size={18} />
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      step="0.5"
-                      value={horas}
-                      onChange={(event) => setHoras(Math.min(10, Math.max(1, Number(event.target.value) || 1)))}
-                    />
-                  </div>
-                  <small>De 1 a 10 horas por dia. Você pode usar valores como 1,5 ou 2,5.</small>
-                </label>
-
-                <div className="period-picker">
-                  <span className="period-picker-title">Partes do dia</span>
-                  <div className="period-grid">
-                    {PERIODOS.map(({ value, label, icon: Icon, detalhe }) => {
-                      const ativo = periodos.includes(value);
-                      return (
-                        <button
-                          type="button"
-                          key={value}
-                          className={`period-card ${ativo ? "selected" : ""}`}
-                          onClick={() => alternarPeriodo(value)}
-                        >
-                          <Icon size={20} />
-                          <strong>{label}</strong>
-                          <small>{detalhe}</small>
-                        </button>
-                      );
-                    })}
-                  </div>
+              <div className="routine-section">
+                <span className="period-picker-title">Quais dias você estuda?</span>
+                <div className="weekday-picker">
+                  {DIAS.map((dia, index) => (
+                    <button type="button" key={dia} className={diasSemana.includes(index) ? "selected" : ""} aria-pressed={diasSemana.includes(index)} onClick={() => alternarDia(index)}>{dia}</button>
+                  ))}
                 </div>
               </div>
 
+              <div className="weekly-routines">
+                {diasSemana.map((dia) => {
+                  const rotina = rotinaSemana[dia] || ROTINA_PADRAO;
+                  return (
+                    <section className="daily-routine-card" key={dia}>
+                      <div className="daily-routine-heading"><div><h4>{DIAS[dia]}</h4><span>{formatarDuracao(duracaoRotina(rotina))} líquidos para estudar</span></div></div>
+                      <div className="routine-time-grid">
+                        <label className="hours-field"><span>Começa às</span><div className="hours-input-wrap"><Clock3 size={18}/><input type="time" value={rotina.inicio} onChange={(event) => atualizarRotina(dia, { inicio: event.target.value })}/></div></label>
+                        <label className="hours-field"><span>Termina às</span><div className="hours-input-wrap"><Clock3 size={18}/><input type="time" value={rotina.fim} onChange={(event) => atualizarRotina(dia, { fim: event.target.value })}/></div></label>
+                      </div>
+                      <div className="daily-breaks">
+                        <div className="daily-breaks-heading"><strong><Coffee size={16}/> Pausas</strong><button type="button" onClick={() => adicionarPausa(dia)} disabled={rotina.pausas.length >= 8}>+ Adicionar pausa</button></div>
+                        {rotina.pausas.length === 0 && <small className="no-breaks">Sem pausas neste dia.</small>}
+                        {rotina.pausas.map((pausa, indice) => <div className="daily-break-row" key={`${dia}-${indice}`}><span>Pausa {indice + 1}</span><label>Começa<input type="time" value={pausa.inicio} onChange={(event) => atualizarPausa(dia, indice, "inicio", event.target.value)}/></label><span>até</span><label>Volta<input type="time" value={pausa.fim} onChange={(event) => atualizarPausa(dia, indice, "fim", event.target.value)}/></label><button type="button" className="remove-break" aria-label={`Remover pausa ${indice + 1} de ${DIAS[dia]}`} onClick={() => atualizarRotina(dia, { pausas: rotina.pausas.filter((_, i) => i !== indice) })}>Remover</button></div>)}
+                        {!rotinaValida(dia) && <small className="daily-routine-error">Confira os horários e as pausas. É preciso ter ao menos 1 hora líquida de estudo.</small>}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+              <div className="routine-priorities">
+                <div className="routine-priority-heading"><div><span className="period-picker-title">Como dividir seu foco?</span><small>Defina cada área individualmente. A soma precisa fechar em 100%.</small></div><strong className={totalPrioridades === 100 ? "" : "invalid"}>{totalPrioridades}%</strong></div>
+                <div className="priority-presets">{PRESETS.map((preset) => <button type="button" key={preset.id} onClick={() => selecionarPreset(preset.valores)}>{preset.nome}<small>{preset.valores.join(" / ")}%</small></button>)}</div>
+                <div className="priority-sliders">{(cronograma?.prioridades || []).map((area) => <label key={area.slug}><span>{area.area}</span><div className="priority-number"><input type="number" min="0" max="100" step="1" value={prioridades[area.slug] ?? 0} onChange={(event) => ajustarPrioridade(area.slug, Math.max(0, Math.min(100, Number(event.target.value) || 0)))}/><strong>%</strong></div></label>)}</div>
+                <p className={`priority-help ${totalPrioridades === 100 ? "valid" : "invalid"}`} role="status">{totalPrioridades === 100 ? "Distribuição correta: 100%." : `As porcentagens somam ${totalPrioridades}%. Ajuste os valores para chegar a 100%.`}</p>
+              </div>
               <div className="config-actions">
-                <span className="muted">Ao salvar, os próximos 7 dias são reorganizados.</span>
-                <button type="button" className="primary-action" onClick={salvarConfiguracao} disabled={salvando}>
+                <span className="muted">Ao salvar, os próximos 7 dias serão reorganizados.</span>
+                <button type="button" className="primary-action" onClick={salvarConfiguracao} disabled={salvando || !rotinasValidas || totalPrioridades !== 100}>
                   <Save size={17} /> {salvando ? "Salvando..." : "Salvar e gerar cronograma"}
                 </button>
               </div>
-            </div>
+            </div>}
 
             <div className="cronograma-week">
               {(cronograma?.dias || []).map((dia, diaIndex) => (
                 <article className="page-card cronograma-day-card" key={dia.data}>
                   <div className="cronograma-day-head">
                     <div>
-                      <span className="day-number">Dia {diaIndex + 1}</span>
+                      <span className="day-number">Estudo {diaIndex + 1}</span>
                       <h3>{formatarDia(dia.data)}</h3>
                     </div>
-                    <div className="day-summary">
+                  <div className="day-summary">
                       <span><Clock3 size={15} /> {formatarDuracao(dia.total_minutos)}</span>
                       <span><CheckCircle2 size={15} /> {dia.concluidas}/{dia.total_atividades}</span>
-                    </div>
+                  </div>
                   </div>
 
                   <div className="cronograma-activities">
-                    {dia.atividades.map((atividade) => {
-                      const IconeTipo = ICONE_TIPO[atividade.tipo] || Target;
-                      return (
-                        <div className={`cronograma-activity ${atividade.concluida ? "done" : ""}`} key={atividade.id}>
-                          <button
-                            type="button"
-                            className="activity-check"
-                            onClick={() => marcarAtividade(atividade)}
-                            aria-label={atividade.concluida ? "Marcar como pendente" : "Marcar como concluída"}
-                          >
-                            {atividade.concluida ? <CheckCircle2 size={23} /> : <Circle size={23} />}
-                          </button>
-
-                          <div className={`activity-icon type-${atividade.tipo}`}>
-                            <IconeTipo size={20} />
-                          </div>
-
-                          <div className="activity-main">
-                            <div className="activity-meta">
-                              <span>{atividade.periodo_label}</span>
-                              <span>{formatarDuracao(atividade.duracao_minutos)}</span>
-                              {atividade.quantidade && <span>{atividade.quantidade} questões</span>}
+                    {(() => {
+                      const diaSemana = (new Date(`${dia.data}T12:00:00`).getDay() + 6) % 7;
+                      const pausasDoDia = rotinaSemana[diaSemana]?.pausas || [];
+                      return dia.atividades.map((atividade, atividadeIndex) => {
+                        const IconeTipo = ICONE_TIPO[atividade.tipo] || Target;
+                        const inicioAnterior = dia.atividades[atividadeIndex - 1]?.inicio_hora;
+                        const pausasAntes = atividade.inicio_hora
+                          ? pausasDoDia.filter((pausa) => pausa.fim <= atividade.inicio_hora! && (!inicioAnterior || pausa.fim > inicioAnterior))
+                          : [];
+                        return (
+                          <Fragment key={atividade.id}>
+                            {pausasAntes.map((pausa, indice) => <div className="cronograma-break" key={`${pausa.inicio}-${indice}`}><Coffee size={17}/><strong>Pausa</strong><span>{pausa.inicio}–{pausa.fim}</span><small>Descanse e retome no horário combinado</small></div>)}
+                            <div className={`cronograma-activity ${atividade.concluida ? "done" : ""}`}>
+                              <button type="button" className="activity-check" onClick={() => marcarAtividade(atividade)} aria-label={atividade.concluida ? "Marcar como pendente" : "Marcar como concluída"}>
+                                {atividade.concluida ? <CheckCircle2 size={23} /> : <Circle size={23} />}
+                              </button>
+                              <div className={`activity-icon type-${atividade.tipo}`}><IconeTipo size={20} /></div>
+                              <div className="activity-main">
+                                <div className="activity-meta">
+                                  {atividade.inicio_hora && <span>{atividade.inicio_hora}</span>}
+                                  <span>{atividade.periodo_label}</span>
+                                  <span>{formatarDuracao(atividade.duracao_minutos)}</span>
+                                  {atividade.quantidade && <span>{atividade.quantidade} questões</span>}
+                                </div>
+                                <strong>{atividade.titulo}</strong>
+                                {atividade.descricao && <p>{atividade.descricao}</p>}
+                              </div>
+                              <Link className="secondary-action activity-open" href={atividade.rota}>Abrir</Link>
                             </div>
-                            <strong>{atividade.titulo}</strong>
-                            {atividade.descricao && <p>{atividade.descricao}</p>}
-                          </div>
-
-                          <Link className="secondary-action activity-open" href={atividade.rota}>
-                            Abrir
-                          </Link>
-                        </div>
-                      );
-                    })}
+                          </Fragment>
+                        );
+                      }).concat(pausasDoDia.filter((pausa) => !dia.atividades.some((atividade) => atividade.inicio_hora && atividade.inicio_hora >= pausa.fim)).map((pausa, indice) => <div className="cronograma-break" key={`${pausa.inicio}-fim-${indice}`}><Coffee size={17}/><strong>Pausa</strong><span>{pausa.inicio}–{pausa.fim}</span><small>Descanse e retome no horário combinado</small></div>));
+                    })()}
                   </div>
                 </article>
               ))}
             </div>
+            {!editandoCronograma && <div className="cronograma-plan-actions">
+              <button type="button" className="secondary-action" onClick={() => setEditandoCronograma(true)}><Save size={17} /> Editar cronograma</button>
+              <button type="button" className="primary-action" onClick={() => {
+                setDiasSemana([0, 1, 2, 3, 4]);
+                setRotinaSemana(Object.fromEntries(DIAS.map((_, dia) => [dia, { ...ROTINA_PADRAO, pausas: [] }])));
+                setPrioridades(Object.fromEntries((cronograma?.prioridades || []).map((area) => [area.slug, 25])));
+                setMensagem("");
+                setErro("");
+                setEditandoCronograma(true);
+              }}><Sparkles size={17} /> Criar um novo cronograma</button>
+            </div>}
           </div>
         </section>
       </div>
     </main>
   );
 }
+

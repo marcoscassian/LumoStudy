@@ -46,6 +46,63 @@
 .priority-row small { display: block; color: var(--lumo-text-soft); margin-top: 3px; font-size: 11px; line-height: 1.35; }
 
 .cronograma-config-card { margin-top: 18px; padding: 24px; }
+.routine-section { margin: 4px 0 22px; }
+.weekday-picker { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 9px; }
+.weekday-picker button { min-height: 44px; border: 1px solid var(--lumo-border); border-radius: 13px; background: var(--lumo-surface-soft); color: var(--lumo-text-soft); font-weight: 800; cursor: pointer; }
+.weekday-picker button.selected { border-color: var(--lumo-accent); background: var(--lumo-surface-purple); color: var(--lumo-purple); }
+.weekly-routines { display: grid; gap: 12px; margin-top: 16px; }
+.daily-routine-card { padding: 16px; border: 1px solid var(--lumo-border); border-radius: 16px; background: var(--lumo-surface-soft); }
+.daily-routine-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.daily-routine-heading h4 { color: var(--lumo-text); font-size: 15px; }
+.daily-routine-heading span { color: var(--lumo-text-soft); font-size: 11px; }
+.routine-time-grid { display: grid; grid-template-columns: repeat(2, minmax(140px, 1fr)) minmax(150px, .8fr); align-items: end; gap: 14px; }
+.daily-routine-card .routine-time-grid { grid-template-columns: repeat(2, minmax(140px, 220px)); }
+.routine-total { display: grid; gap: 3px; min-height: 50px; align-content: center; padding: 0 15px; border-radius: 14px; background: var(--lumo-surface-purple); color: var(--lumo-purple); }
+.routine-total strong { font-size: 19px; }
+.routine-total small, .routine-priority-heading small { color: var(--lumo-text-soft); font-size: 11px; }
+.break-editor { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 17px; padding: 15px; border: 1px solid var(--lumo-border); border-radius: 16px; background: var(--lumo-surface-soft); }
+.break-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.break-toggle input { width: 18px; height: 18px; accent-color: var(--lumo-accent); }
+.break-toggle span { display: grid; gap: 4px; }
+.break-toggle strong { color: var(--lumo-text); font-size: 13px; }
+.break-toggle small { color: var(--lumo-text-soft); font-size: 11px; }
+.break-times { display: flex; align-items: end; gap: 10px; }
+.break-times label { display: grid; gap: 5px; color: var(--lumo-text-soft); font-size: 10px; font-weight: 800; }
+.break-times input { min-height: 38px; padding: 0 9px; border: 1px solid var(--lumo-border); border-radius: 10px; background: var(--lumo-surface); color: var(--lumo-text); }
+.break-times > span { padding-bottom: 10px; color: var(--lumo-text-soft); font-size: 11px; }
+.daily-breaks { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--lumo-border); }
+.daily-breaks-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.daily-breaks-heading > strong { display: inline-flex; align-items: center; gap: 7px; color: var(--lumo-text); font-size: 12px; }
+.daily-breaks-heading > strong svg { color: var(--lumo-purple); }
+.daily-breaks-heading button { padding: 8px 11px; border: 1px solid var(--lumo-border); border-radius: 10px; background: var(--lumo-surface); color: var(--lumo-purple); font-size: 11px; font-weight: 800; cursor: pointer; }
+.daily-breaks-heading button:disabled { opacity: .45; cursor: not-allowed; }
+.daily-break-row { display: flex; align-items: end; gap: 9px; margin-top: 10px; padding: 10px; border-radius: 12px; background: var(--lumo-surface); }
+.daily-break-row > span:first-child { align-self: center; margin-right: auto; color: var(--lumo-text); font-size: 11px; font-weight: 800; }
+.daily-break-row label { display: grid; gap: 4px; color: var(--lumo-text-soft); font-size: 9px; font-weight: 800; }
+.daily-break-row input { min-height: 34px; padding: 0 7px; border: 1px solid var(--lumo-border); border-radius: 8px; background: var(--lumo-surface); color: var(--lumo-text); }
+.daily-break-row > span:nth-of-type(2) { align-self: center; color: var(--lumo-text-soft); font-size: 10px; }
+.remove-break { align-self: center; border: 0; background: transparent; color: #bf3f49; font-size: 10px; font-weight: 800; cursor: pointer; }
+.no-breaks { display: block; margin-top: 8px; color: var(--lumo-text-soft); font-size: 10px; }
+.daily-routine-error { display: block; margin-top: 9px; color: #bf3f49; font-size: 10px; font-weight: 750; }
+.routine-priorities { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--lumo-border); }
+.routine-priority-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.routine-priority-heading > div { display: grid; gap: 4px; }
+.routine-priority-heading .period-picker-title { margin: 0; }
+.routine-priority-heading > strong { color: var(--lumo-purple); font-size: 20px; }
+.routine-priority-heading > strong.invalid { color: #bf3f49; }
+.priority-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.priority-presets button { display: grid; gap: 3px; padding: 10px 13px; border: 1px solid var(--lumo-border); border-radius: 12px; background: var(--lumo-surface); color: var(--lumo-text); font-size: 12px; font-weight: 800; cursor: pointer; }
+.priority-presets button:hover { border-color: var(--lumo-accent); background: var(--lumo-surface-purple); }
+.priority-presets small { color: var(--lumo-text-soft); font-size: 10px; font-weight: 600; }
+.priority-sliders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 20px; }
+.priority-sliders label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--lumo-text); font-size: 12px; font-weight: 750; }
+.priority-number { display: flex; align-items: center; gap: 5px; }
+.priority-number input { width: 76px; min-height: 40px; padding: 0 9px; border: 1px solid var(--lumo-border); border-radius: 10px; background: var(--lumo-surface); color: var(--lumo-text); text-align: right; font-size: 15px; font-weight: 850; }
+.priority-number input:focus { outline: 2px solid var(--lumo-accent); outline-offset: 1px; }
+.priority-number strong { color: var(--lumo-text-soft); }
+.priority-help { display: block; margin-top: 9px; color: var(--lumo-text-soft); font-size: 11px; }
+.priority-help.invalid { color: #bf3f49; font-weight: 750; }
+.priority-help.valid { color: #18764e; font-weight: 750; }
 .cronograma-config-grid {
   display: grid;
   grid-template-columns: minmax(220px, .38fr) minmax(0, 1fr);
@@ -114,6 +171,7 @@
 .config-actions .muted { font-size: 12px; }
 
 .cronograma-week { display: grid; gap: 14px; margin-top: 18px; }
+.cronograma-plan-actions { display: flex; justify-content: center; gap: 12px; margin-top: 22px; padding: 18px; border: 1px solid var(--lumo-border); border-radius: 16px; background: var(--lumo-surface); }
 .cronograma-day-card { overflow: hidden; }
 .cronograma-day-head {
   display: flex;
@@ -149,6 +207,9 @@
 }
 
 .cronograma-activities { padding: 8px 18px 16px; }
+.cronograma-break { display: flex; align-items: center; gap: 9px; margin: 12px 18px 0; padding: 11px 13px; border: 1px dashed color-mix(in srgb, var(--lumo-accent) 40%, var(--lumo-border)); border-radius: 13px; background: var(--lumo-surface-purple); color: var(--lumo-purple); }
+.cronograma-break span { font-size: 12px; font-weight: 800; }
+.cronograma-break small { margin-left: auto; color: var(--lumo-text-soft); font-size: 10px; }
 .cronograma-activity {
   display: grid;
   grid-template-columns: 30px 43px minmax(0, 1fr) auto;
@@ -202,9 +263,18 @@ html[data-theme="dark"] .activity-icon.type-flashcards { color: #62d29b; backgro
 
 @media (max-width: 720px) {
   .cronograma-heading-row, .config-actions, .cronograma-day-head { align-items: stretch; flex-direction: column; }
+  .cronograma-plan-actions { flex-direction: column; }
+  .cronograma-plan-actions > button { width: 100%; }
   .cronograma-heading-row { display: flex; }
   .cronograma-heading-row > .secondary-action { width: 100%; }
   .period-grid { grid-template-columns: 1fr; }
+  .routine-time-grid, .daily-routine-card .routine-time-grid { grid-template-columns: 1fr 1fr; }
+  .daily-break-row { flex-wrap: wrap; }
+  .daily-break-row > span:first-child { width: 100%; }
+  .remove-break { margin-left: auto; }
+  .priority-sliders { grid-template-columns: 1fr; }
+  .cronograma-break { flex-wrap: wrap; }
+  .cronograma-break small { width: 100%; margin-left: 26px; }
   .config-actions .primary-action { width: 100%; }
   .cronograma-activity { grid-template-columns: 30px 42px minmax(0, 1fr); }
   .activity-open { grid-column: 2 / -1; width: 100%; }
