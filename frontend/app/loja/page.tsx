@@ -130,13 +130,14 @@ export default function LojaPage() {
     }
   }
 
-  async function executar(item: ItemLoja, tipo: "comprar" | "equipar") {
+  async function executar(item: ItemLoja, tipo: "comprar" | "equipar" | "desequipar") {
     const token = localStorage.getItem("token");
     if (!token) return;
     setAcao(item.id);
     setMensagem(null);
     try {
-      const response = await fetch(`${API_BASE}/loja/${item.id}/${tipo}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const rota = tipo === "desequipar" && item.tipo === "cursor" ? "/loja/equipar-cursor-padrao" : `/loja/${item.id}/${tipo}`;
+      const response = await fetch(`${API_BASE}${rota}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.detail || "Não foi possível concluir a ação.");
       setMensagem({ tipo: "success", texto: data.mensagem || "Pronto!" });
@@ -210,7 +211,9 @@ export default function LojaPage() {
           <div>{item.equipado ? <span className="shop-status"><Check size={13} /> Em uso</span> : <span className="price"><Coins size={15}/>{item.preco_coins}</span>}</div>
           {!item.comprado ? (
             <button className="primary-action" disabled={acao === item.id || (item.tipo !== "avatar" && semSaldo)} onClick={() => item.tipo === "avatar" ? abrirPersonalizador(item) : void executar(item, "comprar")}>{item.tipo === "avatar" ? <><WandSparkles size={15}/> Personalizar</> : "Comprar"}</button>
-          ) : item.equipado ? (
+          ) : item.equipado ? item.tipo === "cursor" ? (
+            <button className="secondary-action" disabled={acao === item.id} onClick={() => void executar(item, "desequipar")}><X size={15}/> Desequipar</button>
+          ) : (
             <button className="secondary-action" disabled><Check size={15}/> Equipado</button>
           ) : (
             <button className="secondary-action" disabled={acao === item.id} onClick={() => void executar(item, "equipar")}>{item.tipo === "mascote" ? <PawPrint size={15}/> : item.tipo === "cursor" ? <MousePointer2 size={15}/> : <UserRound size={15}/>} Usar</button>
@@ -297,7 +300,7 @@ export default function LojaPage() {
         <div className="avatar-studio-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && acao === null) setItemPersonalizando(null); }}>
           <section className="avatar-studio" role="dialog" aria-modal="true" aria-labelledby="avatar-studio-title">
             <header className="avatar-studio-header">
-              <div><span className="sidebar-page-kicker"><WandSparkles size={14}/> ATELIÊ DE AVATARES</span><h2 id="avatar-studio-title">Seu estilo, suas regras</h2><p>Escolha uma casa e monte um visual que tenha a sua cara.</p></div>
+              <div><span className="sidebar-page-kicker"><WandSparkles size={14}/> ATELIÊ DE AVATARES</span><h2 id="avatar-studio-title">Personalizar Personagem</h2><p>Escolha a casa, a roupa e deixe seu personagem do seu jeito!</p></div>
               <button className="avatar-studio-close" type="button" aria-label="Fechar personalização" disabled={acao !== null} onClick={() => setItemPersonalizando(null)}><X size={20}/></button>
             </header>
 
@@ -315,6 +318,7 @@ export default function LojaPage() {
               </div>
 
               <div className="avatar-studio-options">
+                <div className="avatar-studio-progress"><span>1 <b>Personalização</b></span><i/><span>2 <b>Confirmar</b></span><i/><span>3 <b>Comprar</b></span></div>
                 <div className="avatar-studio-step"><span>01</span><div><h3>Escolha as cores da sua casa</h3><p>A camisa e os detalhes do uniforme acompanham essa escolha.</p></div></div>
                 <div className="avatar-studio-houses">
                   {CASAS_PERSONALIZACAO.map((casa) => (
@@ -335,6 +339,15 @@ export default function LojaPage() {
                   ))}
                 </div>
               </div>
+              <aside className="avatar-studio-summary">
+                <h3>Resumo da Compra</h3>
+                <div className="avatar-studio-summary-user"><AvatarLoja key={`summary-${arquivoPreview}`} src={arquivoPreview} nome={nomeComCasa} fallbacks={[arquivoCasa, itemPersonalizando.arquivo, itemPersonalizando.arquivo_legado || ""]}/><div><strong>{itemPersonalizando.nome}</strong><small>Personalizado por você</small></div></div>
+                <div className="avatar-studio-summary-row"><Crown size={17}/><span>Casa<small>{NOMES_CASAS[casaVisual]}</small></span></div>
+                <div className="avatar-studio-summary-row"><Sparkles size={17}/><span>Roupa<small>{ROUPAS.find((roupa) => roupa.slug === roupaVisual)?.nome}</small></span></div>
+                <div className="avatar-studio-summary-total"><strong>Total</strong><b><Coins size={16}/>{itemPersonalizando.preco_coins} moedas</b></div>
+                <button type="button" className="avatar-studio-buy" disabled={acao === itemPersonalizando.id || semSaldoPersonalizacao} onClick={() => void comprarPersonalizado()}>{acao === itemPersonalizando.id ? "Preparando…" : semSaldoPersonalizacao ? "Moedas insuficientes" : <>Comprar <ChevronRight size={17}/></>}</button>
+                <small className="avatar-studio-note">Após a compra, você poderá alterar suas personalizações no seu perfil.</small>
+              </aside>
             </div>
 
             <footer className="avatar-studio-footer">

@@ -335,6 +335,58 @@ html[data-theme="dark"] .podium-card.first { background: linear-gradient(180deg,
 .avatar-studio-buy { min-height: 47px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 20px; color: white; border: 0; border-radius: 14px; background: linear-gradient(135deg, var(--lumo-accent-light, #9a73ff), var(--lumo-accent, #6e42f5)); box-shadow: 0 9px 21px rgba(var(--lumo-accent-rgb, 110,66,245), .22); font-size: 12px; font-weight: 800; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
 .avatar-studio-buy:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 13px 28px rgba(var(--lumo-accent-rgb, 110,66,245), .3); }
 .avatar-studio-buy:disabled { opacity: .55; cursor: not-allowed; }
+.avatar-studio { width: min(1180px, 100%); padding: 14px; color: #e8e4ff; background: #070b1c; border: 1px solid #20294e; border-radius: 8px; }
+.avatar-studio-header { margin: 0 0 10px; padding: 12px 16px; border-bottom: 1px solid #1b2445; }
+.avatar-studio-header h2 { font-size: 19px; letter-spacing: 0; }
+.avatar-studio-header p, .avatar-studio-step p { color: #9ba6d5; }
+.avatar-studio-header .sidebar-page-kicker { display: none; }
+.avatar-studio-close { color: #d8d4f7; background: #101733; border-color: #252f59; }
+.avatar-studio-layout { grid-template-columns: minmax(150px, .72fr) minmax(300px, 1.45fr) minmax(170px, .85fr); gap: 12px; align-items: stretch; }
+.avatar-studio-preview-column, .avatar-studio-options, .avatar-studio-summary { min-width: 0; padding: 10px; border: 1px solid #20294e; border-radius: 7px; background: #080d20; }
+.avatar-studio-preview-column { position: static; }
+.avatar-studio-preview { min-height: 265px; border-radius: 5px; background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--studio-color) 23%, #10152c), #070b1b 75%); }
+.avatar-studio-preview-label { color: #a6b2e6; }
+.avatar-studio-selected-house { margin-top: 8px; padding: 8px; color: #e8e4ff; background: #0b1128; border-color: #20294e; border-radius: 5px; }
+.avatar-studio-selected-house strong, .avatar-studio-step h3 { color: #e4e0ff; }
+.avatar-studio-selected-house small { color: #9ba6d5; }
+.avatar-studio-progress { display: flex; align-items: center; gap: 7px; margin-bottom: 14px; color: #aeb8e4; font-size: 10px; }
+.avatar-studio-progress span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.avatar-studio-progress span:first-child { color: #c87bff; }
+.avatar-studio-progress i { height: 1px; flex: 1; background: #263052; }
+.avatar-studio-step { margin-bottom: 9px; }
+.avatar-studio-step > span { width: 22px; height: 22px; color: #d09aff; background: #201444; }
+.avatar-studio-houses { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.avatar-studio-house, .avatar-studio-outfit { min-height: 58px; padding: 7px; color: #dfdcf7; background: #080d20; border-color: #20294e; border-radius: 5px; }
+.avatar-studio-house { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.avatar-studio-house.selected, .avatar-studio-outfit.selected { border-color: #a441e5; background: #160e2c; box-shadow: 0 0 0 1px #a441e5; }
+.avatar-studio-house-swatch { width: 28px; height: 28px; border-radius: 50%; }
+.avatar-studio-house > span:nth-child(2) { display: block; }
+.avatar-studio-house strong { color: #dedaf8; font-size: 9px; }
+.avatar-studio-house small { display: none; }
+.avatar-studio-house > svg { position: absolute; }
+.avatar-studio-step--clothes { margin-top: 13px; }
+.avatar-studio-outfits { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.avatar-studio-outfit { min-height: 66px; display: grid; justify-items: center; text-align: center; }
+.avatar-studio-outfit-art { width: 34px; height: 40px; background: #131a33; }
+.avatar-studio-outfit-art::before { width: 21px; height: 32px; }
+.avatar-studio-outfit strong { color: #e0dcf8; font-size: 9px; }
+.avatar-studio-outfit small { display: none; }
+.avatar-studio-summary { display: flex; flex-direction: column; gap: 11px; }
+.avatar-studio-summary h3 { margin: 2px 0 0; padding-bottom: 10px; color: #dedaf8; font-size: 13px; border-bottom: 1px solid #20294e; }
+.avatar-studio-summary-user { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #20294e; }
+.avatar-studio-summary-user .shop-avatar-wrap { width: 46px; flex: 0 0 46px; border: 1px solid #303b67; border-radius: 5px; }
+.avatar-studio-summary-user strong, .avatar-studio-summary-user small { display: block; }
+.avatar-studio-summary-user strong { color: #e7e3ff; font-size: 11px; }
+.avatar-studio-summary-user small, .avatar-studio-note { margin-top: 3px; color: #9ba6d5; font-size: 9px; }
+.avatar-studio-summary-row { display: flex; gap: 9px; align-items: center; color: #bc8cff; font-size: 10px; }
+.avatar-studio-summary-row span, .avatar-studio-summary-row small { display: block; }
+.avatar-studio-summary-row small { margin-top: 3px; color: #aab4dc; }
+.avatar-studio-summary-total { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid #20294e; color: #c6c2e8; font-size: 11px; }
+.avatar-studio-summary-total b { display: flex; align-items: center; gap: 5px; color: #ffd260; font-weight: 600; }
+.avatar-studio-summary .avatar-studio-buy { width: 100%; min-height: 38px; border-radius: 7px; }
+.avatar-studio-note { padding: 8px; border: 1px solid #20294e; border-radius: 5px; line-height: 1.4; }
+.avatar-studio-footer { display: none; }
+@media (max-width: 760px) { .avatar-studio-layout { grid-template-columns: 1fr; } .avatar-studio-summary { min-height: 270px; } .avatar-studio-progress { overflow: hidden; } }
 @keyframes studio-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes studio-rise-in { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (max-width: 760px) { .avatar-studio-backdrop { padding: 10px; } .avatar-studio { max-height: 96vh; padding: 21px 17px; border-radius: 22px; } .avatar-studio-layout { grid-template-columns: 1fr; } .avatar-studio-preview-column { position: static; display: grid; grid-template-columns: minmax(130px, .72fr) minmax(150px, 1fr); align-items: stretch; gap: 9px; } .avatar-studio-preview { min-height: 180px; border-radius: 18px; } .avatar-studio-character { width: 70%; } .avatar-studio-selected-house { align-self: stretch; flex-wrap: wrap; align-content: center; margin: 0; padding: 11px; } .avatar-studio-selected-house > div { flex: 1 1 80%; } .avatar-studio-options { margin-top: 23px; } }

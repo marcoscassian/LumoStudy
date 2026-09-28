@@ -261,6 +261,13 @@ def equipar_mascote_padrao(usuario: UsuarioLogado, session: SessionDep):
     return _resposta(session, usuario, "Sua coruja voltou a entregar as notificações.")
 
 
+@router.post("/equipar-cursor-padrao")
+def equipar_cursor_padrao(usuario: UsuarioLogado, session: SessionDep):
+    _desequipar_tipo(session, usuario.id, "cursor")
+    session.commit()
+    return _resposta(session, usuario, "Seta padrÃ£o selecionada como ponteiro do mouse.")
+
+
 @router.post("/{item_id}/comprar")
 def comprar_item(
     item_id: int,
