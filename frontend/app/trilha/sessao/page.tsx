@@ -8,6 +8,7 @@ import "../trilha.css";
 import "../questoes.css";
 
 import Header from "../../components/header";
+import QuestionText, { anoDaProva, nomeDisciplina } from "../../components/question-text";
 import { API_BASE } from "../../lib/api";
 
 type Alternativa = {
@@ -19,7 +20,8 @@ type Alternativa = {
 type Questao = {
   prova: string;
   index: string;
-  assunto?: string;
+  disciplina?: string;
+  discipline?: string;
   enunciado?: string;
   imagens: string[];
   comando?: string;
@@ -330,12 +332,12 @@ function SessaoDeQuestoesPageContent() {
                   const selection = window.getSelection();
                   if (selection?.rangeCount) alternarMarcaTexto(selection.getRangeAt(0));
                 }}>
-                {questaoAtual.assunto && (
-                  <span className="quiz-assunto-tag">{questaoAtual.assunto}</span>
-                )}
+                <span className="quiz-identificacao">ENEM {anoDaProva(questaoAtual.prova)} · {nomeDisciplina(questaoAtual.disciplina || questaoAtual.discipline || area)}</span>
 
                 {questaoAtual.enunciado && (
-                  <p className="quiz-context" data-quiz-highlight="enunciado">{questaoAtual.enunciado}</p>
+                  <div className="quiz-context" data-quiz-highlight="enunciado">
+                    <QuestionText text={questaoAtual.enunciado} />
+                  </div>
                 )}
 
                 {questaoAtual.imagens.length > 0 && (
@@ -347,7 +349,9 @@ function SessaoDeQuestoesPageContent() {
                 )}
 
                 {questaoAtual.comando && (
-                  <p className="quiz-comando" data-quiz-highlight="comando">{questaoAtual.comando}</p>
+                  <div className="quiz-comando" data-quiz-highlight="comando">
+                    <QuestionText text={questaoAtual.comando} />
+                  </div>
                 )}
 
                 <div className="quiz-alternatives">
@@ -371,7 +375,7 @@ function SessaoDeQuestoesPageContent() {
                       >
                         <span className="quiz-alternative-letter">{alternativa.letra}</span>
                         <span className="quiz-alternative-texto">
-                          <span data-quiz-highlight={`alternativa-${alternativa.letra}`}>{alternativa.texto}</span>
+                          <span data-quiz-highlight={`alternativa-${alternativa.letra}`}><QuestionText text={alternativa.texto} /></span>
                           {alternativa.imagem && (
                             <img src={`${API_BASE}${alternativa.imagem}`} alt="" />
                           )}
@@ -411,18 +415,28 @@ function SessaoDeQuestoesPageContent() {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  className="quiz-responder-btn"
-                  disabled={resultadoAtual ? corrigindo : !letraSelecionada || corrigindo}
-                  onClick={resultadoAtual ? handleProxima : handleResponder}
-                >
-                  {corrigindo
-                    ? "Corrigindo..."
-                    : resultadoAtual
-                      ? indiceAtual + 1 >= totalQuestoes ? "Finalizar" : "Próxima Questão"
-                      : "Responder Questão"}
-                </button>
+                <div className="quiz-action-row">
+                  <button
+                    type="button"
+                    className="quiz-responder-btn"
+                    disabled={resultadoAtual ? corrigindo : !letraSelecionada || corrigindo}
+                    onClick={resultadoAtual ? handleProxima : handleResponder}
+                  >
+                    {corrigindo
+                      ? "Corrigindo..."
+                      : resultadoAtual
+                        ? indiceAtual + 1 >= totalQuestoes ? "Finalizar" : "Próxima Questão"
+                        : "Responder Questão"}
+                  </button>
+                    <button
+                      type="button"
+                      className="quiz-passar-btn"
+                      disabled={Boolean(resultadoAtual) || indiceAtual + 1 >= totalQuestoes}
+                      onClick={handleProxima}
+                    >
+                      Passar questão <ChevronRight size={17} />
+                    </button>
+                </div>
               </div>
             </div>
           )}

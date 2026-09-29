@@ -439,6 +439,11 @@ html[data-theme="dark"] .podium-card.first { background: linear-gradient(180deg,
 .sim-progress-line { height: 8px; border-radius: 999px; background: var(--lumo-surface-soft); overflow: hidden; margin-bottom: 18px; }
 .sim-progress-fill { height: 100%; background: linear-gradient(90deg, var(--lumo-accent), var(--lumo-accent-light)); }
 .sim-question-card { padding: 26px; }
+.sim-question-context { margin-top: 18px; font-size: 17px; line-height: 1.7; }
+.sim-question-command { margin-top: 18px; font-size: 16px; line-height: 1.65; }
+.sim-question-context .question-text-source,
+.sim-question-command .question-text-source { display: inline-block; font-size: .78em; line-height: 1.45; color: var(--lumo-text-soft); }
+.sim-answer-text { min-width: 0; font-size: 17px; line-height: 1.6; }
 .sim-question-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 22px; }
 .sim-question-nav-bottom { margin-top: 22px; margin-bottom: 0; }
 .sim-answer-grid { display: grid; gap: 10px; margin-top: 18px; }

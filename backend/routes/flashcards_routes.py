@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlmodel import Session, select
 
 from database.db import get_session
-from models.models import DiaEstudo, Flashcard, ProgressoTema, Questao, RevisaoFlashcard
+from models.models import DiaEstudo, Flashcard, RevisaoFlashcard, Usuarios
 from routes.login_routes import UsuarioLogado
 from services.progresso_service import recalcular_streak, recompensar_flashcard
 
@@ -55,7 +55,22 @@ def listar_flashcards(
         consulta = consulta.where(Flashcard.disciplina == disciplina)
     if conteudo:
         consulta = consulta.where(Flashcard.conteudo_principal == conteudo)
-    return session.exec(consulta.order_by(Flashcard.atualizado_em.desc())).all()
+    cards = session.exec(consulta.order_by(Flashcard.atualizado_em.desc())).all()
+    resposta = []
+    for card in cards:
+        autor = session.get(Usuarios, card.criado_por) if card.criado_por else None
+        resposta.append({
+            "id": card.id,
+            "frente": card.frente,
+            "verso": card.verso,
+            "disciplina": card.disciplina,
+            "conteudo_principal": card.conteudo_principal,
+            "ativo": card.ativo,
+            "criado_por": card.criado_por,
+            "oficial": bool(autor and autor.is_admin),
+            "criado_em": card.criado_em,
+        })
+    return resposta
 
 
 def _registrar_dia(session: Session, usuario_id: int, tempo_segundos: int = 0) -> None:
@@ -68,29 +83,6 @@ def _registrar_dia(session: Session, usuario_id: int, tempo_segundos: int = 0) -
     dia.flashcards_revisados += 1
     dia.tempo_segundos += max(0, min(int(tempo_segundos or 0), 3600))
     session.add(dia)
-
-
-def _atualizar_progresso(session: Session, usuario_id: int, flashcard: Flashcard) -> None:
-    if not flashcard.questao_id:
-        return
-    questao = session.get(Questao, flashcard.questao_id)
-    if not questao or not questao.tema_id:
-        return
-    progresso = session.exec(
-        select(ProgressoTema).where(
-            ProgressoTema.usuario_id == usuario_id,
-            ProgressoTema.tema_id == questao.tema_id,
-        )
-    ).first()
-    if not progresso:
-        progresso = ProgressoTema(usuario_id=usuario_id, tema_id=questao.tema_id)
-    progresso.flashcards_revisados += 1
-    progresso.progresso = min(100, progresso.questoes_respondidas * 5 + progresso.flashcards_revisados * 5)
-    progresso.status = "concluido" if progresso.progresso >= 100 else "em_andamento"
-    progresso.atualizado_em = datetime.now()
-    if progresso.status == "concluido" and progresso.concluido_em is None:
-        progresso.concluido_em = datetime.now()
-    session.add(progresso)
 
 
 @router.post("", status_code=201)
@@ -156,7 +148,6 @@ def registrar_revisao(
     )
     session.add(revisao)
     _registrar_dia(session, usuario.id, payload.tempo_segundos or 0)
-    _atualizar_progresso(session, usuario.id, flashcard)
     xp, coins = recompensar_flashcard(usuario)
     recalcular_streak(session, usuario)
     session.add(usuario)

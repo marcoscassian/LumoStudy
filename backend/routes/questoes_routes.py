@@ -17,6 +17,7 @@ from models.models import (
     Prova,
     Questao,
     QuestaoEditorial,
+    Resolucao,
     RespostaUsuario,
     SimuladoQuestao,
     TentativaSimulado,
@@ -37,6 +38,21 @@ AREAS = [
 
 VALORES_DE_AREA = {area["value"] for area in AREAS}
 QUANTIDADES_VALIDAS = {5, 10, 15, 20}
+
+NOMES_DISCIPLINAS = {
+    "linguagens": "Linguagens",
+    "ciencias-humanas": "Ciências Humanas",
+    "ciencias-humana": "Ciências Humanas",
+    "matematica": "Matemática",
+    "ciencias-natureza": "Ciências da Natureza",
+}
+
+
+def _nome_disciplina(valor: str | None) -> str | None:
+    if not valor:
+        return None
+    chave = valor.strip().lower()
+    return NOMES_DISCIPLINAS.get(chave, valor)
 
 
 def _listar_provas() -> list[str]:
@@ -76,113 +92,6 @@ def _questoes_da_area(area: str) -> list[dict]:
         itens.extend({"prova": prova, "index": pasta} for pasta in pastas_da_area)
 
     return itens
-
-
-# =======================================================================
-# Classificação de assunto (matéria) por palavras-chave no enunciado.
-#
-# O ENEM também não marca a matéria específica de cada questão (ex.: se uma
-# questão de Ciências da Natureza é de Física, Química ou Biologia). Como o
-# app não tem acesso a essa informação oficial, aproximamos isso contando
-# palavras-chave típicas de cada matéria no texto da questão e escolhendo a
-# que aparecer com mais força. É uma heurística — pode errar em questões
-# interdisciplinares ou com poucas palavras-chave — não uma classificação
-# oficial do INEP.
-# =======================================================================
-
-PALAVRAS_CHAVE_ASSUNTO = {
-    "ciencias-natureza": {
-        "Biologia": [
-            "célula", "celular", "dna", "gene", "genético", "organismo", "ecossistema",
-            "espécie", "evolução", "proteína", "enzima", "metabolismo", "fotossíntese",
-            "vírus", "bactéria", "população", "biodiversidade", "ecológic", "reprodução",
-            "cromossomo", "tecido", "órgão", "sistema imunológico", "vacina", "microrganismo",
-        ],
-        "Química": [
-            "química", "reação", "mol ", "átomo", "elemento químico", "ligação química",
-            "solução", "concentração", "ph ", "ácido", "base ", "oxidação", "composto",
-            "molécula", "tabela periódica", "combustão", "polímero", "substância",
-            "elétron", "íon", "solvente", "soluto",
-        ],
-        "Física": [
-            "física", "velocidade", "aceleração", "força", "newton", "energia cinética",
-            "energia potencial", "campo elétrico", "corrente elétrica", "tensão elétrica",
-            "resistor", "onda", "frequência", "potência", "movimento", "gravidade",
-            "pressão", "temperatura", "calor", "termodinâmica", "óptica", "lente",
-            "espelho", "circuito", "magnetismo", "eletromagnet",
-        ],
-    },
-    "ciencias-humanas": {
-        "História": [
-            "história", "guerra", "revolução", "império", "colonização", "ditadura",
-            "independência", "século", "monarquia", "república", "escravidão", "colônia",
-        ],
-        "Geografia": [
-            "geografia", "território", "urbaniz", "clima", "relevo", "migração",
-            "globalização", "agricultura", "recursos naturais", "mapa", "rural", "êxodo",
-        ],
-        "Filosofia": [
-            "filosofia", "filósofo", "ética", "razão", "conhecimento", "existência",
-            "platão", "aristóteles", "kant", "moral",
-        ],
-        "Sociologia": [
-            "sociologia", "sociedade", "cultura", "classe social", "desigualdade",
-            "movimento social", "identidade", "cidadania", "trabalho",
-        ],
-    },
-    "matematica": {
-        "Álgebra": [
-            "equação", "função", "polinômio", "incógnita", "variável", "sistema de equações",
-            "logaritmo", "exponencial", "inequação", "matriz",
-        ],
-        "Geometria": [
-            "área", "perímetro", "triângulo", "ângulo", "volume", "circunferência",
-            "figura geométrica", "polígono", "raio", "diâmetro", "trigonometria",
-            "seno", "cosseno", "tangente", "escala", "planta",
-        ],
-        "Estatística e Probabilidade": [
-            "probabilidade", "média", "mediana", "desvio", "amostra", "gráfico",
-            "porcentagem", "estatística", "frequência relativa", "razão", "proporção",
-            "sequência", "progressão aritmética", "progressão geométrica",
-        ],
-        "Matemática Financeira": ["juros", "montante", "investimento", "taxa de juros", "financiamento", "desconto"],
-    },
-    "linguagens": {
-        "Literatura": ["literatura", "literário", "poema", "romance", "poesia", "narrador"],
-        "Gramática": ["gramática", "concordância", "verbo", "sintaxe", "morfologia", "ortografia"],
-        "Artes": ["pintura", "escultura", "música", "obra de arte", "artista", "exposição"],
-    },
-}
-
-
-def _texto_para_classificacao(dados: dict) -> str:
-    partes = [dados.get("context") or "", dados.get("alternativesIntroduction") or ""]
-    for alternativa in dados.get("alternatives", []):
-        partes.append(alternativa.get("text") or "")
-    return " ".join(partes).lower()
-
-
-def _classificar_assunto(area: str, dados: dict) -> str | None:
-    idioma = dados.get("language")
-    if area == "linguagens" and idioma:
-        return "Inglês" if idioma == "ingles" else "Espanhol" if idioma == "espanhol" else None
-
-    mapa_assuntos = PALAVRAS_CHAVE_ASSUNTO.get(area)
-    if not mapa_assuntos:
-        return None
-
-    texto = _texto_para_classificacao(dados)
-
-    melhor_assunto = None
-    melhor_pontuacao = 0
-
-    for assunto, palavras in mapa_assuntos.items():
-        pontuacao = sum(texto.count(palavra) for palavra in palavras)
-        if pontuacao > melhor_pontuacao:
-            melhor_pontuacao = pontuacao
-            melhor_assunto = assunto
-
-    return melhor_assunto
 
 
 @lru_cache(maxsize=None)
@@ -295,12 +204,8 @@ def _montar_questao_publica(prova: str, index: str, session: Session) -> dict:
     dados = _ler_json_questao(prova, index)
     questao = _montar_questao_original(prova, index, dados)
     questao.pop("gabarito", None)
-    editorial = _buscar_editorial(session, prova, index)
-    assunto_automatico = _classificar_assunto(dados.get("discipline"), dados)
     questao.update({
-        "assunto": editorial.conteudo_principal if editorial else assunto_automatico,
-        "disciplina": editorial.disciplina if editorial else None,
-        "conteudoPrincipal": editorial.conteudo_principal if editorial else assunto_automatico,
+        "disciplina": _nome_disciplina(dados.get("discipline")),
     })
     return questao
 
@@ -336,7 +241,7 @@ def detalhar_prova_publica(ano: int):
         dados = _ler_json_questao(codigo, index)
         questoes.append({
             "index": index,
-            "disciplina": dados.get("discipline"),
+            "disciplina": _nome_disciplina(dados.get("discipline")),
             "idioma": dados.get("language"),
         })
     return {"ano": ano, "codigo": codigo, "questoes": questoes}
@@ -514,14 +419,14 @@ def corrigir_questoes(
         xp_ganhos += xp
         coins_ganhas += coins
 
-        editorial = _buscar_editorial(session, resposta.prova, resposta.index)
+        resolucao = session.exec(select(Resolucao).where(Resolucao.questao_id == questao.id)).first()
         detalhes.append({
             "prova": resposta.prova,
             "index": resposta.index,
             "letraEscolhida": resposta.letra,
             "correta": correta,
             "gabarito": gabarito,
-            "resolucao": editorial.resolucao if editorial else None,
+            "resolucao": resolucao.texto if resolucao else None,
         })
 
     recalcular_streak(session, usuario)

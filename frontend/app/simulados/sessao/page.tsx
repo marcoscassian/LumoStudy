@@ -7,10 +7,11 @@ import { ChevronLeft, ChevronRight, Clock3, Send, X } from "lucide-react";
 import "../../trilha/trilha.css";
 import "../../sidebar-pages.css";
 import Header from "../../components/header";
+import QuestionText, { anoDaProva, nomeDisciplina } from "../../components/question-text";
 import { API_BASE } from "../../lib/api";
 
 type AlternativaSimulado = { letra: string; texto: string; imagem?: string | null };
-type QuestaoSimulado = { prova: string; index: string; assunto?: string; enunciado?: string; imagens?: string[]; comando?: string; alternativas?: AlternativaSimulado[] };
+type QuestaoSimulado = { prova: string; index: string; disciplina?: string; discipline?: string; enunciado?: string; imagens?: string[]; comando?: string; alternativas?: AlternativaSimulado[] };
 type DadosSimulado = { dia_prova?: number; tempo_limite_minutos?: number };
 type ResultadoSimulado = { tentativa?: { total_questoes?: number; acertos?: number }; xp_ganhos?: number; coins_ganhas?: number };
 
@@ -192,17 +193,17 @@ export default function SessaoSimuladoPage() {
               <button className="secondary-action" disabled={indice === questoes.length - 1} onClick={() => setIndice((i) => Math.min(questoes.length - 1, i + 1))}>Próxima <ChevronRight size={16}/></button>
             </div>
 
-            {questao.assunto && <span className="sidebar-page-kicker">{questao.assunto}</span>}
-            {questao.enunciado && <p style={{marginTop:18, lineHeight:1.7, whiteSpace:"pre-wrap"}}>{questao.enunciado}</p>}
+            <span className="sidebar-page-kicker">ENEM {anoDaProva(questao.prova)} · {nomeDisciplina(questao.disciplina || questao.discipline)}</span>
+            {questao.enunciado && <QuestionText text={questao.enunciado} className="sim-question-context" />}
             {Boolean(questao.imagens?.length) && <div style={{display:"grid", gap:12, marginTop:16}}>{questao.imagens?.map((src) => <img key={src} src={`${API_BASE}${src}`} alt="" style={{maxWidth:"100%", borderRadius:12}} />)}</div>}
-            {questao.comando && <p style={{marginTop:18, lineHeight:1.65, fontWeight:700}}>{questao.comando}</p>}
+            {questao.comando && <QuestionText text={questao.comando} className="sim-question-command" />}
 
             <div className="sim-answer-grid">
               {questao.alternativas?.map((alt) => (
                 <div key={alt.letra} className={`sim-answer ${respostas[indice] === alt.letra ? "selected" : ""}`} onClick={() => setRespostas((prev) => ({...prev, [indice]: alt.letra}))}>
                   <span className="sim-answer-letter">{alt.letra}</span>
-                  <div style={{lineHeight:1.55}}>
-                    {alt.texto}
+                  <div className="sim-answer-text">
+                    <QuestionText text={alt.texto} />
                     {alt.imagem && <img src={`${API_BASE}${alt.imagem}`} alt="" style={{display:"block", maxWidth:"100%", marginTop:8, borderRadius:10}} />}
                   </div>
                 </div>

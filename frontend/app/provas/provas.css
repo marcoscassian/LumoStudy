@@ -69,9 +69,11 @@
   text-transform: uppercase;
 }
 
-.provas-enunciado { line-height: 1.65; }
-.provas-enunciado p { margin: 0 0 16px; white-space: pre-wrap; }
-.provas-enunciado .provas-comando { font-weight: 700; }
+.provas-enunciado { font-size: 17px; line-height: 1.7; }
+.provas-enunciado .question-text { margin: 0 0 18px; }
+.provas-enunciado .provas-comando { font-size: 16px; }
+.provas-enunciado > .question-text .question-text-source,
+.provas-enunciado .provas-comando .question-text-source { display: inline-block; font-size: .78em; line-height: 1.45; color: var(--lumo-text-soft); }
 
 .provas-imagens {
   display: grid;

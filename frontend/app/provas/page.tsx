@@ -10,6 +10,7 @@ import "./provas.css";
 
 import Header from "../components/header";
 import Sidebar from "../components/sidebar";
+import QuestionText, { nomeDisciplina } from "../components/question-text";
 import { API_BASE } from "../lib/api";
 
 type ProvaResumo = {
@@ -40,13 +41,6 @@ type Questao = {
   alternativas: { letra: string; texto: string; imagem: string | null }[];
   gabarito: string | null;
   disciplinaOriginal: string | null;
-};
-
-const NOMES_AREAS: Record<string, string> = {
-  linguagens: "Linguagens",
-  "ciencias-humanas": "Ciências Humanas",
-  matematica: "Matemática",
-  "ciencias-natureza": "Ciências da Natureza",
 };
 
 function nomeQuestao(index: string) {
@@ -207,8 +201,8 @@ export default function ProvasPage() {
                     <>
                       <div className="provas-questao-topo">
                         <div>
-                          <span className="provas-etiqueta">ENEM {ano} · Questão {nomeQuestao(index || "")}</span>
-                          <h2>{resumoAtual?.disciplina ? NOMES_AREAS[resumoAtual.disciplina] || resumoAtual.disciplina : "Questão"}</h2>
+                          <span className="provas-etiqueta">ENEM {ano} · {nomeDisciplina(questaoVisivel?.disciplinaOriginal || resumoAtual?.disciplina)}</span>
+                          <h2>Questão {nomeQuestao(index || "")}</h2>
                         </div>
                         <span className="muted">{posicao + 1} de {questoes.length}</span>
                       </div>
@@ -217,18 +211,18 @@ export default function ProvasPage() {
                       {erroQuestao && <p className="inline-message error" role="alert">{erroQuestao}</p>}
                       {questaoVisivel && (
                         <div className="provas-enunciado">
-                          {questaoVisivel.enunciado && <p>{questaoVisivel.enunciado}</p>}
+                          {questaoVisivel.enunciado && <QuestionText text={questaoVisivel.enunciado} />}
                           {questaoVisivel.imagens.length > 0 && (
                             <div className="provas-imagens">
                               {questaoVisivel.imagens.map((src) => <img key={src} src={`${API_BASE}${src}`} alt={`Imagem da questão ${nomeQuestao(questaoVisivel.index)}`} />)}
                             </div>
                           )}
-                          {questaoVisivel.comando && <p className="provas-comando">{questaoVisivel.comando}</p>}
+                          {questaoVisivel.comando && <QuestionText text={questaoVisivel.comando} className="provas-comando" />}
                           <div className="provas-alternativas">
                             {questaoVisivel.alternativas.map((alternativa) => (
                               <div key={alternativa.letra} className={`provas-alternativa ${mostrarGabarito && alternativa.letra === questaoVisivel.gabarito ? "correta" : ""}`}>
                                 <strong>{alternativa.letra}</strong>
-                                <span>{alternativa.texto}{alternativa.imagem && <img src={`${API_BASE}${alternativa.imagem}`} alt={`Imagem da alternativa ${alternativa.letra}`} />}</span>
+                                <span><QuestionText text={alternativa.texto} />{alternativa.imagem && <img src={`${API_BASE}${alternativa.imagem}`} alt={`Imagem da alternativa ${alternativa.letra}`} />}</span>
                               </div>
                             ))}
                           </div>
@@ -257,7 +251,7 @@ export default function ProvasPage() {
                         type="button"
                         className={item.index === index ? "atual" : ""}
                         onClick={() => selecionarQuestao(item.index)}
-                        aria-label={`Questão ${nomeQuestao(item.index)}${item.disciplina ? `, ${NOMES_AREAS[item.disciplina] || item.disciplina}` : ""}`}
+                        aria-label={`Questão ${nomeQuestao(item.index)}${item.disciplina ? `, ${nomeDisciplina(item.disciplina)}` : ""}`}
                         aria-current={item.index === index ? "true" : undefined}
                         title={`Questão ${nomeQuestao(item.index)}`}
                       >

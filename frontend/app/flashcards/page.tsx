@@ -9,7 +9,7 @@ import "../trilha/trilha.css";
 import styles from "./flashcards.module.css";
 import { API_BASE as API } from "../lib/api";
 
-type Flashcard = { id: number; frente: string; verso: string; disciplina: string; conteudo_principal: string };
+type Flashcard = { id: number; frente: string; verso: string; disciplina: string; conteudo_principal: string; oficial?: boolean };
 
 type FlashcardForm = {
   frente: string;
@@ -40,6 +40,7 @@ export default function FlashcardsPage() {
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [flipped, setFlipped] = useState<Set<number>>(new Set());
   const [disciplina, setDisciplina] = useState("");
+  const [origem, setOrigem] = useState<"oficiais" | "meus" | null>(null);
   const [reviewed, setReviewed] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState<number | null>(null);
   const [form, setForm] = useState<FlashcardForm>(emptyForm);
@@ -56,8 +57,9 @@ export default function FlashcardsPage() {
       .catch(() => setCards([]));
   }, [router]);
 
-  const disciplinas = useMemo(() => Array.from(new Set(cards.map((item) => item.disciplina))).sort(), [cards]);
-  const filtered = disciplina ? cards.filter((item) => item.disciplina === disciplina) : cards;
+  const cardsDaOrigem = cards.filter((item) => (origem === "oficiais" ? item.oficial : !item.oficial));
+  const disciplinas = useMemo(() => Array.from(new Set(cardsDaOrigem.map((item) => item.disciplina))).sort(), [cardsDaOrigem]);
+  const filtered = disciplina ? cardsDaOrigem.filter((item) => item.disciplina === disciplina) : cardsDaOrigem;
 
   async function criarFlashcard(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -153,6 +155,33 @@ export default function FlashcardsPage() {
     }
   }
 
+  if (origem === null) {
+    return (
+      <main className={`dashboard ${styles.selectionDashboard}`}>
+        <Header />
+        <div className={`dashboard-body ${styles.dashboardBody}`}>
+          <Sidebar />
+          <section className={styles.selectionContent}>
+            <div className={styles.selectionCards}>
+              <button type="button" className={`${styles.choiceCard} ${styles.officialChoice}`} onClick={() => setOrigem("oficiais")}>
+                <img src="/chapeu.png" alt="" className={styles.choiceImage} />
+                <h1>FlashCards<br />oficiais do<br />LumoStudy</h1>
+                <p>Explore os flashcards<br />criados pela nossa equipe<br />e estude com o melhor conteúdo.</p>
+                <span className={styles.choiceAction}><Sparkles size={17} /> Acessar <span aria-hidden="true">›</span></span>
+              </button>
+              <button type="button" className={`${styles.choiceCard} ${styles.personalChoice}`} onClick={() => setOrigem("meus")}>
+                <img src="/bau.png" alt="" className={styles.choiceImage} />
+                <h1>Meus<br />Flashcards</h1>
+                <p>Acesse e revise os flashcards<br />que você criou, personalizou<br />ou salvou.</p>
+                <span className={styles.choiceAction}><BookOpen size={17} /> Acessar <span aria-hidden="true">›</span></span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="dashboard">
       <Header />
@@ -187,6 +216,7 @@ export default function FlashcardsPage() {
             </section>
 
             <section className={styles.toolbar}>
+              <button type="button" className={styles.backChoice} onClick={() => { setOrigem(null); setShowCreateForm(false); setDisciplina(""); }}>Trocar coleção</button>
               <div className={styles.filterControl}>
                 <label htmlFor="flashcard-disciplina">Filtrar por disciplina</label>
                 <select id="flashcard-disciplina" value={disciplina} onChange={(e) => setDisciplina(e.target.value)}>
@@ -195,10 +225,10 @@ export default function FlashcardsPage() {
                 </select>
               </div>
 
-              <button type="button" className={styles.createToggle} onClick={() => setShowCreateForm((value) => !value)}>
+              {origem === "meus" && <button type="button" className={styles.createToggle} onClick={() => setShowCreateForm((value) => !value)}>
                 {showCreateForm ? <X size={18} /> : <Plus size={18} />}
                 {showCreateForm ? "Cancelar" : "Criar flashcard"}
-              </button>
+              </button>}
             </section>
 
             {showCreateForm && (

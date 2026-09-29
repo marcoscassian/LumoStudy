@@ -126,6 +126,18 @@ class QuestaoEditorial(SQLModel, table=True):
     atualizado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
 
 
+class Resolucao(SQLModel, table=True):
+    __tablename__ = "resolucoes"
+    __table_args__ = MYSQL_TABLE
+
+    id: int | None = Field(default=None, primary_key=True)
+    questao_id: int = Field(foreign_key="questoes.id", ondelete="CASCADE", nullable=False, unique=True, index=True)
+    texto: str = Field(sa_column=Column(Text, nullable=False))
+    criado_por: int | None = Field(default=None, foreign_key="usuarios.id", ondelete="SET NULL", index=True)
+    criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+    atualizado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+
+
 class Flashcard(SQLModel, table=True):
     __tablename__ = "flashcards"
     __table_args__ = MYSQL_TABLE
@@ -135,7 +147,6 @@ class Flashcard(SQLModel, table=True):
     verso: str = Field(sa_column=Column(Text, nullable=False))
     disciplina: str = Field(max_length=100, nullable=False, index=True)
     conteudo_principal: str = Field(max_length=150, nullable=False, index=True)
-    questao_id: int | None = Field(default=None, foreign_key="questoes.id", ondelete="SET NULL", index=True)
     ativo: bool = Field(default=True, nullable=False, index=True)
     criado_por: int | None = Field(default=None, foreign_key="usuarios.id", ondelete="SET NULL", index=True)
     criado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)

@@ -350,15 +350,25 @@ html[data-theme="dark"] .chip {
 }
 
 html[data-theme="dark"] .chip.chip-active,
-html[data-theme="dark"] .quiz-assunto-tag,
+html[data-theme="dark"] .quiz-identificacao,
 html[data-theme="dark"] .quiz-alternative.selecionada {
   background: rgba(var(--lumo-accent-rgb), 0.12) !important;
   color: var(--lumo-text) !important;
 }
 
-body,
-body *:not(input):not(textarea):not([contenteditable="true"]) {
+body {
   cursor: var(--lumo-custom-cursor, auto) !important;
+}
+
+body a[href],
+body button:not(:disabled),
+body label,
+body select,
+body [role="button"],
+body .quiz-alternative:not(.correta):not(.errada):not(.riscada),
+body .sim-answer,
+body .question-dot {
+  cursor: pointer !important;
 }
 
 html[data-theme="dark"] .quiz-alternative.correta {

@@ -5,7 +5,8 @@ import { BookOpenCheck, CreditCard, LockKeyhole, Mail, Pencil, Plus, Search, Sen
 import { useRouter } from "next/navigation";
 import styles from "./admin.module.css";
 import { API_BASE as API } from "../lib/api";
-const emptyCard = { frente: "", verso: "", disciplina: "", conteudo_principal: "", prova: "", numero_questao: "", ativo: true };
+const emptyCard = { frente: "", verso: "", disciplina: "", conteudo_principal: "", ativo: true };
+const FLASHCARDS_POR_PAGINA = 50;
 
 type Editorial = { resolucao?: string; disciplina?: string; conteudo_principal?: string };
 type Original = { prova: string; index: string; titulo?: string; enunciado?: string; comando?: string; alternativas: { letra: string; texto: string }[]; gabarito?: string; disciplinaOriginal?: string };
@@ -21,12 +22,15 @@ export default function AdminPage() {
   const [original, setOriginal] = useState<Original | null>(null);
   const [editorial, setEditorial] = useState<Editorial>({});
   const [cards, setCards] = useState<Flashcard[]>([]);
+  const [paginaCards, setPaginaCards] = useState(0);
+  const [temProximaPaginaCards, setTemProximaPaginaCards] = useState(false);
   const [card, setCard] = useState(emptyCard);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [busca, setBusca] = useState("");
   const [usuarios, setUsuarios] = useState<UsuarioAdmin[]>([]);
   const [buscaUsuario, setBuscaUsuario] = useState("");
   const [notificacao, setNotificacao] = useState({ usuario_id: "", titulo: "Mensagem da equipe LumoStudy", mensagem: "", rota: "" });
+  const [enviandoNotificacao, setEnviandoNotificacao] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -40,9 +44,16 @@ export default function AdminPage() {
     return data;
   }, [router]);
 
-  const loadCards = useCallback(async (term = "") => {
-    const query = term ? `?busca=${encodeURIComponent(term)}` : "";
-    setCards(await authFetch(`/admin/flashcards${query}`));
+  const loadCards = useCallback(async (term = "", pagina = 0) => {
+    const params = new URLSearchParams({
+      limite: String(FLASHCARDS_POR_PAGINA + 1),
+      offset: String(pagina * FLASHCARDS_POR_PAGINA),
+    });
+    if (term.trim()) params.set("busca", term.trim());
+    const resultados = await authFetch(`/admin/flashcards?${params.toString()}`) as Flashcard[];
+    setCards(resultados.slice(0, FLASHCARDS_POR_PAGINA));
+    setTemProximaPaginaCards(resultados.length > FLASHCARDS_POR_PAGINA);
+    setPaginaCards(pagina);
   }, [authFetch]);
 
   const loadUsers = useCallback(async (term = "") => {
@@ -52,19 +63,22 @@ export default function AdminPage() {
 
   useEffect(() => {
     authFetch("/admin/provas").then((data) => { const values = data.map((item: { ano: number }) => item.ano); setAnos(values); setAno(String(values[0] || "")); }).catch((e) => setError(e.message));
-    authFetch("/admin/flashcards").then(setCards).catch((e) => setError(e.message));
+    authFetch(`/admin/flashcards?limite=${FLASHCARDS_POR_PAGINA + 1}&offset=0`).then((resultados: Flashcard[]) => {
+      setCards(resultados.slice(0, FLASHCARDS_POR_PAGINA));
+      setTemProximaPaginaCards(resultados.length > FLASHCARDS_POR_PAGINA);
+    }).catch((e) => setError(e.message));
     authFetch("/admin/usuarios").then(setUsuarios).catch((e) => setError(e.message));
   }, [authFetch]);
 
   async function searchQuestion(event: FormEvent) {
     event.preventDefault(); setError(""); setMessage("");
-    try { const data = await authFetch(`/admin/questoes/buscar?ano=${ano}&numero=${encodeURIComponent(numero)}`); setOriginal(data.original); setEditorial(data.editorial || {}); }
+    try { const data = await authFetch(`/admin/questoes/buscar?ano=${ano}&numero=${encodeURIComponent(numero)}`); setOriginal(data.original); setEditorial({ ...(data.editorial || {}), resolucao: data.resolucao?.texto || data.editorial?.resolucao || "" }); }
     catch (e) { setOriginal(null); setError((e as Error).message); }
   }
 
   async function saveQuestion(event: FormEvent) {
     event.preventDefault(); if (!original) return;
-    try { const data = await authFetch(`/admin/questoes/${original.prova}/${encodeURIComponent(original.index)}/editorial`, { method: "PUT", body: JSON.stringify(editorial) }); setEditorial(data); setMessage("Dados editoriais salvos."); setError(""); }
+    try { const data = await authFetch(`/admin/questoes/${original.prova}/${encodeURIComponent(original.index)}/editorial`, { method: "PUT", body: JSON.stringify(editorial) }); setEditorial({ ...(data.editorial || {}), resolucao: data.resolucao?.texto || editorial.resolucao || "" }); setMessage("Dados editoriais salvos."); setError(""); }
     catch (e) { setError((e as Error).message); }
   }
 
@@ -72,23 +86,27 @@ export default function AdminPage() {
     event.preventDefault();
     try {
       const path = editingId ? `/admin/flashcards/${editingId}` : "/admin/flashcards";
-      await authFetch(path, { method: editingId ? "PUT" : "POST", body: JSON.stringify({ ...card, prova: card.prova || null, numero_questao: card.numero_questao || null }) });
-      setCard(emptyCard); setEditingId(null); setMessage(editingId ? "Flashcard atualizado." : "Flashcard criado."); setError(""); await loadCards(busca);
+      await authFetch(path, { method: editingId ? "PUT" : "POST", body: JSON.stringify(card) });
+      setCard(emptyCard); setEditingId(null); setMessage(editingId ? "Flashcard atualizado." : "Flashcard criado."); setError(""); await loadCards(busca, paginaCards);
     } catch (e) { setError((e as Error).message); }
   }
 
-  function editCard(item: Flashcard) { setEditingId(item.id); setCard({ frente: item.frente, verso: item.verso, disciplina: item.disciplina, conteudo_principal: item.conteudo_principal, prova: item.prova || "", numero_questao: item.numero_questao || "", ativo: item.ativo }); window.scrollTo({ top: 0, behavior: "smooth" }); }
-  async function toggleCard(item: Flashcard) { try { await authFetch(`/admin/flashcards/${item.id}/status?ativo=${!item.ativo}`, { method: "PATCH" }); await loadCards(busca); } catch (e) { setError((e as Error).message); } }
+  function editCard(item: Flashcard) { setEditingId(item.id); setCard({ frente: item.frente, verso: item.verso, disciplina: item.disciplina, conteudo_principal: item.conteudo_principal, ativo: item.ativo }); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  async function toggleCard(item: Flashcard) { try { await authFetch(`/admin/flashcards/${item.id}/status?ativo=${!item.ativo}`, { method: "PATCH" }); await loadCards(busca, paginaCards); } catch (e) { setError((e as Error).message); } }
 
   async function sendNotification(event: FormEvent) {
     event.preventDefault();
     setError(""); setMessage("");
-    if (!notificacao.usuario_id) { setError("Selecione o usuário que receberá a notificação."); return; }
+    if (!notificacao.usuario_id) { setError("Selecione o destinatário da notificação."); return; }
+    const enviarParaTodos = notificacao.usuario_id === "todos";
+    if (enviarParaTodos && !window.confirm("Confirma o envio desta notificação para todos os usuários?")) return;
+    setEnviandoNotificacao(true);
     try {
       const data = await authFetch("/admin/notificacoes", {
         method: "POST",
         body: JSON.stringify({
-          usuario_id: Number(notificacao.usuario_id),
+          usuario_id: enviarParaTodos ? null : Number(notificacao.usuario_id),
+          enviar_para_todos: enviarParaTodos,
           titulo: notificacao.titulo,
           mensagem: notificacao.mensagem,
           rota: notificacao.rota.trim() || null,
@@ -97,6 +115,7 @@ export default function AdminPage() {
       setMessage(data.mensagem || "Notificação enviada.");
       setNotificacao((atual) => ({ ...atual, mensagem: "", rota: "" }));
     } catch (e) { setError((e as Error).message); }
+    finally { setEnviandoNotificacao(false); }
   }
 
   return <main className={styles.page}><div className={styles.shell}>
@@ -108,13 +127,13 @@ export default function AdminPage() {
       <form className={`${styles.card} ${styles.search}`} onSubmit={searchQuestion}><label className={styles.field}>Ano da prova<select value={ano} onChange={(e) => setAno(e.target.value)} required>{anos.map((value) => <option key={value}>{value}</option>)}</select></label><label className={styles.field}>Número da questão<input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Ex.: 42 ou 91-ingles" required/></label><button className={styles.button}><Search size={18}/> Buscar</button></form>
       {original && <div className={styles.grid}><section className={`${styles.card} ${styles.readonly}`}><span className={styles.locked}><LockKeyhole size={14}/> Material oficial — somente leitura</span><h2>{original.titulo || `Questão ${original.index}`}</h2><p className={styles.meta}>{original.prova} · {original.disciplinaOriginal} · Gabarito {original.gabarito}</p><div className={styles.questionText}>{original.enunciado}</div><p className={styles.questionText}><strong>{original.comando}</strong></p><div className={styles.alternatives}>{original.alternativas.map((alt) => <div className={styles.alternative} key={alt.letra}><strong>{alt.letra})</strong> {alt.texto}</div>)}</div></section>
       <form className={`${styles.card} ${styles.editor} ${styles.form}`} onSubmit={saveQuestion}><h2>Dados editáveis</h2><label className={styles.field}>Disciplina<input value={editorial.disciplina || ""} onChange={(e) => setEditorial({...editorial, disciplina: e.target.value})} placeholder="Ex.: Geografia"/></label><label className={styles.field}>Conteúdo principal<input value={editorial.conteudo_principal || ""} onChange={(e) => setEditorial({...editorial, conteudo_principal: e.target.value})} placeholder="Ex.: Climatologia"/></label><label className={styles.field}>Resolução comentada<textarea value={editorial.resolucao || ""} onChange={(e) => setEditorial({...editorial, resolucao: e.target.value})} placeholder="Explique o raciocínio e por que a alternativa está correta."/></label><button className={styles.button}>Salvar alterações</button></form></div>}
-    </> : tab === "flashcards" ? <div className={styles.grid}><form className={`${styles.card} ${styles.form}`} onSubmit={saveCard}><h2>{editingId ? "Editar flashcard" : "Novo flashcard"}</h2><label className={styles.field}>Frente<textarea value={card.frente} onChange={(e) => setCard({...card, frente: e.target.value})} required/></label><label className={styles.field}>Verso<textarea value={card.verso} onChange={(e) => setCard({...card, verso: e.target.value})} required/></label><label className={styles.field}>Disciplina<input value={card.disciplina} onChange={(e) => setCard({...card, disciplina: e.target.value})} required/></label><label className={styles.field}>Conteúdo principal<input value={card.conteudo_principal} onChange={(e) => setCard({...card, conteudo_principal: e.target.value})} required/></label><div className={styles.search}><label className={styles.field}>Prova (opcional)<input value={card.prova} onChange={(e) => setCard({...card, prova: e.target.value.toUpperCase()})} placeholder="ENEM2013"/></label><label className={styles.field}>Questão<input value={card.numero_questao} onChange={(e) => setCard({...card, numero_questao: e.target.value})}/></label></div><label className={styles.checkbox}><input type="checkbox" checked={card.ativo} onChange={(e) => setCard({...card, ativo: e.target.checked})}/> Flashcard ativo</label><button className={styles.button}><Plus size={18}/>{editingId ? "Salvar edição" : "Criar flashcard"}</button>{editingId && <button type="button" className={`${styles.button} ${styles.secondary}`} onClick={() => {setEditingId(null); setCard(emptyCard);}}>Cancelar</button>}</form>
-    <section className={styles.card}><div className={styles.toolbar}><div><h2>Flashcards</h2><p className={styles.subtitle}>{cards.length} resultado(s)</p></div><label className={styles.field}>Buscar<input value={busca} onChange={(e) => {setBusca(e.target.value); loadCards(e.target.value).catch((err) => setError(err.message));}} placeholder="Frente ou verso"/></label></div><div className={styles.list}>{cards.map((item) => <article className={styles.item} key={item.id}><div><h3>{item.frente}</h3><p>{item.verso}</p><div className={styles.meta}>{item.disciplina} · {item.conteudo_principal} · {item.ativo ? "Ativo" : "Inativo"}</div></div><div className={styles.actions}><button className={`${styles.button} ${styles.secondary}`} onClick={() => editCard(item)}><Pencil size={15}/> Editar</button><button className={`${styles.button} ${item.ativo ? styles.danger : styles.secondary}`} onClick={() => toggleCard(item)}>{item.ativo ? "Desativar" : "Ativar"}</button></div></article>)}{cards.length === 0 && <div className={styles.empty}>Nenhum flashcard encontrado.</div>}</div></section></div> :
+    </> : tab === "flashcards" ? <div className={styles.grid}><form className={`${styles.card} ${styles.form}`} onSubmit={saveCard}><h2>{editingId ? "Editar flashcard" : "Novo flashcard"}</h2><label className={styles.field}>Frente<textarea value={card.frente} onChange={(e) => setCard({...card, frente: e.target.value})} required/></label><label className={styles.field}>Verso<textarea value={card.verso} onChange={(e) => setCard({...card, verso: e.target.value})} required/></label><label className={styles.field}>Disciplina<input value={card.disciplina} onChange={(e) => setCard({...card, disciplina: e.target.value})} required/></label><label className={styles.field}>Conteúdo principal<input value={card.conteudo_principal} onChange={(e) => setCard({...card, conteudo_principal: e.target.value})} required/></label><label className={styles.checkbox}><input type="checkbox" checked={card.ativo} onChange={(e) => setCard({...card, ativo: e.target.checked})}/> Flashcard ativo</label><button className={styles.button}><Plus size={18}/>{editingId ? "Salvar edição" : "Criar flashcard"}</button>{editingId && <button type="button" className={`${styles.button} ${styles.secondary}`} onClick={() => {setEditingId(null); setCard(emptyCard);}}>Cancelar</button>}</form>
+    <section className={styles.card}><div className={styles.toolbar}><div><h2>Flashcards</h2><p className={styles.subtitle}>{cards.length} resultado(s) nesta página</p></div><label className={styles.field}>Buscar<input value={busca} onChange={(e) => {setBusca(e.target.value); loadCards(e.target.value, 0).catch((err) => setError(err.message));}} placeholder="Frente ou verso"/></label></div><div className={styles.list}>{cards.map((item) => <article className={styles.item} key={item.id}><div><h3>{item.frente}</h3><p>{item.verso}</p><div className={styles.meta}>{item.disciplina} · {item.conteudo_principal} · {item.ativo ? "Ativo" : "Inativo"}</div></div><div className={styles.actions}><button className={`${styles.button} ${styles.secondary}`} onClick={() => editCard(item)}><Pencil size={15}/> Editar</button><button className={`${styles.button} ${item.ativo ? styles.danger : styles.secondary}`} onClick={() => toggleCard(item)}>{item.ativo ? "Desativar" : "Ativar"}</button></div></article>)}{cards.length === 0 && <div className={styles.empty}>Nenhum flashcard encontrado.</div>}</div><div className={styles.actions}><button type="button" className={`${styles.button} ${styles.secondary}`} disabled={paginaCards === 0} onClick={() => loadCards(busca, paginaCards - 1).catch((err) => setError(err.message))}>Anterior</button><span className={styles.meta}>Página {paginaCards + 1}</span><button type="button" className={`${styles.button} ${styles.secondary}`} disabled={!temProximaPaginaCards} onClick={() => loadCards(busca, paginaCards + 1).catch((err) => setError(err.message))}>Próxima</button></div></section></div> :
       <div className={styles.notificationGrid}>
         <section className={`${styles.card} ${styles.form}`}>
           <div><div className={styles.eyebrow}>Destinatário</div><h2>Escolher usuário</h2><p className={styles.subtitle}>A mensagem aparecerá na carta do mascote como uma notificação não lida.</p></div>
           <label className={styles.field}>Buscar por nome ou e-mail<input value={buscaUsuario} onChange={(e) => { const valor = e.target.value; setBuscaUsuario(valor); loadUsers(valor).catch((err) => setError(err.message)); }} placeholder="Digite o nome ou e-mail"/></label>
-          <label className={styles.field}>Usuário<select value={notificacao.usuario_id} onChange={(e) => setNotificacao({...notificacao, usuario_id: e.target.value})} required><option value="">Selecione um usuário</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nome} — {usuario.email}{usuario.is_admin ? " (admin)" : ""}</option>)}</select></label>
+          <label className={styles.field}>Destinatário<select value={notificacao.usuario_id} onChange={(e) => setNotificacao({...notificacao, usuario_id: e.target.value})} required><option value="">Selecione um destinatário</option><option value="todos">Todos os usuários</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nome} — {usuario.email}{usuario.is_admin ? " (admin)" : ""}</option>)}</select></label>
           <div className={styles.userCount}>{usuarios.length} usuário(s) encontrado(s)</div>
         </section>
         <form className={`${styles.card} ${styles.form}`} onSubmit={sendNotification}>
@@ -122,7 +141,7 @@ export default function AdminPage() {
           <label className={styles.field}>Título<input value={notificacao.titulo} onChange={(e) => setNotificacao({...notificacao, titulo: e.target.value})} maxLength={120} required/></label>
           <label className={styles.field}>Mensagem<textarea value={notificacao.mensagem} onChange={(e) => setNotificacao({...notificacao, mensagem: e.target.value})} placeholder="Escreva a mensagem que aparecerá na carta." maxLength={5000} required/></label>
           <label className={styles.field}>Página ao clicar (opcional)<input value={notificacao.rota} onChange={(e) => setNotificacao({...notificacao, rota: e.target.value})} placeholder="Ex.: /cronograma ou /loja"/></label>
-          <button className={styles.button} disabled={!notificacao.usuario_id || !notificacao.mensagem.trim()}><Send size={18}/> Enviar notificação</button>
+          <button className={styles.button} disabled={enviandoNotificacao || !notificacao.usuario_id || !notificacao.mensagem.trim()}><Send size={18}/> {enviandoNotificacao ? "Enviando..." : "Enviar notificação"}</button>
         </form>
       </div>}
   </div></main>;
