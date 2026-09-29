@@ -9,6 +9,7 @@ import "../sidebar-pages.css";
 import "./configuracoes.css";
 import Sidebar from "../components/sidebar";
 import Header from "../components/header";
+import AvatarImage from "../components/avatar-image";
 import { aplicarTema } from "../components/theme-provider";
 import { API_BASE, formatApiError } from "../lib/api";
 
@@ -446,7 +447,7 @@ export default function ConfiguracoesPage() {
                           onClick={() => escolherCorDoTema(false)}
                         >
                           <span className="theme-style-visual theme-style-visual--avatar">
-                            <img src={avatarUrl} alt="Foto de perfil" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
+                            <AvatarImage src={avatarUrl} alt="Foto de perfil" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
                           </span>
                           <span className="theme-style-copy">
                             <strong>Foto de perfil</strong>

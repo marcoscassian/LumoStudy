@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import { aplicarTema } from "./theme-provider";
+import AvatarImage from "./avatar-image";
 import { API_BASE } from "../lib/api";
 export default function Header() {
   const router = useRouter();
@@ -187,7 +188,7 @@ export default function Header() {
             aria-expanded={isMenuOpen}
             aria-haspopup="menu"
           >
-            <img src={stats.avatar} className="avatar" alt="Perfil" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
+            <AvatarImage src={stats.avatar} className="avatar" alt="Perfil" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
             <ChevronDown className={`header-avatar-chevron ${isMenuOpen ? "open" : ""}`} size={18} />
           </button>
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Star, Flame, Settings, Feather } from "lucide-react";
+import AvatarImage from "../../components/avatar-image";
 
 export default function ProfileHero({ user }) {
   const xpPercent = Math.min(100, Math.round((user.currentXp / user.nextLevelXp) * 100));
@@ -13,7 +14,7 @@ export default function ProfileHero({ user }) {
       <div className="profile-hero-content">
         <div className="profile-hero-top">
           <div className="profile-hero-user">
-            <div className="profile-hero-avatar"><img onError={(e) => { e.currentTarget.src = "/avatar.png"; }} src={user.avatar} alt={user.name} /></div>
+            <div className="profile-hero-avatar"><AvatarImage onError={(e) => { e.currentTarget.src = "/avatar.png"; }} src={user.avatar} alt={user.name} /></div>
             <div className="profile-hero-info">
               <span className="profile-hero-greeting">Olá, Bruxo!</span>
               <h1>{user.name}</h1>

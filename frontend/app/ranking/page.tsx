@@ -7,6 +7,7 @@ import { Coins, Flame, Medal, Trophy } from "lucide-react";
 import "../trilha/trilha.css";
 import "../sidebar-pages.css";
 import Header from "../components/header";
+import AvatarImage from "../components/avatar-image";
 import Sidebar from "../components/sidebar";
 import { API_BASE } from "../lib/api";
 
@@ -62,7 +63,7 @@ export default function RankingPage() {
                     {ordemPodio.map((user) => (
                       <article key={user.id} className={`page-card podium-card ${user.posicao === 1 ? "first" : ""}`}>
                         <div className="podium-rank">{user.posicao === 1 ? "🥇" : user.posicao === 2 ? "🥈" : "🥉"}</div>
-                        <img className="podium-avatar" src={user.avatar_url || "/avatar.png"} alt="" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
+                        <AvatarImage className="podium-avatar" src={user.avatar_url || "/avatar.png"} alt="" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
                         <div className="podium-name">{user.nome}</div>
                         <div className="podium-xp">{Number(user.xp).toLocaleString("pt-BR")} XP</div>
                         <div className="muted" style={{fontSize:12, marginTop:4}}>Nível {user.nivel} · {user.streak} dias</div>
