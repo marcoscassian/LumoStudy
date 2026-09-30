@@ -9,7 +9,13 @@ import AvatarImage from "./avatar-image";
 import { API_BASE } from "../lib/api";
 export default function Header() {
   const router = useRouter();
-  const [stats, setStats] = useState({ coins: 0, streak: 0, xp: 0, avatar: "/avatar.png" });
+  const [stats, setStats] = useState({
+    coins: 0,
+    streak: 0,
+    xp: 0,
+    avatar: "/avatar.png",
+    progressao: { nivel_atual: 1, nome_nivel_atual: "Trouxa", progresso_percentual: 0 },
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -37,6 +43,7 @@ export default function Header() {
           streak: Number(data.streak ?? 0),
           xp: Number(data.xp ?? 0),
           avatar: data.avatar_url || "/avatar.png",
+          progressao: data.progressao || { nivel_atual: 1, nome_nivel_atual: "Trouxa", progresso_percentual: 0 },
         });
       } catch (error) {
         console.error("Erro ao buscar stats do usuário:", error);
@@ -129,9 +136,9 @@ export default function Header() {
     }
   };
 
-  const level = Math.max(1, Math.floor(stats.xp / 1000) + 1);
-  const xpInsideLevel = stats.xp % 1000;
-  const xpPercent = Math.min(100, Math.max(0, Math.round((xpInsideLevel / 1000) * 100)));
+  const level = Number(stats.progressao.nivel_atual || 1);
+  const levelName = stats.progressao.nome_nivel_atual || "Trouxa";
+  const xpPercent = Number(stats.progressao.progresso_percentual || 0);
 
   return (
     <header className="header header--compact">
@@ -170,7 +177,7 @@ export default function Header() {
           </div>
 
           <div className="xp">
-            <div className="xp-level">Nível {level}</div>
+            <div className="xp-level">Nível {level} · {levelName}</div>
             <div className="xp-bar">
               <div className="xp-fill" style={{ width: `${xpPercent}%` }} />
             </div>

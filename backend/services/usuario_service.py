@@ -8,6 +8,7 @@ from repositories.usuario_repository import UsuarioRepository
 from schemas.usuario_schema import PerfilPublico, UsuarioCreate, UsuarioUpdate
 from services.identidade_service import casa_do_curso, normalizar_curso
 from services.progresso_service import garantir_metas_padrao
+from services.xp_service import progressao_usuario
 
 senha_context = PasswordHash.recommended()
 
@@ -92,4 +93,6 @@ class UsuarioService:
         return self.repo.save(usuario)
 
     def perfil_publico(self, usuario):
-        return PerfilPublico.model_validate(usuario).model_dump()
+        perfil = PerfilPublico.model_validate(usuario).model_dump()
+        perfil["progressao"] = progressao_usuario(self.repo.session, usuario)
+        return perfil

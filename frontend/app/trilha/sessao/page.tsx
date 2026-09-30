@@ -34,8 +34,14 @@ type Resultado = {
   resolucao?: string;
 };
 
+type ConclusaoBloco = {
+  xp_ganhos?: number;
+  xp_total_atividade?: number;
+  questoes_contabilizadas?: number;
+};
+
 type FaixaDestaque = { inicio: number; fim: number };
-type RegistroDestaques = Record<string, FaixaDestaque[]>;
+type RegistroDestaques = Record<string, Record<string, FaixaDestaque[]>>;
 const SEM_DESTAQUES: Record<string, FaixaDestaque[]> = {};
 
 function obterFaixasTexto(elemento: HTMLElement, faixas: FaixaDestaque[]) {
@@ -76,6 +82,7 @@ function SessaoDeQuestoesPageContent() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
   const [questoes, setQuestoes] = useState<Questao[]>([]);
+  const [tentativaId, setTentativaId] = useState<number | null>(null);
   const [indiceAtual, setIndiceAtual] = useState(0);
 
   const [selecionadas, setSelecionadas] = useState<Record<number, string>>({});
@@ -85,7 +92,9 @@ function SessaoDeQuestoesPageContent() {
   const [marcaTextoAtivo, setMarcaTextoAtivo] = useState(false);
 
   const [corrigindo, setCorrigindo] = useState(false);
+  const [finalizando, setFinalizando] = useState(false);
   const [finalizado, setFinalizado] = useState(false);
+  const [conclusao, setConclusao] = useState<ConclusaoBloco | null>(null);
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
   const inicioQuestaoRef = useRef(0);
 
@@ -106,8 +115,15 @@ function SessaoDeQuestoesPageContent() {
 
       try {
         const areaValida = area ?? "";
-        const params = new URLSearchParams({ area: areaValida, quantidade });
-        const response = await fetch(`${API_BASE}/questoes/gerar?${params.toString()}`);
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${API_BASE}/questoes/blocos/iniciar`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ area: areaValida, quantidade: Number(quantidade) }),
+        });
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
@@ -116,6 +132,7 @@ function SessaoDeQuestoesPageContent() {
 
         const data = await response.json();
         setQuestoes(data.questoes || []);
+        setTentativaId(Number(data.tentativa_id));
       } catch (err: unknown) {
         console.error(err);
         const mensagem = err instanceof Error ? err.message : "Não foi possível conectar ao servidor.";
@@ -126,7 +143,6 @@ function SessaoDeQuestoesPageContent() {
     }
 
     carregarQuestoes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, area, quantidade]);
 
   useEffect(() => {
@@ -214,7 +230,7 @@ function SessaoDeQuestoesPageContent() {
   }
 
   async function handleResponder() {
-    if (!questaoAtual || !letraSelecionada || resultadoAtual || corrigindo) return;
+    if (!questaoAtual || !letraSelecionada || resultadoAtual || corrigindo || !tentativaId) return;
 
     setCorrigindo(true);
 
@@ -235,6 +251,7 @@ function SessaoDeQuestoesPageContent() {
               tempo_segundos: Math.max(1, Math.round((Date.now() - inicioQuestaoRef.current) / 1000)),
             },
           ],
+          tentativa_bloco_id: tentativaId,
         }),
       });
 
@@ -257,9 +274,31 @@ function SessaoDeQuestoesPageContent() {
     setIndiceAtual((prev) => Math.max(0, prev - 1));
   }
 
+  async function finalizarBloco() {
+    if (!tentativaId || finalizando || finalizado) return;
+    setFinalizando(true);
+    setErro("");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/questoes/blocos/${tentativaId}/finalizar`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || "Não foi possível finalizar o bloco.");
+      setConclusao(data);
+      setFinalizado(true);
+      window.dispatchEvent(new Event("lumostudy:stats-changed"));
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Não foi possível finalizar o bloco.");
+    } finally {
+      setFinalizando(false);
+    }
+  }
+
   function handleProxima() {
     if (indiceAtual + 1 >= totalQuestoes) {
-      setFinalizado(true);
+      void finalizarBloco();
       return;
     }
     setIndiceAtual((prev) => prev + 1);
@@ -327,7 +366,7 @@ function SessaoDeQuestoesPageContent() {
                   {Object.keys(destaquesAtuais).length > 0 && <button type="button" onClick={() => setDestaques((atual) => ({ ...atual, [String(indiceAtual)]: {} }))}>Limpar marcações</button>}
                 </div>
 
-                <div className="quiz-highlight-content" onMouseUp={(event) => {
+                <div className="quiz-highlight-content" onMouseUp={() => {
                   if (!marcaTextoAtivo) return;
                   const selection = window.getSelection();
                   if (selection?.rangeCount) alternarMarcaTexto(selection.getRangeAt(0));
@@ -419,10 +458,12 @@ function SessaoDeQuestoesPageContent() {
                   <button
                     type="button"
                     className="quiz-responder-btn"
-                    disabled={resultadoAtual ? corrigindo : !letraSelecionada || corrigindo}
+                    disabled={finalizando || (resultadoAtual ? corrigindo : !letraSelecionada || corrigindo)}
                     onClick={resultadoAtual ? handleProxima : handleResponder}
                   >
-                    {corrigindo
+                    {finalizando
+                      ? "Finalizando..."
+                      : corrigindo
                       ? "Corrigindo..."
                       : resultadoAtual
                         ? indiceAtual + 1 >= totalQuestoes ? "Finalizar" : "Próxima Questão"
@@ -452,6 +493,9 @@ function SessaoDeQuestoesPageContent() {
                   ? `Você respondeu ${respondidas} de ${totalQuestoes} questões. `
                   : ""}
                 {totalQuestoes > 0 ? Math.round((acertos / totalQuestoes) * 100) : 0}% de aproveitamento neste bloco.
+              </p>
+              <p>
+                +{Number(conclusao?.xp_total_atividade ?? conclusao?.xp_ganhos ?? 0).toLocaleString("pt-BR")} XP por {conclusao?.questoes_contabilizadas || 0} questões válidas.
               </p>
               <div className="quiz-summary-actions">
                 <button type="button" className="primario" onClick={() => router.push("/trilha")}>

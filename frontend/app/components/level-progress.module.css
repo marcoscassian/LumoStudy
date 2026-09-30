@@ -1,0 +1,298 @@
+.summary {
+  display: grid;
+  grid-template-columns: minmax(210px, .8fr) minmax(260px, .9fr) minmax(340px, 1.4fr);
+  align-items: center;
+  gap: 22px;
+  padding: 20px;
+  border: 1px solid rgba(var(--lumo-accent-rgb), .2);
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--lumo-surface-purple), var(--lumo-surface));
+  box-shadow: 0 12px 28px rgba(35, 22, 64, .07);
+}
+
+.summaryHeading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.summaryIcon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--lumo-accent), var(--lumo-accent-light));
+  box-shadow: 0 8px 20px rgba(var(--lumo-accent-rgb), .22);
+}
+
+.summaryHeading span,
+.summaryHeading p,
+.summaryNumbers span {
+  display: block;
+  color: var(--lumo-text-soft);
+  font-size: 11px;
+}
+
+.summaryHeading span {
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.summaryHeading h3 {
+  margin: 3px 0 2px;
+  color: var(--lumo-text);
+  font-size: 18px;
+}
+
+.summaryNumbers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.summaryNumbers > div {
+  padding: 12px;
+  border-radius: 13px;
+  background: rgba(var(--lumo-accent-rgb), .06);
+}
+
+.summaryNumbers strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--lumo-purple);
+  font-size: 17px;
+}
+
+.progressArea {
+  min-width: 0;
+}
+
+.progressCopy,
+.remainingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.progressCopy {
+  margin-bottom: 9px;
+  color: var(--lumo-text-soft);
+  font-size: 12px;
+}
+
+.progressCopy > strong {
+  color: var(--lumo-purple);
+}
+
+.progressTrack {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--lumo-border);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .08);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--lumo-accent), var(--lumo-accent-light));
+  box-shadow: 0 0 16px rgba(var(--lumo-accent-rgb), .38);
+  transition: width .35s ease;
+}
+
+.remainingRow,
+.maximumCopy {
+  margin-top: 8px;
+  color: var(--lumo-text-soft);
+  font-size: 11px;
+}
+
+.maximumCopy {
+  color: var(--lumo-purple);
+  font-weight: 800;
+}
+
+.pathViewport {
+  width: 100%;
+  margin-top: 28px;
+  padding: 14px 5px 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-color: var(--lumo-accent) var(--lumo-surface-soft);
+  scrollbar-width: thin;
+  outline: none;
+}
+
+.pathViewport:focus-visible {
+  border-radius: 12px;
+  box-shadow: 0 0 0 3px rgba(var(--lumo-accent-rgb), .16);
+}
+
+.pathTrack {
+  display: flex;
+  align-items: flex-start;
+  width: max-content;
+  min-width: 100%;
+  padding: 8px 18px 2px;
+}
+
+.levelNode {
+  position: relative;
+  width: 154px;
+  flex: 0 0 154px;
+  text-align: center;
+}
+
+.marker {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 13px;
+  border: 3px solid var(--lumo-border);
+  border-radius: 50%;
+  color: var(--lumo-text-soft);
+  background: var(--lumo-surface);
+  box-shadow: 0 5px 15px rgba(35, 22, 64, .1);
+}
+
+.levelNumber {
+  display: block;
+  color: var(--lumo-text-soft);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.levelNode h4 {
+  min-height: 38px;
+  margin-top: 4px;
+  color: var(--lumo-text);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.levelNode p {
+  margin-top: 7px;
+  color: var(--lumo-text-soft);
+  font-size: 11px;
+}
+
+.levelNode p strong,
+.levelNode p span {
+  display: block;
+}
+
+.levelNode small {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--lumo-accent);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.segment {
+  position: relative;
+  width: 68px;
+  height: 8px;
+  flex: 0 0 68px;
+  margin: 20px -4px 0;
+  overflow: visible;
+  border-radius: 999px;
+  background: var(--lumo-border);
+}
+
+.segment > div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--lumo-accent), var(--lumo-accent-light));
+  transition: width .35s ease;
+}
+
+.segment > span {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--lumo-purple);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.concluido .marker,
+.atual .marker {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, var(--lumo-accent), var(--lumo-accent-light));
+}
+
+.atual .marker {
+  box-shadow: 0 0 0 7px rgba(var(--lumo-accent-rgb), .13), 0 8px 22px rgba(var(--lumo-accent-rgb), .28);
+  transform: scale(1.08);
+}
+
+.atual h4 {
+  color: var(--lumo-purple);
+}
+
+.bloqueado {
+  opacity: .58;
+  filter: saturate(.55);
+}
+
+@media (max-width: 1080px) {
+  .summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .progressArea {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .summary {
+    grid-template-columns: 1fr;
+    padding: 17px;
+  }
+
+  .progressArea {
+    grid-column: auto;
+  }
+
+  .remainingRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .pathViewport {
+    margin-top: 20px;
+    padding-bottom: 16px;
+  }
+
+  .pathTrack {
+    padding-inline: 8px;
+  }
+
+  .levelNode {
+    width: 142px;
+    flex-basis: 142px;
+  }
+
+  .segment {
+    width: 54px;
+    flex-basis: 54px;
+  }
+}

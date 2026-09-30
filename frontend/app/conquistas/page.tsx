@@ -7,16 +7,24 @@ import { Award, CheckCircle2, LockKeyhole, Sparkles, Trophy } from "lucide-react
 import "../trilha/trilha.css";
 import "../sidebar-pages.css";
 import Header from "../components/header";
+import {
+  LevelPath,
+  LevelProgress,
+  type LevelPathItem,
+  type LevelProgressData,
+} from "../components/level-progress";
 import Sidebar from "../components/sidebar";
 import { API_BASE } from "../lib/api";
 
 type Conquista = { slug: string; nome: string; descricao: string; desbloqueada: boolean; atual: number; meta: number; unidade: string; percentual: number };
-type DadosConquistas = { desbloqueadas: number; total: number; conquistas: Conquista[] };
+type DadosConquistas = { desbloqueadas: number; total: number; conquistas: Conquista[]; progressao?: LevelProgressData; trilha_niveis?: LevelPathItem[] };
 
 export default function ConquistasPage() {
   const router = useRouter();
   const [dados, setDados] = useState<DadosConquistas | null>(null);
   const [erro, setErro] = useState("");
+  const progressao = dados?.progressao;
+  const trilhaNiveis = dados?.trilha_niveis || [];
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -41,7 +49,7 @@ export default function ConquistasPage() {
           <div className="sidebar-page-shell">
             <span className="sidebar-page-kicker"><Award size={14}/> Conquistas</span>
             <h1 className="sidebar-page-title">Seu livro de feitos</h1>
-            <p className="sidebar-page-subtitle">As conquistas são liberadas automaticamente conforme seus dados reais de questões, flashcards, simulados, sequência, moedas e XP.</p>
+            <p className="sidebar-page-subtitle">As conquistas são liberadas automaticamente conforme seus dados reais de questões, flashcards, simulados, sequência e moedas.</p>
 
             {erro && <div className="inline-message error">{erro}</div>}
             {!dados && !erro && <div className="page-card" style={{padding:24, marginTop:22}}>Carregando conquistas...</div>}
@@ -53,6 +61,20 @@ export default function ConquistasPage() {
                   <div><strong>{dados.desbloqueadas}/{dados.total}</strong><span>conquistas desbloqueadas</span></div>
                   <div style={{marginLeft:"auto"}}><Sparkles size={24} color="var(--lumo-accent)"/></div>
                 </div>
+
+                {progressao ? <section className="page-card wizard-trail">
+                  <div className="wizard-trail-heading">
+                    <span className="sidebar-page-kicker">Progressão</span>
+                    <h2>Trilha do Mundo Bruxo</h2>
+                    <p>Avance da esquerda para a direita. Deslize horizontalmente para explorar todos os níveis.</p>
+                  </div>
+                  <LevelProgress progressao={progressao} titulo="Nível atual" />
+                  <LevelPath progressao={progressao} niveis={trilhaNiveis} />
+                </section> : (
+                  <div className="inline-message" style={{marginTop:22}}>
+                    Os dados de progressão ainda não estão disponíveis. Atualize a página em instantes.
+                  </div>
+                )}
 
                 <div className="achievements-grid">
                   {(dados.conquistas || []).map((item) => (

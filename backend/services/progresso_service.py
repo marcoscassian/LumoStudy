@@ -6,14 +6,8 @@ from sqlmodel import Session, select
 
 from models.models import DiaEstudo, MetaUsuario, Notificacao, Usuarios
 
-# Regras simples de gamificação. Como os valores ficam persistidos em usuarios,
-# o cabeçalho e o perfil sempre mostram o mesmo saldo salvo no MySQL.
-XP_QUESTAO_CORRETA = 10
-XP_QUESTAO_ERRADA = 5
 COINS_QUESTAO_CORRETA = 2
-XP_FLASHCARD = 5
 COINS_FLASHCARD = 1
-XP_SIMULADO_CONCLUIDO = 30
 COINS_SIMULADO_CONCLUIDO = 10
 
 METAS_PADRAO = {
@@ -194,20 +188,16 @@ def recalcular_streak(session: Session, usuario: Usuarios) -> int:
 
 
 def recompensar_questao(usuario: Usuarios, correta: bool) -> tuple[int, int]:
-    xp = XP_QUESTAO_CORRETA if correta else XP_QUESTAO_ERRADA
     coins = COINS_QUESTAO_CORRETA if correta else 0
-    usuario.xp += xp
     usuario.coins += coins
-    return xp, coins
+    return 0, coins
 
 
 def recompensar_flashcard(usuario: Usuarios) -> tuple[int, int]:
-    usuario.xp += XP_FLASHCARD
     usuario.coins += COINS_FLASHCARD
-    return XP_FLASHCARD, COINS_FLASHCARD
+    return 0, COINS_FLASHCARD
 
 
 def recompensar_simulado(usuario: Usuarios) -> tuple[int, int]:
-    usuario.xp += XP_SIMULADO_CONCLUIDO
     usuario.coins += COINS_SIMULADO_CONCLUIDO
-    return XP_SIMULADO_CONCLUIDO, COINS_SIMULADO_CONCLUIDO
+    return 0, COINS_SIMULADO_CONCLUIDO

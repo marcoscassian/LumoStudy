@@ -6,7 +6,15 @@ const LUDIMILA_CORVINAL_FRAMES = [1, 2, 3, 4, 5].map(
   (frame) => `/avatarsprite/ludimila/ludimilac/ludimilac_${frame}.png`,
 );
 
-export default function AvatarImage({ src = "/avatar.png", alt = "", className, onError }) {
+/**
+ * @param {{
+ *   src?: string;
+ *   alt?: string;
+ *   className?: string;
+ *   onError?: import("react").ReactEventHandler<HTMLImageElement>;
+ * }} props
+ */
+export default function AvatarImage({ src = "/avatar.png", alt = "", className = "", onError }) {
   const animado = /ludimilac(?:-[^/]+)?\.png(?:$|\?)/i.test(src);
   const [frame, setFrame] = useState(0);
 

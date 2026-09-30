@@ -28,6 +28,7 @@ from routes.login_routes import AdminLogado, UsuarioLogado, criar_token_usuario
 from schemas.usuario_schema import PerfilPublico, UsuarioCreate, UsuarioUpdate
 from services.progresso_service import garantir_metas_padrao, recalcular_streak
 from services.usuario_service import UsuarioService
+from services.xp_service import progressao_usuario
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
@@ -48,7 +49,11 @@ def get_usuario_service(session: SessionDep) -> UsuarioService:
     return UsuarioService(UsuarioRepository(session))
 
 
-def _perfil_publico(usuario: Usuarios) -> dict:
+def _perfil_publico(
+    session: Session,
+    usuario: Usuarios,
+    progressao: dict | None = None,
+) -> dict:
     return {
         "id": usuario.id,
         "nome": usuario.nome,
@@ -57,6 +62,7 @@ def _perfil_publico(usuario: Usuarios) -> dict:
         "coins": usuario.coins,
         "streak": usuario.streak,
         "xp": usuario.xp,
+        "progressao": progressao or progressao_usuario(session, usuario),
         "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
@@ -298,11 +304,13 @@ def get_dashboard_perfil(usuario: UsuarioLogado, session: SessionDep):
 
     session.commit()
     session.refresh(usuario)
+    progressao = progressao_usuario(session, usuario)
 
     return {
-        "usuario": _perfil_publico(usuario),
+        "usuario": _perfil_publico(session, usuario, progressao),
         "visao_geral": {
             "questoes_respondidas": questoes_respondidas,
+            "questoes_contabilizadas": progressao["questoes_contabilizadas"],
             "flashcards_revisados": flashcards_revisados,
             "taxa_acertos": taxa_acertos,
             "simulados_resolvidos": simulados_resolvidos,

@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 from database.db import get_session
 from models.models import ConquistaUsuario, RespostaUsuario, RevisaoFlashcard, TentativaSimulado
 from routes.login_routes import UsuarioLogado
+from services.xp_service import progressao_usuario, trilha_niveis
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/conquistas", tags=["conquistas"])
@@ -19,6 +20,7 @@ def _count(session: Session, model, *conditions) -> int:
 
 @router.get("")
 def listar_conquistas(usuario: UsuarioLogado, session: SessionDep):
+    progressao = progressao_usuario(session, usuario)
     questoes = _count(session, RespostaUsuario, RespostaUsuario.usuario_id == usuario.id)
     corretas = _count(
         session,
@@ -43,8 +45,7 @@ def listar_conquistas(usuario: UsuarioLogado, session: SessionDep):
         ("primeiro-simulado", "Desafio Aceito", "Conclua um simulado", simulados >= 1, min(simulados, 1), 1, "simulados"),
         ("sequencia-3", "Chama Acesa", "Mantenha uma sequência de 3 dias", usuario.streak >= 3, min(usuario.streak, 3), 3, "dias"),
         ("sequencia-7", "Semana de Fogo", "Mantenha uma sequência de 7 dias", usuario.streak >= 7, min(usuario.streak, 7), 7, "dias"),
-        ("carteira-cheia", "Gringotes", "Tenha 100 moedas", usuario.coins >= 100, min(usuario.coins, 100), 100, "moedas"),
-        ("nivel-2", "Bruxo Experiente", "Alcance o nível 2", usuario.xp >= 1000, min(usuario.xp, 1000), 1000, "xp"),
+        ("carteira-cheia", "Gringotes", "Tenha 100 moedas", usuario.coins >= 100, min(usuario.coins, 100), 100, "moedas")
     ]
 
     persistidas = {
@@ -87,4 +88,6 @@ def listar_conquistas(usuario: UsuarioLogado, session: SessionDep):
         "desbloqueadas": sum(1 for item in saida if item["desbloqueada"]),
         "total": len(saida),
         "conquistas": saida,
+        "progressao": progressao,
+        "trilha_niveis": trilha_niveis(usuario.xp),
     }

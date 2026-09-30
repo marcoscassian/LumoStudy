@@ -5,8 +5,6 @@ import { Star, Flame, Settings, Feather } from "lucide-react";
 import AvatarImage from "../../components/avatar-image";
 
 export default function ProfileHero({ user }) {
-  const xpPercent = Math.min(100, Math.round((user.currentXp / user.nextLevelXp) * 100));
-
   return (
     <section className="profile-hero">
       <div className="profile-hero-stars" />
@@ -18,11 +16,7 @@ export default function ProfileHero({ user }) {
             <div className="profile-hero-info">
               <span className="profile-hero-greeting">Olá, Bruxo!</span>
               <h1>{user.name}</h1>
-              <div className="profile-hero-level">
-                <span className="level-tag">Nível {user.level}</span>
-                <div className="level-bar"><div className="level-fill" style={{ width: `${xpPercent}%` }} /></div>
-                <span className="level-xp">{user.currentXp.toLocaleString("pt-BR")} / {user.nextLevelXp.toLocaleString("pt-BR")} XP</span>
-              </div>
+              <p className="profile-hero-intro">Seu painel de estudos e conquistas no mundo bruxo.</p>
             </div>
           </div>
           <div className={`profile-hero-house house-${user.houseSlug}`}>

@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from database.db import get_session
@@ -20,10 +21,13 @@ from models.models import (
     Resolucao,
     RespostaUsuario,
     SimuladoQuestao,
+    TentativaBloco,
+    TentativaBlocoQuestao,
     TentativaSimulado,
 )
 from routes.login_routes import UsuarioLogado
 from services.progresso_service import recalcular_streak, recompensar_questao
+from services.xp_service import processar_xp_atividade, progressao_usuario
 
 router = APIRouter(prefix="/questoes", tags=["questoes"])
 
@@ -286,6 +290,69 @@ def gerar_questoes(
     }
 
 
+class IniciarBlocoRequest(BaseModel):
+    area: str
+    quantidade: int = 10
+
+
+@router.post("/blocos/iniciar", status_code=201)
+def iniciar_bloco(
+    payload: IniciarBlocoRequest,
+    usuario: UsuarioLogado,
+    session: Session = Depends(get_session),
+):
+    if payload.area not in VALORES_DE_AREA:
+        raise HTTPException(status_code=400, detail="Área inválida")
+    if payload.quantidade not in QUANTIDADES_VALIDAS:
+        raise HTTPException(status_code=400, detail="Quantidade inválida. Use 5, 10, 15 ou 20")
+
+    itens_area = _questoes_da_area(payload.area)
+    if not itens_area:
+        raise HTTPException(status_code=404, detail="Nenhuma questão encontrada para essa área")
+
+    escolhidos = random.sample(
+        itens_area,
+        k=min(payload.quantidade, len(itens_area)),
+    )
+    registros: list[Questao] = []
+    for item in escolhidos:
+        questao = _buscar_questao_db(session, item["prova"], item["index"])
+        if not questao:
+            raise HTTPException(
+                status_code=409,
+                detail="Catálogo de questões não indexado. Execute python database/createdb.py.",
+            )
+        registros.append(questao)
+
+    tentativa = TentativaBloco(
+        usuario_id=usuario.id,
+        area=payload.area,
+        total_questoes=len(registros),
+    )
+    session.add(tentativa)
+    session.flush()
+    for ordem, questao in enumerate(registros, start=1):
+        session.add(
+            TentativaBlocoQuestao(
+                tentativa_bloco_id=tentativa.id,
+                questao_id=questao.id,
+                ordem=ordem,
+            )
+        )
+    session.commit()
+    session.refresh(tentativa)
+
+    return {
+        "tentativa_id": tentativa.id,
+        "area": payload.area,
+        "quantidade": len(escolhidos),
+        "questoes": [
+            _montar_questao_publica(item["prova"], item["index"], session)
+            for item in escolhidos
+        ],
+    }
+
+
 class RespostaEnviada(BaseModel):
     prova: str
     index: str
@@ -296,6 +363,7 @@ class RespostaEnviada(BaseModel):
 class CorrecaoRequest(BaseModel):
     respostas: list[RespostaEnviada]
     tentativa_simulado_id: int | None = None
+    tentativa_bloco_id: int | None = None
 
 
 def _registrar_dia_estudo(
@@ -352,14 +420,55 @@ def corrigir_questoes(
     xp_ganhos = 0
     coins_ganhas = 0
     tentativa = None
+    tentativa_bloco = None
     chaves_recebidas: set[tuple[str, str]] = set()
 
+    if (
+        payload.tentativa_simulado_id is not None
+        and payload.tentativa_bloco_id is not None
+    ):
+        raise HTTPException(status_code=400, detail="Informe apenas uma atividade")
+
     if payload.tentativa_simulado_id is not None:
-        tentativa = session.get(TentativaSimulado, payload.tentativa_simulado_id)
+        tentativa = session.exec(
+            select(TentativaSimulado)
+            .where(TentativaSimulado.id == payload.tentativa_simulado_id)
+            .with_for_update()
+        ).first()
         if not tentativa or tentativa.usuario_id != usuario.id:
             raise HTTPException(status_code=404, detail="Tentativa de simulado não encontrada")
         if tentativa.finalizada:
             raise HTTPException(status_code=409, detail="Este simulado já foi finalizado")
+
+    if payload.tentativa_bloco_id is not None:
+        tentativa_bloco = session.exec(
+            select(TentativaBloco)
+            .where(TentativaBloco.id == payload.tentativa_bloco_id)
+            .with_for_update()
+        ).first()
+        if not tentativa_bloco or tentativa_bloco.usuario_id != usuario.id:
+            raise HTTPException(status_code=404, detail="Tentativa de bloco não encontrada")
+        if tentativa_bloco.finalizada:
+            raise HTTPException(status_code=409, detail="Este bloco já foi finalizado")
+
+    tentativa_atividade = tentativa or tentativa_bloco
+    if tentativa_atividade is not None:
+        filtro_tentativa = (
+            RespostaUsuario.tentativa_simulado_id == tentativa.id
+            if tentativa is not None
+            else RespostaUsuario.tentativa_bloco_id == tentativa_bloco.id
+        )
+        respostas_registradas = int(
+            session.exec(
+                select(func.count(RespostaUsuario.id)).where(filtro_tentativa)
+            ).one()
+            or 0
+        )
+        if respostas_registradas + len(payload.respostas) > tentativa_atividade.total_questoes:
+            raise HTTPException(
+                status_code=400,
+                detail="A quantidade de respostas excede o total desta atividade",
+            )
 
     for resposta in payload.respostas:
         chave_resposta = (resposta.prova, resposta.index)
@@ -397,6 +506,26 @@ def corrigir_questoes(
             if resposta_existente:
                 raise HTTPException(status_code=409, detail="Esta questão já foi registrada neste simulado")
 
+        if tentativa_bloco is not None:
+            pertence = session.exec(
+                select(TentativaBlocoQuestao).where(
+                    TentativaBlocoQuestao.tentativa_bloco_id == tentativa_bloco.id,
+                    TentativaBlocoQuestao.questao_id == questao.id,
+                )
+            ).first()
+            if not pertence:
+                raise HTTPException(status_code=400, detail="Questão não pertence a este bloco")
+
+            resposta_existente = session.exec(
+                select(RespostaUsuario).where(
+                    RespostaUsuario.usuario_id == usuario.id,
+                    RespostaUsuario.tentativa_bloco_id == tentativa_bloco.id,
+                    RespostaUsuario.questao_id == questao.id,
+                )
+            ).first()
+            if resposta_existente:
+                raise HTTPException(status_code=409, detail="Esta questão já foi registrada neste bloco")
+
         if correta:
             acertos += 1
 
@@ -406,6 +535,7 @@ def corrigir_questoes(
                 usuario_id=usuario.id,
                 questao_id=questao.id,
                 tentativa_simulado_id=payload.tentativa_simulado_id,
+                tentativa_bloco_id=payload.tentativa_bloco_id,
                 alternativa_escolhida=str(resposta.letra).strip().upper(),
                 correta=correta,
                 tempo_segundos=tempo_resposta,
@@ -440,4 +570,41 @@ def corrigir_questoes(
         "coins_ganhas": coins_ganhas,
         "saldo": {"xp": usuario.xp, "coins": usuario.coins, "streak": usuario.streak},
         "detalhes": detalhes,
+    }
+
+
+@router.post("/blocos/{tentativa_id}/finalizar")
+def finalizar_bloco(
+    tentativa_id: int,
+    usuario: UsuarioLogado,
+    session: Session = Depends(get_session),
+):
+    tentativa = session.exec(
+        select(TentativaBloco)
+        .where(TentativaBloco.id == tentativa_id)
+        .with_for_update()
+    ).first()
+    if not tentativa or tentativa.usuario_id != usuario.id:
+        raise HTTPException(status_code=404, detail="Tentativa de bloco não encontrada")
+
+    if not tentativa.finalizada:
+        tentativa.finalizada = True
+        tentativa.finalizado_em = datetime.now()
+        session.add(tentativa)
+
+    resultado_xp = processar_xp_atividade(session, usuario.id, tentativa)
+    recalcular_streak(session, usuario)
+    session.commit()
+    session.refresh(tentativa)
+    session.refresh(usuario)
+
+    return {
+        "tentativa": tentativa,
+        **resultado_xp,
+        "progressao": progressao_usuario(session, usuario),
+        "saldo": {
+            "xp": usuario.xp,
+            "coins": usuario.coins,
+            "streak": usuario.streak,
+        },
     }

@@ -26,6 +26,7 @@ from services.email_service import (
 )
 from services.identidade_service import casa_do_curso
 from services.progresso_service import recalcular_streak
+from services.xp_service import progressao_usuario
 
 carregar_env()
 
@@ -173,6 +174,7 @@ def login(
         "coins": usuario.coins,
         "streak": usuario.streak,
         "xp": usuario.xp,
+        "progressao": progressao_usuario(session, usuario),
         "is_admin": usuario.is_admin,
         "curso": usuario.curso,
         "casa": usuario.casa,
@@ -331,6 +333,7 @@ def get_me(
         "coins": usuario.coins,
         "streak": usuario.streak,
         "xp": usuario.xp,
+        "progressao": progressao_usuario(session, usuario),
         "is_admin": usuario.is_admin,
         "curso": usuario.curso,
         "casa": usuario.casa,

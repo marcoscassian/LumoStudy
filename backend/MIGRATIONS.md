@@ -95,3 +95,14 @@ As migrations devem ser commitadas em `migrations/versions/`.
 A migration `0011` adiciona `curso`, `mascote_slug` e `mascote_url` aos usuários e cria a tabela `notificacoes`.
 
 Depois dela, a casa passa a ser definida pelo curso e não pela foto de perfil. A inicialização sincroniza os 16 slots de avatar e os mascotes da Loja automaticamente.
+
+## 0017 — XP por atividades concluídas
+
+A migration `0017` cria tentativas persistidas para blocos de questões e torna o
+processamento de XP idempotente em blocos e simulados. Cada resposta registrada
+em uma atividade oficialmente finalizada vale 10 XP, independentemente de estar
+certa ou errada.
+
+Durante a migração, o XP existente é recalculado apenas a partir de simulados
+finalizados que podem ser comprovados no histórico. Recompensas antigas de login,
+flashcards, streak e outras fontes deixam de compor o saldo.

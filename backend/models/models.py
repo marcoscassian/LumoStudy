@@ -194,16 +194,69 @@ class TentativaSimulado(SQLModel, table=True):
     total_questoes: int = Field(default=0, nullable=False)
     acertos: int = Field(default=0, nullable=False)
     finalizada: bool = Field(default=False, nullable=False, index=True)
+    xp_processado: bool = Field(default=False, nullable=False, index=True)
+    xp_concedido: int = Field(default=0, nullable=False)
+    xp_processado_em: NaiveDatetime | None = Field(default=None, nullable=True)
+
+
+class TentativaBloco(SQLModel, table=True):
+    __tablename__ = "tentativas_bloco"
+    __table_args__ = MYSQL_TABLE
+
+    id: int | None = Field(default=None, primary_key=True)
+    usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
+    area: str = Field(max_length=50, nullable=False, index=True)
+    iniciado_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False)
+    finalizado_em: NaiveDatetime | None = Field(default=None, nullable=True)
+    total_questoes: int = Field(default=0, nullable=False)
+    finalizada: bool = Field(default=False, nullable=False, index=True)
+    xp_processado: bool = Field(default=False, nullable=False, index=True)
+    xp_concedido: int = Field(default=0, nullable=False)
+    xp_processado_em: NaiveDatetime | None = Field(default=None, nullable=True)
+
+
+class TentativaBlocoQuestao(SQLModel, table=True):
+    __tablename__ = "tentativa_bloco_questoes"
+    __table_args__ = (
+        UniqueConstraint("tentativa_bloco_id", "questao_id", name="uq_bloco_questao"),
+        UniqueConstraint("tentativa_bloco_id", "ordem", name="uq_bloco_ordem"),
+        MYSQL_TABLE,
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    tentativa_bloco_id: int = Field(
+        foreign_key="tentativas_bloco.id", ondelete="CASCADE", nullable=False, index=True
+    )
+    questao_id: int = Field(foreign_key="questoes.id", ondelete="CASCADE", nullable=False, index=True)
+    ordem: int = Field(nullable=False)
 
 
 class RespostaUsuario(SQLModel, table=True):
     __tablename__ = "respostas_usuario"
-    __table_args__ = MYSQL_TABLE
+    __table_args__ = (
+        UniqueConstraint(
+            "tentativa_simulado_id",
+            "questao_id",
+            name="uq_resposta_simulado_questao",
+        ),
+        UniqueConstraint(
+            "tentativa_bloco_id",
+            "questao_id",
+            name="uq_resposta_bloco_questao",
+        ),
+        MYSQL_TABLE,
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id", ondelete="CASCADE", nullable=False, index=True)
     questao_id: int = Field(foreign_key="questoes.id", ondelete="CASCADE", nullable=False, index=True)
     tentativa_simulado_id: int | None = Field(default=None, foreign_key="tentativas_simulado.id", ondelete="SET NULL", index=True)
+    tentativa_bloco_id: int | None = Field(
+        default=None,
+        foreign_key="tentativas_bloco.id",
+        ondelete="SET NULL",
+        index=True,
+    )
     alternativa_escolhida: str = Field(max_length=5, nullable=False)
     correta: bool = Field(nullable=False, index=True)
     respondida_em: NaiveDatetime = Field(default_factory=datetime.now, nullable=False, index=True)

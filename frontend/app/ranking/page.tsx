@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Coins, Flame, Medal, Trophy } from "lucide-react";
+import { Coins, Flame, Trophy } from "lucide-react";
 
 import "../trilha/trilha.css";
 import "../sidebar-pages.css";
@@ -11,7 +11,7 @@ import AvatarImage from "../components/avatar-image";
 import Sidebar from "../components/sidebar";
 import { API_BASE } from "../lib/api";
 
-type UsuarioRanking = { id: number; posicao: number; nome: string; xp: number; nivel: number; streak: number; coins: number; avatar_url?: string | null; eu: boolean };
+type UsuarioRanking = { id: number; posicao: number; nome: string; xp: number; nivel: number; nome_nivel: string; streak: number; coins: number; avatar_url?: string | null; eu: boolean };
 type DadosRanking = { minha_posicao: number | null; ranking: UsuarioRanking[] };
 
 export default function RankingPage() {
@@ -55,7 +55,7 @@ export default function RankingPage() {
               <>
                 <div className="feature-hero" style={{marginTop:22}}>
                   <h2>Sua posição atual: #{dados.minha_posicao || "—"}</h2>
-                  <p>Continue respondendo questões, revisando flashcards e concluindo simulados para ganhar XP e subir no ranking.</p>
+                  <p>Conclua blocos de questões e simulados para ganhar XP e subir no ranking.</p>
                 </div>
 
                 {ordemPodio.length > 0 && (
@@ -66,7 +66,7 @@ export default function RankingPage() {
                         <AvatarImage className="podium-avatar" src={user.avatar_url || "/avatar.png"} alt="" onError={(e) => { e.currentTarget.src = "/avatar.png"; }} />
                         <div className="podium-name">{user.nome}</div>
                         <div className="podium-xp">{Number(user.xp).toLocaleString("pt-BR")} XP</div>
-                        <div className="muted" style={{fontSize:12, marginTop:4}}>Nível {user.nivel} · {user.streak} dias</div>
+                        <div className="muted" style={{fontSize:12, marginTop:4}}>Nível {user.nivel} · {user.nome_nivel} · {user.streak} dias</div>
                       </article>
                     ))}
                   </div>

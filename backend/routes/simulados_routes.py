@@ -10,6 +10,7 @@ from database.db import get_session
 from models.models import Prova, Questao, RespostaUsuario, Simulado, SimuladoQuestao, TentativaSimulado
 from routes.login_routes import UsuarioLogado
 from services.progresso_service import obter_ou_criar_dia_estudo, recalcular_streak, recompensar_simulado
+from services.xp_service import XP_POR_QUESTAO, processar_xp_atividade, progressao_usuario
 
 SessionDep = Annotated[Session, Depends(get_session)]
 router = APIRouter(prefix="/simulados", tags=["simulados"])
@@ -122,13 +123,21 @@ def iniciar_simulado_por_id(simulado_id: int, usuario: UsuarioLogado, session: S
 
 @router.post("/tentativas/{tentativa_id}/finalizar")
 def finalizar_simulado(tentativa_id: int, usuario: UsuarioLogado, session: SessionDep):
-    tentativa = session.get(TentativaSimulado, tentativa_id)
+    tentativa = session.exec(
+        select(TentativaSimulado)
+        .where(TentativaSimulado.id == tentativa_id)
+        .with_for_update()
+    ).first()
     if not tentativa or tentativa.usuario_id != usuario.id:
         raise HTTPException(status_code=404, detail="Tentativa não encontrada")
-    if tentativa.finalizada:
+    if tentativa.xp_processado:
         return {
             "tentativa": tentativa,
             "xp_ganhos": 0,
+            "xp_total_atividade": tentativa.xp_concedido,
+            "questoes_contabilizadas": tentativa.xp_concedido // XP_POR_QUESTAO,
+            "ja_processado": True,
+            "progressao": progressao_usuario(session, usuario),
             "coins_ganhas": 0,
             "saldo": {"xp": usuario.xp, "coins": usuario.coins, "streak": usuario.streak},
         }
@@ -139,18 +148,25 @@ def finalizar_simulado(tentativa_id: int, usuario: UsuarioLogado, session: Sessi
             RespostaUsuario.tentativa_simulado_id == tentativa.id,
         )
     ).all()
-    tentativa.acertos = sum(1 for resposta in respostas if resposta.correta)
-    tentativa.finalizado_em = datetime.now()
-    tentativa.tempo_gasto_segundos = max(0, int((tentativa.finalizado_em - tentativa.iniciado_em).total_seconds()))
-    tentativa.finalizada = True
+    if not tentativa.finalizada:
+        tentativa.acertos = sum(1 for resposta in respostas if resposta.correta)
+        tentativa.finalizado_em = datetime.now()
+        tentativa.tempo_gasto_segundos = max(
+            0,
+            int((tentativa.finalizado_em - tentativa.iniciado_em).total_seconds()),
+        )
+        tentativa.finalizada = True
 
-    # O simulado conta como tempo real de estudo. As respostas do simulado são
-    # gravadas com tempo 0 no front para não duplicar este total.
-    dia = obter_ou_criar_dia_estudo(session, usuario.id)
-    dia.tempo_segundos += tentativa.tempo_gasto_segundos
-    session.add(dia)
+        # O simulado conta como tempo real de estudo. As respostas do simulado são
+        # gravadas com tempo 0 no front para não duplicar este total.
+        dia = obter_ou_criar_dia_estudo(session, usuario.id)
+        dia.tempo_segundos += tentativa.tempo_gasto_segundos
+        session.add(dia)
+        _, coins = recompensar_simulado(usuario)
+    else:
+        coins = 0
 
-    xp, coins = recompensar_simulado(usuario)
+    resultado_xp = processar_xp_atividade(session, usuario.id, tentativa)
     recalcular_streak(session, usuario)
     session.add(tentativa)
     session.add(usuario)
@@ -160,7 +176,8 @@ def finalizar_simulado(tentativa_id: int, usuario: UsuarioLogado, session: Sessi
 
     return {
         "tentativa": tentativa,
-        "xp_ganhos": xp,
+        **resultado_xp,
+        "progressao": progressao_usuario(session, usuario),
         "coins_ganhas": coins,
         "saldo": {"xp": usuario.xp, "coins": usuario.coins, "streak": usuario.streak},
     }

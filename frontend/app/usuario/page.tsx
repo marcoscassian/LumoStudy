@@ -20,6 +20,7 @@ import "./usuario.css";
 
 import Sidebar from "../components/sidebar";
 import Header from "../components/header";
+import { LevelProgress, type LevelProgressData } from "../components/level-progress";
 import ProfileHero from "./components/profilehero";
 import StatCard from "./components/statcard";
 import MasteryCard from "./components/masterycard";
@@ -35,8 +36,8 @@ const AREA_VISUAL: Record<string, { image: string; color: string }> = {
 };
 
 type Dashboard = {
-  usuario?: { nome?: string; avatar_url?: string; casa?: string; xp?: number; coins?: number; streak?: number };
-  visao_geral?: { questoes_respondidas?: number; flashcards_revisados?: number; taxa_acertos?: number; simulados_resolvidos?: number; temas_concluidos?: number };
+  usuario?: { nome?: string; avatar_url?: string; casa?: string; xp?: number; coins?: number; streak?: number; progressao?: LevelProgressData };
+  visao_geral?: { questoes_respondidas?: number; questoes_contabilizadas?: number; flashcards_revisados?: number; taxa_acertos?: number; simulados_resolvidos?: number; temas_concluidos?: number };
   dominio_areas?: { nome: string; slug: string; percentual: number }[];
   dominio_geral?: number;
   atividades_recentes?: { id: string; tipo: string; title: string; subject: string; ocorrido_em: string }[];
@@ -135,9 +136,7 @@ export default function UsuarioPage() {
 
     const user = dashboard.usuario || {};
     const overview = dashboard.visao_geral || {};
-    const currentXp = Number(user.xp || 0);
-    const level = Math.floor(currentXp / 1000) + 1;
-    const nextLevelXp = level * 1000;
+    const progressao = user.progressao;
     const casaSlug = String(user.casa || "grifinoria").toLowerCase();
 
     const profileUser = {
@@ -145,9 +144,6 @@ export default function UsuarioPage() {
       avatar: user.avatar_url || "/avatar.png",
       house: CASA_NOME[casaSlug] || user.casa || "Corvinal",
       houseSlug: casaSlug,
-      level,
-      currentXp,
-      nextLevelXp,
       coins: Number(user.coins || 0),
       streak: Number(user.streak || 0),
     };
@@ -202,7 +198,7 @@ export default function UsuarioPage() {
       });
     });
 
-    return { profileUser, overviewCards, mastery, activities, goals };
+    return { profileUser, progressao, overviewCards, mastery, activities, goals };
   }, [dashboard]);
 
   if (loading) {
@@ -236,6 +232,14 @@ export default function UsuarioPage() {
         <Sidebar />
         <section className="content profile-content">
           <ProfileHero user={viewModel.profileUser} />
+
+          {viewModel.progressao ? (
+            <LevelProgress progressao={viewModel.progressao} titulo="Sua progressão mágica" />
+          ) : (
+            <div className="inline-message">
+              Os dados de progressão ainda não estão disponíveis. Atualize a página em instantes.
+            </div>
+          )}
 
           <div>
             <div className="section-title"><Star size={18} />Seu progresso geral</div>

@@ -13,7 +13,7 @@ import { API_BASE } from "../../lib/api";
 type AlternativaSimulado = { letra: string; texto: string; imagem?: string | null };
 type QuestaoSimulado = { prova: string; index: string; disciplina?: string; discipline?: string; enunciado?: string; imagens?: string[]; comando?: string; alternativas?: AlternativaSimulado[] };
 type DadosSimulado = { dia_prova?: number; tempo_limite_minutos?: number };
-type ResultadoSimulado = { tentativa?: { total_questoes?: number; acertos?: number }; xp_ganhos?: number; coins_ganhas?: number };
+type ResultadoSimulado = { tentativa?: { total_questoes?: number; acertos?: number }; xp_ganhos?: number; xp_total_atividade?: number; coins_ganhas?: number };
 
 function formatarTempo(total: number) {
   const segundos = Math.max(0, total);
@@ -156,7 +156,7 @@ export default function SessaoSimuladoPage() {
           <span className="sidebar-page-kicker">Simulado concluído</span>
           <h1>Resultado do ENEM · Dia {simulado?.dia_prova}</h1>
           <div className="sim-result-score">{acertos}/{total}</div>
-          <p className="muted">{total ? Math.round((acertos / total) * 100) : 0}% de aproveitamento · +{resultado.xp_ganhos || 0} XP · +{resultado.coins_ganhas || 0} moedas</p>
+          <p className="muted">{total ? Math.round((acertos / total) * 100) : 0}% de aproveitamento · +{resultado.xp_total_atividade ?? resultado.xp_ganhos ?? 0} XP · +{resultado.coins_ganhas || 0} moedas</p>
           <div style={{display:"flex", gap:12, justifyContent:"center", marginTop:22}}>
             <button className="secondary-action" onClick={() => router.push("/simulados")}>Novo simulado</button>
             <button className="primary-action" onClick={() => router.push("/usuario")}>Ver meu desempenho</button>
