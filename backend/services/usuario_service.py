@@ -6,7 +6,6 @@ from pwdlib import PasswordHash
 from models.models import Notificacao
 from repositories.usuario_repository import UsuarioRepository
 from schemas.usuario_schema import PerfilPublico, UsuarioCreate, UsuarioUpdate
-from services.identidade_service import casa_do_curso, normalizar_curso
 from services.progresso_service import garantir_metas_padrao
 from services.xp_service import progressao_usuario
 
@@ -31,14 +30,12 @@ class UsuarioService:
         if self.repo.get_by_email(email):
             raise HTTPException(status_code=400, detail="E-mail já cadastrado")
 
-        curso = normalizar_curso(data.curso)
-        casa = casa_do_curso(curso)
+        casa = str(data.casa or "grifinoria").strip() or "grifinoria"
         usuario = self.repo.create(
             UsuarioCreate(
                 nome=data.nome,
                 email=email,
                 senha_hash=senha_context.hash(data.senha_hash),
-                curso=curso,
                 casa=casa,
                 avatar_url="/avatar.png",
                 mascote_slug="coruja",

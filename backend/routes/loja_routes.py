@@ -218,7 +218,6 @@ def _desequipar_tipo(session: Session, usuario_id: int, tipo: str) -> None:
 def _resposta(session: Session, usuario, mensagem: str | None = None) -> dict:
     resposta = {
         "coins": usuario.coins,
-        "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
         "mascote_slug": usuario.mascote_slug,

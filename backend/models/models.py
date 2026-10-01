@@ -21,7 +21,6 @@ class Usuarios(SQLModel, table=True):
     streak: int = Field(default=0, nullable=False)
     xp: int = Field(default=0, nullable=False)
     is_admin: bool = Field(default=False, nullable=False)
-    curso: str = Field(default="informatica", max_length=30, nullable=False, index=True)
     casa: str = Field(default="grifinoria", max_length=30, nullable=False, index=True)
     avatar_url: str = Field(default="/avatar.png", max_length=255, nullable=False)
     mascote_slug: str = Field(default="coruja", max_length=50, nullable=False)

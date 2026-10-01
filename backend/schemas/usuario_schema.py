@@ -8,7 +8,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class UsuarioBase(BaseModel):
     nome: str = Field(..., min_length=2, max_length=150)
     email: EmailStr
-    curso: str = Field(..., min_length=2, max_length=30)
     casa: str = Field(default="grifinoria", max_length=30)
     avatar_url: str = Field(default="/avatar.png", max_length=255)
     mascote_slug: str = Field(default="coruja", max_length=50)
@@ -42,7 +41,6 @@ class PerfilPublico(BaseModel):
     coins: int
     streak: int
     xp: int
-    curso: str
     casa: str
     avatar_url: str
     mascote_slug: str

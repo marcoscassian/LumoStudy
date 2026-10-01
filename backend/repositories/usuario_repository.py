@@ -27,7 +27,6 @@ class UsuarioRepository:
             nome=data.nome.strip(),
             email=str(data.email).strip().lower(),
             senha_hash=data.senha_hash,
-            curso=data.curso,
             casa=data.casa or "grifinoria",
             avatar_url=data.avatar_url or "/avatar.png",
             mascote_slug=data.mascote_slug or "coruja",

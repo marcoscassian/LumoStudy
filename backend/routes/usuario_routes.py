@@ -63,7 +63,6 @@ def _perfil_publico(
         "streak": usuario.streak,
         "xp": usuario.xp,
         "progressao": progressao or progressao_usuario(session, usuario),
-        "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
         "mascote_slug": usuario.mascote_slug,

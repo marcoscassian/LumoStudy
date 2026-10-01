@@ -323,7 +323,6 @@ def listar_usuarios_admin(
             "id": usuario.id,
             "nome": usuario.nome,
             "email": str(usuario.email),
-            "curso": usuario.curso,
             "casa": usuario.casa,
             "is_admin": usuario.is_admin,
         }

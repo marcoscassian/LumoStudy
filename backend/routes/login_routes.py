@@ -24,7 +24,6 @@ from services.email_service import (
     email_configurado,
     enviar_email_recuperacao,
 )
-from services.identidade_service import casa_do_curso
 from services.progresso_service import recalcular_streak
 from services.xp_service import progressao_usuario
 
@@ -113,10 +112,13 @@ def get_usuario(
         if not usuario:
             raise credentials_exception
 
-        casa_correta = casa_do_curso(usuario.curso)
+        casa_padrao = "grifinoria"
         alterado = False
-        if usuario.casa != casa_correta:
-            usuario.casa = casa_correta
+        if not usuario.casa:
+            usuario.casa = casa_padrao
+            alterado = True
+        if usuario.casa not in {"grifinoria", "sonserina", "corvinal", "lufa-lufa"}:
+            usuario.casa = casa_padrao
             alterado = True
         if not usuario.mascote_slug:
             usuario.mascote_slug = "coruja"
@@ -176,7 +178,6 @@ def login(
         "xp": usuario.xp,
         "progressao": progressao_usuario(session, usuario),
         "is_admin": usuario.is_admin,
-        "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
         "mascote_slug": usuario.mascote_slug,
@@ -335,7 +336,6 @@ def get_me(
         "xp": usuario.xp,
         "progressao": progressao_usuario(session, usuario),
         "is_admin": usuario.is_admin,
-        "curso": usuario.curso,
         "casa": usuario.casa,
         "avatar_url": usuario.avatar_url,
         "mascote_slug": usuario.mascote_slug,

@@ -421,7 +421,6 @@ def semear_catalogo() -> tuple[int, int, int]:
         for usuario in session.exec(select(Usuarios)).all():
             if usuario.casa not in casas:
                 usuario.casa = "grifinoria"
-            usuario.curso = curso_por_casa.get(usuario.casa, "informatica")
             if not usuario.mascote_slug:
                 usuario.mascote_slug = "coruja"
             if not usuario.mascote_url:
