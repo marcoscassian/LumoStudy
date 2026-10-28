@@ -1,0 +1,7 @@
+INFO:     Started server process [55801]
+INFO:     Waiting for application startup.
+Conectando ao MySQL local em 127.0.0.1:3306 como root e preparando 'LumoStudy'...
+Banco 'LumoStudy' criado/verificado.
+INFO  [alembic.runtime.migration] Context impl MySQLImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+Migrations aplicadas até o head.
